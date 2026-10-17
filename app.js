@@ -21,18 +21,53 @@ var ART = {m:'der', f:'die', n:'das'};
 var ARTINFO = {m:'<b>der</b> أداة للمذكّر، مثل «الـ» في العربية.<br>مثال: <span class="de">der Hund</span> = الكلب', f:'<b>die</b> أداة للمؤنّث، مثل «الـ» في العربية.<br>مثال: <span class="de">die Katze</span> = القطة', n:'<b>das</b> أداة للمحايد (لا مذكّر ولا مؤنّث)، مثل «الـ» في العربية.<br>مثال: <span class="de">das Haus</span> = البيت'};
 
 /* ---------------- storage ---------------- */
-function blank(){ return {xp:0, streak:0, last:'', days:{}, badges:{}, heard:{}, done:{}, gs:{}, mist:{}, fixed:0, cards:{}, games:{}, daily:{}, tools:{}, name:'', set:{theme:'dark', kids:false, sp:false, speed:'slow'}, v:3, perfect:false, test:null, popup:false, station:0, exam:{}, spoke:0}; }
+function blank(){ return {xp:0, streak:0, last:'', days:{}, badges:{}, heard:{}, done:{}, gs:{}, mist:{}, fixed:0, cards:{}, games:{}, daily:{}, tools:{}, name:'', set:{theme:'dark', kids:false, sp:false, speed:'slow'}, v:4, perfect:false, test:null, popup:false, station:0, exam:{}, spoke:0}; }
 var S = (function(){
   var d = blank();
   try{ var x = JSON.parse(localStorage.getItem('sprachrakete') || 'null');
     if (x){ for (var k in x) if (k !== 'seen') d[k] = x[k];
       d.set = Object.assign({theme:'dark', kids:false, sp:false, speed:'slow'}, x.set || {});
-      if ((x.v || 1) < 3){ d.set.sp = false; if (!x.set || x.set.theme !== 'light') d.set.theme = 'dark'; d.v = 3; }
+      if ((x.v || 1) < 3){ if (!x.set || x.set.theme !== 'light') d.set.theme = 'dark'; }
+      if ((x.v || 1) < 4){ d.set.sp = false; d.v = 4; }
       ['heard','done','gs','mist','exam','days','badges','cards','games','daily','tools'].forEach(function(k){ if (!d[k] || typeof d[k] !== 'object') d[k] = {}; });
     } }catch(e){}
   return d;
 })();
 function save(){ try{ localStorage.setItem('sprachrakete', JSON.stringify(S)); }catch(e){} }
+
+/* ---------------- owner config (config.json) ---------------- */
+var CFG = {announcement:{text:'', link:'', color:'gold'}, whatsapp:'201080845228', youtube:'u0_0z', hide:[], goatcounter:'', repo:'mohnned7/mohnned7.github.io'};
+var HIDE_KEYS = {exam:'تدريب الامتحان', test:'اختبار المستوى', speak:'اختبر نطقك', mistakes:'كرّاسة أخطائي', stories:'القصص', letters:'الرسائل', a2:'دروس A2', tools:'الأدوات', games:'الألعاب', journey:'رحلتي'};
+function hidden(k){ return (CFG.hide || []).indexOf(k) >= 0; }
+function waNum(){ return String(CFG.whatsapp || '').replace(/[^\d]/g, ''); }
+function ytName(){ return String(CFG.youtube || '').replace(/^@/, '').trim(); }
+function loadConfig(){
+  try{ fetch('config.json?t=' + Date.now(), {cache:'no-store'}).then(function(r){ return r.ok ? r.json() : null; }).then(function(c){
+    if (!c || typeof c !== 'object') return;
+    for (var k in c) CFG[k] = c[k];
+    if (!Array.isArray(CFG.hide)) CFG.hide = [];
+    if (!CFG.announcement || typeof CFG.announcement !== 'object') CFG.announcement = {text:''};
+    showAnnouncement(); startStats(); if (!$('#stage')) route(); else navHide();
+  }).catch(function(){}); }catch(e){}
+}
+function showAnnouncement(){
+  var old = $('#annBar'); if (old) old.remove();
+  var a = CFG.announcement || {}, t = String(a.text || '').trim(); if (!t) return;
+  var key = 'ann:' + t; try{ if (localStorage.getItem('sr-ann') === key) return; }catch(e){}
+  var lk = String(a.link || '').trim(), safe = /^(https?:\/\/|#\/)/.test(lk);
+  var bar = document.createElement('div'); bar.id = 'annBar'; bar.className = 'ann ' + (['violet','red','green'].indexOf(a.color) >= 0 ? a.color : 'gold');
+  bar.innerHTML = (safe ? '<a href="' + esc(lk) + '"' + (/^https?:/.test(lk) ? ' target="_blank" rel="noopener"' : '') + '>' + esc(t) + ' ‹</a>' : '<span>' + esc(t) + '</span>') + '<button type="button" aria-label="إغلاق">✕</button>';
+  var top = $('#top'); top.parentNode.insertBefore(bar, top.nextSibling);
+  bar.querySelector('button').onclick = function(){ bar.remove(); try{ localStorage.setItem('sr-ann', key); }catch(e){} };
+}
+var statsOn = false;
+function startStats(){
+  var code = String(CFG.goatcounter || '').trim().replace(/[^a-z0-9-]/gi, ''); if (!code || statsOn || location.protocol !== 'https:') return;
+  statsOn = true; window.goatcounter = {no_onload:true};
+  var s = document.createElement('script'); s.async = true; s.src = 'https://gc.zgo.at/count.js'; s.setAttribute('data-goatcounter', 'https://' + code + '.goatcounter.com/count');
+  s.onload = function(){ countView(); }; document.head.appendChild(s);
+}
+function countView(){ try{ if (window.goatcounter && window.goatcounter.count){ var h = (location.hash || '#/').replace(/^#\/?/, '').split('/').slice(0, 2).join('/'); if (/^admin/.test(h)) return; window.goatcounter.count({path:'/' + h, title:document.title}); } }catch(e){} }
 
 /* ---------------- theme / settings ---------------- */
 function isDark(){ return S.set.theme !== 'light'; }
@@ -199,7 +234,7 @@ function addXP(n, quiet){
   S.xp += n; var t = today();
   if (S.last !== t){ S.streak = (S.last === yesterday()) ? S.streak + 1 : 1; S.last = t; }
   S.days[t] = (S.days[t] || 0) + n; save();
-  if (!quiet) checkBadges(); updateRibbon();
+  if (!quiet) checkBadges(); updateRibbon(); var gc = $('.goal'); if (gc){ var was = gc.classList.contains('done'); gc.outerHTML = goalHTML(); if (!was && S.goal && (S.days[t] || 0) >= S.goal) setTimeout(function(){ toast('🎯 حققت هدف اليوم!'); confetti(); }, 400); } else if (S.goal && (S.days[t] || 0) >= S.goal && (S.days[t] - n) < S.goal) setTimeout(function(){ toast('🎯 حققت هدف اليوم!'); }, 400);
 }
 function touch(tool){ S.tools[tool] = 1; save(); }
 
@@ -317,16 +352,17 @@ function shell(){
   document.body.insertAdjacentHTML('afterbegin',
    '<header class="top" id="top"><div class="wrap"><a class="logo" href="#/"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="#14103A"/><circle cx="31" cy="10" r="1.3" fill="#fff"/><circle cx="9" cy="14" r="1" fill="#fff"/>'+
    '<path d="M20 7c6 5 7 13 5 21h-10c-2-8-1-16 5-21z" fill="#FFF7E8"/><path d="M20 7c3 2 5 5 5.6 9h-11.2C15 12 17 9 20 7z" fill="#FF6B2C"/><circle cx="20" cy="19" r="3" fill="#5B3DF5"/><path d="M17 28q3 8 6 0z" fill="#FFC53D"/></svg>'+
-   '<b>Sprach<span>rakete</span></b></a><button class="ibtn" id="kidsBtn" title="وضع الصغار" aria-label="وضع الصغار">🧸</button><button class="ibtn" id="themeBtn" aria-label="الوضع الليلي أو النهاري">☀️</button></div></header>'+
+   '<b>Sprach<span>rakete</span></b></a><a class="ibtn" id="meBtn" href="#/me" title="حسابي" aria-label="حسابي">🧑‍🚀</a><button class="ibtn" id="kidsBtn" title="وضع الصغار" aria-label="وضع الصغار">🧸</button><button class="ibtn" id="themeBtn" aria-label="الوضع الليلي أو النهاري">☀️</button></div></header>'+
    '<main id="app"></main>'+
    '<nav class="nav" aria-label="القائمة"><div class="in">'+
-   '<a href="#/" data-n="home"><i>🏠</i>الرئيسية</a><a href="#/learn" data-n="learn"><i>📚</i>الدروس</a><a href="#/play" data-n="play"><i>🎮</i>الألعاب</a><a href="#/me" data-n="me"><i>🧑‍🚀</i>حسابي</a><a href="#/search" data-n="search"><i>🔍</i>بحث</a></div></nav>'+
+   '<a href="#/" data-n="home"><i>🏠</i>الرئيسية</a><a href="#/learn" data-n="learn"><i>📚</i>الدروس</a><a href="#/train" data-n="train"><i>🎯</i>التدريب</a><a href="#/play" data-n="play"><i>🎮</i>الألعاب</a><a href="#/search" data-n="search"><i>🔍</i>بحث</a></div></nav>'+
    '<div class="toast" id="toast" role="status"></div><div class="feedback" id="fb"></div>');
   $('#themeBtn').onclick = function(){ S.set.theme = isDark() ? 'light' : 'dark'; save(); applySettings(); };
   $('#kidsBtn').onclick = function(){ S.set.kids = !S.set.kids; save(); applySettings(); toast(S.set.kids ? '🧸 وضع الصغار مفعّل' : 'تم إيقاف وضع الصغار'); };
   addEventListener('scroll', function(){ $('#top').classList.toggle('scrolled', scrollY > 6); }, {passive:true});
 }
-function setNav(n){ $$('.nav a').forEach(function(a){ a.classList.toggle('on', a.dataset.n === n); }); }
+function navHide(){ var g = $('.nav a[data-n="play"]'); if (g) g.hidden = hidden('games'); var n = $('.nav .in'); if (n) n.style.gridTemplateColumns = 'repeat(' + $$('.nav a').filter(function(a){ return !a.hidden; }).length + ',1fr)'; }
+function setNav(n){ navHide(); $$('.nav a').forEach(function(a){ a.classList.toggle('on', a.dataset.n === n); }); var mb = $('#meBtn'); if (mb) mb.classList.toggle('on', n === 'me'); }
 var leaveHook = null;
 function render(html, nav){
   if (leaveHook){ try{ leaveHook(); }catch(e){} leaveHook = null; }
@@ -335,14 +371,15 @@ function render(html, nav){
   setNav(nav); window.scrollTo(0, 0);
   if (pendingSt && !$('#stage')) setTimeout(checkStation, 700);
 }
-function ctlBar(extra){
+function ctlBar(extra, noPr){
   return '<div class="ctl"><div class="seg" role="group" aria-label="سرعة الصوت"><button data-sp="slow" class="' + (S.set.speed === 'slow' ? 'on' : '') + '">🐢 بطيء</button><button data-sp="normal" class="' + (S.set.speed !== 'slow' ? 'on' : '') + '">عادي</button></div>' +
-    '<button class="chip ' + (S.set.sp ? 'on' : '') + '" data-pr>النطق بالعربية</button>' + (extra || '') + '</div>';
+    (noPr ? '' : prChip()) + (extra || '') + '</div>';
 }
+function prChip(){ return '<button class="chip pr-chip ' + (S.set.sp ? 'on' : '') + '" data-pr aria-pressed="' + !!S.set.sp + '">' + (S.set.sp ? 'إخفاء النطق بالعربية' : 'إظهار النطق بالعربية') + '</button>'; }
 function setSpeed(v){ S.set.speed = v; save(); if (v === 'slow') Object.keys(usedGroups).forEach(loadAudio); }
 function bindCtl(){
   $$('[data-sp]').forEach(function(b){ b.onclick = function(){ setSpeed(b.dataset.sp); $$('[data-sp]').forEach(function(x){ x.classList.toggle('on', x.dataset.sp === b.dataset.sp); }); }; });
-  $$('[data-pr]').forEach(function(b){ b.onclick = function(){ S.set.sp = !S.set.sp; save(); applySettings(); $$('[data-pr]').forEach(function(x){ x.classList.toggle('on', S.set.sp); }); }; });
+  $$('[data-pr]').forEach(function(b){ b.onclick = function(){ S.set.sp = !S.set.sp; save(); applySettings(); $$('[data-pr]').forEach(function(x){ x.classList.toggle('on', S.set.sp); x.setAttribute('aria-pressed', !!S.set.sp); if (x.classList.contains('pr-chip')) x.textContent = S.set.sp ? 'إخفاء النطق بالعربية' : 'إظهار النطق بالعربية'; }); }; });
 }
 function streakNow(){ return (S.last === today() || S.last === yesterday()) ? S.streak : 0; }
 function updateRibbon(){ var r = $('#ribbon'); if (r){ r.innerHTML = ribbonHTML(); bindRibbon(); } }
@@ -367,6 +404,49 @@ function streakInfo(){
     '<div class="cal rtl">' + cells + '</div><p style="margin-top:10px">مجموع أيام التعلّم: <b>' + ar(act) + '</b></p>');
 }
 
+/* ---------------- daily goal + onboarding ---------------- */
+var GOALS = [{m:5, x:30, t:'5 دقائق', d:'خفيف'}, {m:10, x:60, t:'10 دقائق', d:'مناسب'}, {m:20, x:120, t:'20 دقيقة', d:'جاد'}];
+function goalHTML(){
+  if (!S.goal) return '';
+  var got = S.days[today()] || 0, pct = Math.min(100, Math.round(got / S.goal * 100)), done = got >= S.goal;
+  return '<div class="goal' + (done ? ' done' : '') + '"><div class="goal-t"><b>' + (done ? '✅ حققت هدف اليوم!' : '🎯 هدفك اليوم') + '</b><span>' + Math.min(got, S.goal) + ' / ' + S.goal + ' نقطة</span></div><div class="prog"><i style="width:' + pct + '%"></i></div></div>';
+}
+function onboarding(){
+  if (S.onb || $('.modal')) return;
+  var step = 0, data = {name:S.name || '', lvl:null, goal:60}, old = S.xp > 0, steps = old ? [0, 2] : [0, 1, 2];
+  var m = modal('<div id="onb"></div>', 'onbcard');
+  m.querySelector('.x').onclick = function(){ S.onb = 1; save(); m.remove(); };
+  function dotsH(){ return '<div class="onb-dots">' + steps.map(function(i){ return '<i class="' + (i === step ? 'on' : '') + '"></i>'; }).join('') + '</div>'; }
+  function draw(){
+    var b = $('#onb', m);
+    if (step === 0){
+      b.innerHTML = dotsH() + '<div class="big">🚀</div><h3>أهلًا بك في Sprachrakete!</h3><p>' + (old ? 'أضفنا ميزات جديدة! ' : 'رحلتك لتعلّم الألمانية تبدأ الآن. ') + 'ما اسمك؟</p>' +
+        '<input class="inp" id="onbName" placeholder="اكتب اسمك" value="' + esc(data.name) + '" autocomplete="given-name"><button class="btn wide" id="onbNext" style="margin-top:12px">التالي</button><button class="btn alt wide" id="onbSkip" style="margin-top:8px">تخطَّ</button>';
+      $('#onbNext', m).onclick = function(){ data.name = $('#onbName', m).value.trim(); step = steps[1]; draw(); };
+      $('#onbSkip', m).onclick = function(){ step = steps[1]; draw(); };
+      $('#onbName', m).onkeydown = function(e){ if (e.key === 'Enter') $('#onbNext', m).click(); };
+      setTimeout(function(){ var i = $('#onbName', m); if (i) i.focus(); }, 80);
+    } else if (step === 1){
+      b.innerHTML = dotsH() + '<div class="big">🧭</div><h3>' + (data.name ? 'تشرفنا يا ' + esc(data.name) + '! ' : '') + 'ما مستواك في الألمانية؟</h3>' +
+        '<div class="onb-opts"><button class="onb-o" data-l="new"><span>🌱</span><b>مبتدئ تمامًا</b><small>أبدأ من الحروف والأرقام</small></button>' +
+        '<button class="onb-o" data-l="some"><span>📘</span><b>أعرف القليل</b><small>أبدأ بدروس A1</small></button>' +
+        '<button class="onb-o" data-l="test"><span>❓</span><b>لا أعرف</b><small>اختبار قصير يحدد مستواي</small></button></div>';
+      $$('.onb-o', m).forEach(function(o){ o.onclick = function(){ data.lvl = o.dataset.l; step = 2; draw(); }; });
+    } else {
+      b.innerHTML = dotsH() + '<div class="big">🎯</div><h3>' + (old && data.name ? 'أهلًا يا ' + esc(data.name) + '! ' : '') + 'كم تريد أن تتعلم كل يوم؟</h3><p>اختر هدفًا يوميًا، ويمكنك تغييره لاحقًا من حسابي.</p>' +
+        '<div class="onb-opts">' + GOALS.map(function(g){ return '<button class="onb-o' + (g.x === data.goal ? ' on' : '') + '" data-g="' + g.x + '"><span>⏱️</span><b>' + g.t + '</b><small>' + g.d + ' · ' + g.x + ' نقطة يوميًا</small></button>'; }).join('') + '</div>' +
+        '<button class="btn wide flame" id="onbGo" style="margin-top:12px">🚀 لنبدأ</button>';
+      $$('.onb-o', m).forEach(function(o){ o.onclick = function(){ data.goal = +o.dataset.g; $$('.onb-o', m).forEach(function(z){ z.classList.toggle('on', z === o); }); }; });
+      $('#onbGo', m).onclick = function(){
+        if (data.name) S.name = data.name; S.goal = data.goal; S.onb = 1; save(); m.remove();
+        if (!data.lvl){ viewHome(); toast('🎯 هدفك اليومي: ' + S.goal + ' نقطة'); return; }
+        go(data.lvl === 'test' ? '#/test' : data.lvl === 'some' ? '#/learn/a1' : '#/learn/words');
+      };
+    }
+  }
+  draw();
+}
+
 /* ---------------- HOME ---------------- */
 function wordOfDay(){
   var pool = []; SR.modules.forEach(function(m){ (m.items || []).forEach(function(it){ if (it.e && it.de.split(' ').length <= 2 && !/[?!.]/.test(it.de)) pool.push(Object.assign({grp:m.id}, it)); }); });
@@ -382,24 +462,20 @@ function viewHome(){
    '<div class="txt"><h1><span class="de">Sprachrakete</span>تعلّم الألمانية بالعربية من أول حرف حتى تتكلم</h1><p>دروس بالصوت، وألعاب، ونقاط تأخذك من الأرض إلى المجرة.</p></div>' +
    '<div class="count" id="count" aria-live="polite"></div>' +
    '<div class="launch"><button class="go" id="launch">🚀 عُدّ معي بالألمانية</button><div class="rkwrap">' + ROCKET + '</div></div></section>' +
-   '<div class="wrap"><div class="ribbon" id="ribbon">' + ribbonHTML() + '</div>' +
+   '<div class="wrap"><div class="ribbon" id="ribbon">' + ribbonHTML() + '</div>' + goalHTML() +
    (nu ? '<a class="cont" href="' + nu.href + '" style="--c:' + nu.color + '"><span class="em">' + nu.e + '</span><div class="tx"><small>' + (heardCount(nu.id) ? 'تابع من حيث توقفت' : 'ابدأ من هنا') + '</small><b>' + esc(nu.title) + '</b><div class="prog"><i style="width:' + unitPct(nu.id) + '%"></i></div></div><span class="arr">‹</span></a>' : '') +
    '<a class="mission ' + (done ? 'done' : '') + '" href="#/daily"><span class="em">' + (done ? '✅' : '🎯') + '</span><div><b>' + (done ? 'أنهيت مهمة اليوم!' : 'مهمة اليوم') + '</b><span>' + (done ? 'عُد غدًا حتى لا تنقطع السلسلة 🔥' : '10 أسئلة سريعة و50 نقطة إضافية') + '</span></div><span class="arr">‹</span></a>' +
-   (mc ? '<a class="mission mist" href="#/mistakes"><span class="em">🩹</span><div><b>كرّاسة أخطائي</b><span>' + plural(mc, 'كلمة واحدة تحتاج مراجعة', 'كلمتان تحتاجان مراجعة', 'كلمات تحتاج مراجعة', 'كلمة تحتاج مراجعة') + '</span></div><span class="arr">‹</span></a>' : '') +
    (S.test == null ? '<a class="mission test" href="#/test"><span class="em">🧭</span><div><b>لا تعرف من أين تبدأ؟</b><span>اختبار من 12 سؤالًا يحدد مستواك</span></div><span class="arr">‹</span></a>' : '') +
    '<a class="jmini" href="#/journey"><div class="jm-l"><span>' + st.e + '</span><b>رحلتك الفضائية</b><small>' + (nx ? 'أنت في ' + st.a + ' · المحطة التالية ' + nx.e + ' ' + nx.a : 'وصلت إلى المجرة! 🎉') + '</small></div><div class="prog"><i style="width:' + Math.round(doneCount() / Math.max(1, UNITS.length) * 100) + '%"></i></div></a>' +
    '<div class="sh"><h2>كلمة اليوم</h2></div>' +
    '<div class="wod"><div class="em">' + (w.e || '⭐') + '</div><div style="flex:1;min-width:0"><div class="w">' + deHTML(w) + '</div><div class="pr arp">' + pron(w.ar) + '</div><div class="m">' + esc(w.mn) + '</div></div><button class="play" id="wodPlay" aria-label="استمع">' + ICON_PLAY + '</button></div>' +
-   '<div class="sh"><h2>تعلّم</h2><a href="#/learn">كل الدروس</a></div><div class="tiles big">' +
-     bigTile('#/learn#a1', '📘', '#5B3DF5', 'دروس A1', plural(SR.a1.length, 'درس واحد', 'درسان', 'دروس', 'درسًا') + ' بالترتيب') + bigTile('#/learn#planets', '🪐', '#19C79A', 'كواكب الكلمات', plural(topics().length, 'موضوع واحد', 'موضوعان', 'مواضيع', 'موضوعًا') + ' بالصوت') +
-     bigTile('#/stories', '📖', '#FF3D7F', 'قصص قصيرة', 'استمع واقرأ وأجب') + bigTile('#/letters', '✉️', '#3A86FF', 'رسائل جاهزة', 'نماذج للكتابة') + '</div>' +
-   '<div class="sh"><h2>تدرّب</h2><a href="#/play">كل الألعاب</a></div><div class="tiles big">' +
-     bigTile('#/play', '🎮', '#FF6B2C', 'الألعاب', '9 ألعاب ممتعة') + bigTile('#/exam', '📝', '#8338EC', 'تدريب على امتحان A1', 'استماع، قراءة، كتابة، محادثة') +
-     bigTile('#/speak/greet', '🎤', '#06A77D', 'اختبر نطقك', 'تكلّم والموقع يصحح لك') + bigTile('#/mistakes', '🩹', '#E63946', 'كرّاسة أخطائي', mc ? plural(mc, 'كلمة واحدة', 'كلمتان', 'كلمات', 'كلمة') + ' للمراجعة' : 'أخطاؤك تُحفظ هنا') + '</div>' +
-   '<div class="sh"><h2>أدوات ذكية</h2></div><div class="tiles">' + toolsHTML() + '</div>' +
+   '<div class="sh"><h2>إلى أين اليوم؟</h2></div><div class="tiles big">' +
+     bigTile('#/learn', '📚', '#5B3DF5', 'الدروس', 'الكلمات ودروس A1 وA2') + bigTile('#/train', '🎯', '#8338EC', 'التدريب', 'الامتحان والنطق والأخطاء') +
+     (hidden('games') ? '' : bigTile('#/play', '🎮', '#FF6B2C', 'الألعاب', '9 ألعاب ومهمة اليوم')) + (hidden('journey') ? '' : bigTile('#/journey', '🚀', '#19C79A', 'رحلتي', st.e + ' ' + st.a)) + '</div>' +
    '<div class="sh"><h2>تواصل معي</h2></div>' + contactHTML(true) +
    footer() + '</div>';
   render(html, 'home'); bindRibbon();
+  if (!S.onb) setTimeout(onboarding, 400);
   $('#wodPlay').onclick = function(){ play(w); };
   $('#launch').onclick = countdown;
   bindInstall();
@@ -419,8 +495,8 @@ function ladderHTML(){
     return '<a class="rung ' + (open ? 'open' : '') + (i === 0 ? ' here' : '') + '" href="#/levels"><span class="lv de">' + l[0] + '</span><div><b>' + esc(l[1]) + '</b><span>' + esc(l[2]) + '</span></div><em>' + (open ? (i === 0 ? '📍 ابدأ هنا' : 'متاح') : 'قريبًا') + '</em></a>'; }).join('') + '</div>';
 }
 function contactHTML(withInstall){
-  return '<div class="contact"><a class="cbtn wa" href="https://wa.me/201080845228?text=' + encodeURIComponent('مرحبًا! وصلت إليك من موقع Sprachrakete 🚀') + '" target="_blank" rel="noopener"><i>💬</i><div>راسلني على واتساب<small>+201080845228</small></div></a>' +
-    '<a class="cbtn yt" href="https://www.youtube.com/@u0_0z?sub_confirmation=1" target="_blank" rel="noopener"><i>▶</i><div>اشترك في القناة<small>@u0_0z</small></div></a></div>' +
+  return '<div class="contact">' + (waNum() ? '<a class="cbtn wa" href="https://wa.me/' + waNum() + '?text=' + encodeURIComponent('مرحبًا! وصلت إليك من موقع Sprachrakete 🚀') + '" target="_blank" rel="noopener"><i>💬</i><div>راسلني على واتساب<small>+' + waNum() + '</small></div></a>' : '') +
+    (ytName() ? '<a class="cbtn yt" href="https://www.youtube.com/@' + encodeURIComponent(ytName()) + '?sub_confirmation=1" target="_blank" rel="noopener"><i>▶</i><div>اشترك في القناة<small>@' + esc(ytName()) + '</small></div></a>' : '') + '</div>' +
     (withInstall ? '<div class="panel install" id="installCard"><span class="em">📲</span><div style="flex:1"><b>ثبّت Sprachrakete على شاشتك</b><div class="sub">يفتح مثل التطبيق بضغطة واحدة</div></div><button class="btn" id="installBtn">تثبيت</button></div>' : '');
 }
 var running = false;
@@ -445,17 +521,50 @@ function countdown(){
 }
 
 /* ---------------- LEARN ---------------- */
-function viewLearn(anchor){
-  var a1d = SR.a1.filter(function(l){ return S.done['l:' + l.id]; }).length;
-  var html = '<div class="wrap"><div class="ph" style="--c:#5B3DF5"><span class="em">📚</span><h1>الدروس</h1><div class="g">Lernen</div><p>كل كلمة بصوتها ومعناها. أكمل الدروس لتتقدم في رحلتك.</p></div>' +
-    '<div class="sh" id="a1"><h2>دروس A1</h2><span class="cnt">' + a1d + ' من ' + SR.a1.length + '</span></div><div class="list">' + SR.a1.map(lessonRow).join('') + '</div>' +
-    '<div class="sh" id="planets"><h2>كواكب الكلمات</h2></div><div class="planets">' + topics().map(planet).join('') + '</div>' +
-    '<div class="sh"><h2>اقرأ واكتب</h2></div><div class="tiles big">' + bigTile('#/stories', '📖', '#FF3D7F', 'قصص قصيرة', plural((SX.stories || []).length, 'قصة واحدة', 'قصتان', 'قصص', 'قصة') + ' بالصوت') + bigTile('#/letters', '✉️', '#3A86FF', 'رسائل جاهزة', plural((SX.letters || []).length, 'نموذج واحد', 'نموذجان', 'نماذج', 'نموذجًا') + ' للكتابة') + '</div>' +
-    '<div class="sh"><h2>دروس A2</h2></div><div class="list">' + SR.a2.map(lessonRow).join('') + '</div>' +
-    '<div class="sh"><h2>أدوات ذكية</h2></div><div class="tiles">' + toolsHTML() + '</div>' +
-    '<div class="sh"><h2>سلّم المستويات</h2><a href="#/levels">التفاصيل</a></div>' + ladderHTML() + footer() + '</div>';
+var LTABS = [{id:'words', e:'🪐', t:'الكلمات'}, {id:'a1', e:'📘', t:'دروس A1'}, {id:'a2', e:'📗', t:'دروس A2'}, {id:'read', e:'📖', t:'اقرأ واكتب'}, {id:'tools', e:'🧰', t:'أدوات'}];
+function tabBar(list, cur, base){ return '<div class="tabs" role="tablist">' + list.map(function(t){ return '<a role="tab" aria-selected="' + (t.id === cur) + '" class="tab' + (t.id === cur ? ' on' : '') + '" href="' + base + t.id + '"><span>' + t.e + '</span>' + t.t + '</a>'; }).join('') + '</div>'; }
+function viewLearn(tab){
+  var LT = LTABS.filter(function(t){ return !(t.id === 'a2' && hidden('a2')) && !(t.id === 'tools' && hidden('tools')) && !(t.id === 'read' && hidden('stories') && hidden('letters')); });
+  if (!LT.some(function(t){ return t.id === tab; })) tab = '';
+  if (!LT.some(function(t){ return t.id === tab; })) tab = S.set.ltab && LT.some(function(t){ return t.id === S.set.ltab; }) ? S.set.ltab : 'words';
+  if (S.set.ltab !== tab){ S.set.ltab = tab; save(); }
+  var body = '';
+  if (tab === 'words'){
+    body = '<p class="lead">ابدأ من هنا: الحروف والأرقام أولًا، ثم كلمات كل موضوع بالصوت والمعنى.</p>' +
+      '<div class="starter">' + TOPIC_EXTRA.map(function(t){ var uid = 't:' + t.id, pct = unitPct(uid);
+        return '<a class="stc" href="#/t/' + t.id + '" style="--c:' + t.color + '"><span class="badge">' + (S.done[uid] ? '✅ أكملته' : pct ? pct + '٪' : 'ابدأ هنا') + '</span><div class="orb">' + t.e + '</div><b>' + esc(t.title) + '</b><div class="g">' + esc(t.de) + '</div><div class="m">' + esc(t.desc) + '</div><div class="bar"><i style="width:' + pct + '%"></i></div></a>'; }).join('') + '</div>' +
+      '<div class="sh"><h2>مواضيع الكلمات</h2><span class="cnt">' + SR.modules.length + ' موضوعًا</span></div><div class="planets">' + SR.modules.map(planet).join('') + '</div>';
+  } else if (tab === 'a1'){
+    var a1d = SR.a1.filter(function(l){ return S.done['l:' + l.id]; }).length;
+    body = '<p class="lead">قواعد مستوى A1 خطوة بخطوة. كل درس فيه شرح قصير وأمثلة بالصوت.</p>' +
+      '<div class="sh"><h2>دروس A1</h2><span class="cnt">' + a1d + ' من ' + SR.a1.length + '</span></div><div class="list">' + SR.a1.map(lessonRow).join('') + '</div>';
+  } else if (tab === 'a2'){
+    var a2d = SR.a2.filter(function(l){ return S.done['l:' + l.id]; }).length;
+    body = '<p class="lead">بعد A1: الماضي، والمقارنة، والجمل الأطول.</p>' +
+      '<div class="sh"><h2>دروس A2</h2><span class="cnt">' + a2d + ' من ' + SR.a2.length + '</span></div><div class="list">' + SR.a2.map(lessonRow).join('') + '</div>' +
+      '<div class="sh"><h2>سلّم المستويات</h2><a href="#/levels">التفاصيل</a></div>' + ladderHTML();
+  } else if (tab === 'read'){
+    body = '<p class="lead">طبّق ما تعلمته: اقرأ واستمع إلى قصص قصيرة، وتعلّم كتابة الرسائل كما في الامتحان.</p>' +
+      '<div class="tiles big">' + (hidden('stories') ? '' : bigTile('#/stories', '📖', '#FF3D7F', 'قصص قصيرة', plural((SX.stories || []).length, 'قصة واحدة', 'قصتان', 'قصص', 'قصة') + ' بالصوت والأسئلة')) + (hidden('letters') ? '' : bigTile('#/letters', '✉️', '#3A86FF', 'رسائل جاهزة', plural((SX.letters || []).length, 'نموذج واحد', 'نموذجان', 'نماذج', 'نموذجًا') + ' للكتابة')) + '</div>';
+  } else {
+    body = '<p class="lead">أدوات تفاعلية تساعدك على الأرقام والوقت والتعريف بنفسك.</p><div class="tiles big">' + toolsHTML() + '</div>';
+  }
+  var html = '<div class="wrap"><div class="ph sm" style="--c:#5B3DF5"><span class="em">📚</span><h1>الدروس</h1><div class="g">Lernen</div></div>' +
+    tabBar(LT, tab, '#/learn/') + '<div class="tabbody">' + body + '</div>' + footer() + '</div>';
   render(html, 'learn');
-  if (anchor){ var el = document.getElementById(anchor); if (el) setTimeout(function(){ el.scrollIntoView({block:'start'}); scrollBy(0, -70); }, 30); }
+  var on = $('.tabs .tab.on'); if (on && on.scrollIntoView) try{ on.scrollIntoView({block:'nearest', inline:'center'}); }catch(e){}
+  window.scrollTo(0, 0);
+}
+function viewTrain(){
+  var mc = Object.keys(S.mist).length, ex = EXAM_PARTS.filter(function(p){ return S.done['e:' + p.id]; }).length;
+  var html = '<div class="wrap"><div class="ph sm" style="--c:#8338EC"><span class="em">🎯</span><h1>التدريب</h1><div class="g">Training</div><p>استعد للامتحان، واعرف مستواك، وصحّح نطقك وأخطاءك.</p></div>' +
+    '<div class="tiles big">' +
+      (hidden('exam') ? '' : bigTile('#/exam', '📝', '#8338EC', 'تدريب على امتحان A1', ex ? 'أكملت ' + ex + ' من 4 أجزاء' : 'استماع، قراءة، كتابة، محادثة')) +
+      (hidden('test') ? '' : bigTile('#/test', '🧭', '#2B1F86', 'اختبار المستوى', S.test == null ? '12 سؤالًا تحدد من أين تبدأ' : 'نتيجتك السابقة: ' + S.test + ' من 12')) +
+      (hidden('speak') ? '' : bigTile('#/speak/greet', '🎤', '#06A77D', 'اختبر نطقك', 'تكلّم والموقع يصحح لك')) +
+      (hidden('mistakes') ? '' : bigTile('#/mistakes', '🩹', '#E63946', 'كرّاسة أخطائي', mc ? plural(mc, 'كلمة واحدة', 'كلمتان', 'كلمات', 'كلمة') + ' للمراجعة' : 'لا أخطاء الآن')) + '</div>' +
+    '<div class="tip tip" style="margin-top:14px"><b class="k">💡 نصيحة</b>ابدأ باختبار المستوى إن كنت لا تعرف من أين تبدأ، ثم راجع كرّاسة أخطائي مرة كل يوم.</div>' + footer() + '</div>';
+  render(html, 'train');
 }
 function lessonRow(l){
   var uid = 'l:' + l.id, n = l.num ? ar(l.num) : (l.e || ''), pct = unitPct(uid);
@@ -484,7 +593,7 @@ function viewTopic(id){
   if (id === 'abc') return viewABC(); if (id === 'num') return viewNumbers();
   var m = modById(id); if (!m) return go('#/learn');
   var uid = 't:' + id; useAudio(m.id);
-  var html = '<div class="wrap"><div class="ph" style="--c:' + m.color + '"><a class="back" href="#/learn">→ الدروس</a><span class="em">' + m.e + '</span><h1>' + esc(m.title) + '</h1><div class="g">' + esc(m.de) + '</div><p>' + esc(m.desc) + '</p></div>' +
+  var html = '<div class="wrap"><div class="ph" style="--c:' + m.color + '"><a class="back" href="#/learn/words">→ الكلمات</a><span class="em">' + m.e + '</span><h1>' + esc(m.title) + '</h1><div class="g">' + esc(m.de) + '</div><p>' + esc(m.desc) + '</p></div>' +
     unitBar(uid) + ctlBar(m.items ? '<button class="chip go2" id="playAll">▶ تشغيل الكل</button>' : '');
   var list = [];
   if (m.dialogs){
@@ -505,7 +614,7 @@ function viewTopic(id){
 }
 function viewABC(){
   useAudio('abc'); var uid = 't:abc';
-  var html = '<div class="wrap"><div class="ph" style="--c:#5B3DF5"><a class="back" href="#/learn">→ الدروس</a><span class="em">🔤</span><h1>الحروف</h1><div class="g">Das Alphabet</div><p>اضغط على الحرف لتسمع نطقه، واضغط على الكلمة لتسمعها.</p></div>' + unitBar(uid) + ctlBar() + artLegend() +
+  var html = '<div class="wrap"><div class="ph" style="--c:#5B3DF5"><a class="back" href="#/learn/words">→ الكلمات</a><span class="em">🔤</span><h1>الحروف</h1><div class="g">Das Alphabet</div><p>اضغط على الحرف لتسمع نطقه، واضغط على الكلمة لتسمعها.</p></div>' + unitBar(uid) + ctlBar() + artLegend() +
     '<div class="abc">' + SR.letters.map(function(l, i){ var hd = S.heard[uid] && S.heard[uid][i]; return '<button class="lt" data-l="' + i + '">' + (hd ? '<span class="hd">✓</span>' : '') + '<div class="L">' + esc(l.L) + '</div><div class="nm arpw">اسمه: <span class="pr">' + pron(l.lp) + '</span></div><span class="em">' + l.e + '</span><div class="w"><span class="art ' + l.g + '">' + ART[l.g] + '</span> ' + esc(l.de) + '</div><div class="nm">' + esc(l.mn) + '</div></button>'; }).join('') + '</div>' +
     '<div class="sh"><h2>العب بالحروف</h2></div><div class="tiles">' + GAMES.slice(0, 4).map(function(g){ return gameTile(g, 'abc'); }).join('') + '</div>' + footer() + '</div>';
   render(html, 'learn'); bindCtl();
@@ -517,7 +626,7 @@ function viewABC(){
 function viewNumbers(){
   useAudio('num'); var uid = 't:num';
   var list = itemsOf('num').map(function(it, k){ return Object.assign({u:uid, k:k}, it); });
-  var html = '<div class="wrap"><div class="ph" style="--c:#FF6B2C"><a class="back" href="#/learn">→ الدروس</a><span class="em">🔢</span><h1>الأرقام</h1><div class="g">Die Zahlen</div><p>احفظ هذه الأرقام، والباقي يُركَّب منها. جرّب مصنع الأرقام بالأسفل.</p></div>' + unitBar(uid) +
+  var html = '<div class="wrap"><div class="ph" style="--c:#FF6B2C"><a class="back" href="#/learn/words">→ الكلمات</a><span class="em">🔢</span><h1>الأرقام</h1><div class="g">Die Zahlen</div><p>احفظ هذه الأرقام، والباقي يُركَّب منها. جرّب مصنع الأرقام بالأسفل.</p></div>' + unitBar(uid) +
     ctlBar('<button class="chip go2" id="playAll">▶ تشغيل الكل</button>') +
     '<a class="mission" href="#/tool/numbers" style="background:linear-gradient(115deg,#FF6B2C,#FFC53D);color:#1A1446;margin:0 0 12px"><span class="em">🏭</span><div><b>مصنع الأرقام</b><span>اكتب أي رقم من 0 إلى مليون واستمع إليه</span></div><span class="arr">‹</span></a>' +
     '<div class="tip memo"><b class="k">🧠 السر</b>من 21 إلى 99 يقول الألمان الآحاد أولًا: <span class="de">einundzwanzig</span> = واحد و<b>عشرون</b>، تمامًا كما نقول بالعربية!</div>' +
@@ -530,7 +639,7 @@ function viewLesson(id){
   var uid = 'l:' + id, grp = id.indexOf('a1') === 0 ? 'a1' : 'a2'; useAudio(grp);
   var list = l.items.map(function(it, k){ return Object.assign({grp:grp, u:uid, k:k}, it); });
   var TK = {tip:'💡 معلومة', trap:'⚠️ انتبه', memo:'🧠 احفظها هكذا'};
-  var html = '<div class="wrap"><div class="ph" style="--c:' + l.color + '"><a class="back" href="#/learn">→ الدروس</a><span class="em">' + (l.e || '📘') + '</span><h1>' + esc(l.title) + '</h1><div class="g">' + esc(l.de) + '</div>' + (l.mission ? '<p>🎯 ' + esc(l.mission) + '</p>' : '') + '</div>' +
+  var html = '<div class="wrap"><div class="ph" style="--c:' + l.color + '"><a class="back" href="#/learn/' + grp + '">→ دروس ' + grp.toUpperCase() + '</a><span class="em">' + (l.e || '📘') + '</span><h1>' + esc(l.title) + '</h1><div class="g">' + esc(l.de) + '</div>' + (l.mission ? '<p>🎯 ' + esc(l.mission) + '</p>' : '') + '</div>' +
     unitBar(uid) + l.rules.map(function(r){ return '<div class="rule">' + rich(r) + '</div>'; }).join('') +
     (l.tips || []).map(function(t){ return '<div class="tip ' + t.k + '"><b class="k">' + TK[t.k] + '</b>' + rich(t.t) + '</div>'; }).join('') +
     ctlBar('<button class="chip go2" id="playAll">▶ تشغيل الكل</button>') + '<div class="list">';
@@ -542,7 +651,7 @@ function viewLesson(id){
   render(html, 'learn'); bindCtl(); bindItems(list);
 }
 function viewLevels(){
-  var html = '<div class="wrap"><div class="ph" style="--c:#2B1F86"><a class="back" href="#/learn">→ الدروس</a><span class="em">🧗</span><h1>سلّم المستويات</h1><div class="g">A1 → C2</div><p>هذه المستويات معيار أوروبي (CEFR) يُستخدم في الامتحانات والعمل.</p></div>' + ladderHTML() +
+  var html = '<div class="wrap"><div class="ph" style="--c:#2B1F86"><a class="back" href="#/learn/a2">→ الدروس</a><span class="em">🧗</span><h1>سلّم المستويات</h1><div class="g">A1 → C2</div><p>هذه المستويات معيار أوروبي (CEFR) يُستخدم في الامتحانات والعمل.</p></div>' + ladderHTML() +
     '<div class="sh"><h2>A1 · مبتدئ</h2></div><div class="list">' + SR.a1.map(lessonRow).join('') + '</div>' +
     '<div class="sh"><h2>A2 · أساسي</h2></div><div class="list">' + SR.a2.map(lessonRow).join('') + '</div>' +
     '<div class="panel center" style="margin-top:16px"><div style="font-size:44px">🛸</div><b>مستوى B1 وما بعده قريبًا</b><p style="color:var(--mute);font-size:14px;margin:6px 0 12px">اشترك في القناة ليصلك كل جديد.</p>' + contactHTML(false) + '</div>' + footer() + '</div>';
@@ -552,7 +661,7 @@ function viewLevels(){
 /* ---------------- TOOLS ---------------- */
 function viewNumTool(){
   useAudio('num');
-  var html = '<div class="wrap"><div class="ph" style="--c:#FF6B2C"><a class="back" href="#/learn">→ الدروس</a><span class="em">🏭</span><h1>مصنع الأرقام</h1><div class="g">Zahlen-Fabrik</div><p>اكتب أي رقم من 0 إلى 1000000 وشاهد كيف يُركَّب.</p></div>' + ctlBar() +
+  var html = '<div class="wrap"><div class="ph" style="--c:#FF6B2C"><a class="back" href="#/learn/tools">→ الأدوات</a><span class="em">🏭</span><h1>مصنع الأرقام</h1><div class="g">Zahlen-Fabrik</div><p>اكتب أي رقم من 0 إلى 1000000 وشاهد كيف يُركَّب.</p></div>' + ctlBar() +
     '<div class="panel"><input class="inp de" id="nIn" inputmode="numeric" placeholder="مثلًا 2026" value="21" aria-label="الرقم"><div class="bigout" id="nOut"></div><div class="pr arp center" id="nAr" style="font-size:18px"></div>' +
     '<div class="row" style="justify-content:center;margin-top:12px"><button class="btn" id="nPlay">🔊 استمع</button><button class="btn alt" id="nRand">🎲 رقم عشوائي</button></div></div>' +
     '<div class="panel"><b>🎧 تحدٍّ: استمع واكتب الرقم</b><p style="color:var(--mute);font-size:14px;margin:4px 0 10px">ستسمع رقمًا بالألمانية، اكتبه بالأرقام.</p><div class="row"><button class="btn flame" id="qPlay">▶ استمع إلى الرقم</button><input class="inp de" id="qIn" inputmode="numeric" style="flex:1;min-width:120px" aria-label="إجابتك"><button class="btn" id="qChk">تحقّق</button></div><div id="qRes" class="center" style="margin-top:8px;font-weight:800"></div></div>' + footer() + '</div>';
@@ -578,7 +687,7 @@ function clockSVG(h, m){
 }
 function viewClock(){
   var now = new Date(), st = {h:now.getHours(), m:Math.floor(now.getMinutes()/5)*5};
-  var html = '<div class="wrap"><div class="ph" style="--c:#5B3DF5"><a class="back" href="#/learn">→ الدروس</a><span class="em">🕐</span><h1>الساعة الناطقة</h1><div class="g">Wie spät ist es?</div><p>غيّر الساعة والدقائق، وشاهد الوقت بالطريقتين.</p></div>' + ctlBar() +
+  var html = '<div class="wrap"><div class="ph" style="--c:#5B3DF5"><a class="back" href="#/learn/tools">→ الأدوات</a><span class="em">🕐</span><h1>الساعة الناطقة</h1><div class="g">Wie spät ist es?</div><p>غيّر الساعة والدقائق، وشاهد الوقت بالطريقتين.</p></div>' + ctlBar() +
     '<div class="panel"><div class="clockwrap" id="ck"></div><div class="steps"><button class="btn alt" data-d="h-1">− ساعة</button><button class="btn alt" data-d="h1">+ ساعة</button><button class="btn alt" data-d="m-5">− 5 د</button><button class="btn alt" data-d="m5">+ 5 د</button></div></div>' +
     '<div class="panel"><b>💬 في الكلام اليومي</b><div class="bigout sm" id="inf"></div><div class="pr arp center" id="infAr"></div><div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="pInf">🔊 استمع</button></div></div>' +
     '<div class="panel"><b>🚉 الصيغة الرسمية (المواعيد والقطارات)</b><div class="bigout sm" id="frm"></div><div class="pr arp center" id="frmAr"></div><div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="pFrm">🔊 استمع</button></div></div>' +
@@ -601,7 +710,7 @@ function viewCalendar(){
   ['Mo','Di','Mi','Do','Fr','Sa','So'].forEach(function(x){ cells += '<span class="h">' + x + '</span>'; });
   for (var i = 0; i < off; i++) cells += '<span></span>';
   for (var k = 1; k <= dim; k++) cells += '<span class="' + (k === dn ? 't' : '') + '">' + k + '</span>';
-  var html = '<div class="wrap"><div class="ph" style="--c:#19C79A"><a class="back" href="#/learn">→ الدروس</a><span class="em">🗓️</span><h1>التقويم الحي</h1><div class="g">' + esc(day[0]) + ' · ' + esc(mon[0]) + '</div><p>تاريخ اليوم والساعة الآن بالألمانية.</p></div>' + ctlBar() +
+  var html = '<div class="wrap"><div class="ph" style="--c:#19C79A"><a class="back" href="#/learn/tools">→ الأدوات</a><span class="em">🗓️</span><h1>التقويم الحي</h1><div class="g">' + esc(day[0]) + ' · ' + esc(mon[0]) + '</div><p>تاريخ اليوم والساعة الآن بالألمانية.</p></div>' + ctlBar() +
     '<div class="panel"><b>📍 اليوم</b><div class="bigout sm">' + esc(sDe) + '</div><div class="pr arp center">' + pron(sAr) + '</div><div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="pD">🔊 استمع</button></div>' +
     '<div class="center" style="font-family:Outfit;font-weight:700;margin-top:14px">' + esc(mon[0]) + ' ' + y + '</div><div class="cal">' + cells + '</div></div>' +
     '<div class="panel"><b>⏰ الساعة الآن</b><div class="bigout sm" id="tNow"></div><div class="pr arp center" id="tAr"></div><div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="pT">🔊 استمع</button></div></div>' +
@@ -616,8 +725,8 @@ function viewCalendar(){
 function femAr(s){ return s.split(' ').map(function(w){ return /[ةى]$/.test(w) ? w : w + 'ة'; }).join(' '); }
 function viewIntro(){
   var st = {name:S.name || '', g:'m', c:0, city:'', age:'', job:0, langs:{0:1, 3:1}};
-  var html = '<div class="wrap"><div class="ph" style="--c:#FF3D7F"><a class="back" href="#/learn">→ الدروس</a><span class="em">🙋</span><h1>قدّم نفسك</h1><div class="g">Ich stelle mich vor</div><p>املأ بياناتك واحصل على تعريف نفسك بالألمانية جاهزًا بالصوت.</p></div>' + ctlBar() +
-    '<div class="panel form"><label for="iN">اسمك (بالحروف اللاتينية أفضل)</label><input class="inp de" id="iN" placeholder="Ali" value="' + esc(st.name) + '">' +
+  var html = '<div class="wrap"><div class="ph" style="--c:#FF3D7F"><a class="back" href="#/learn/tools">→ الأدوات</a><span class="em">🙋</span><h1>قدّم نفسك</h1><div class="g">Ich stelle mich vor</div><p>املأ بياناتك واحصل على تعريف نفسك بالألمانية جاهزًا بالصوت.</p></div>' + ctlBar() +
+    '<div class="panel form"><label for="iN">اسمك (بالحروف اللاتينية أفضل)</label><input class="inp de" id="iN" placeholder="Mohannad" value="' + esc(st.name) + '">' +
     '<label>أنا</label><div class="seg" style="width:max-content"><button data-gg="m" class="on">👦 ذكر</button><button data-gg="f">👧 أنثى</button></div>' +
     '<label for="iC">بلدك</label><select class="inp" id="iC">' + SR.countries.map(function(c, i){ return '<option value="' + i + '">' + c[3] + ' ' + c[2] + '</option>'; }).join('') + '</select>' +
     '<label for="iT">مدينتك</label><input class="inp de" id="iT" placeholder="Kairo">' +
@@ -654,7 +763,7 @@ function viewIntro(){
 /* ---------------- STORIES ---------------- */
 function viewStories(){
   var st = SX.stories || [];
-  var html = '<div class="wrap"><div class="ph" style="--c:#FF3D7F"><a class="back" href="#/learn">→ الدروس</a><span class="em">📖</span><h1>قصص قصيرة</h1><div class="g">Kurze Geschichten</div><p>استمع إلى القصة جملة جملة، ثم أجب عن الأسئلة.</p></div><div class="list">' +
+  var html = '<div class="wrap"><div class="ph" style="--c:#FF3D7F"><a class="back" href="#/learn/read">→ اقرأ واكتب</a><span class="em">📖</span><h1>قصص قصيرة</h1><div class="g">Kurze Geschichten</div><p>استمع إلى القصة جملة جملة، ثم أجب عن الأسئلة.</p></div><div class="list">' +
     st.map(function(s, i){ var uid = 's:' + s.id; return '<a class="it lesson" href="#/story/' + s.id + '" style="--c:' + s.color + '"><span class="em">' + s.e + '</span><div class="tx"><b>' + esc(s.title) + '</b><div class="cj">' + esc(s.de) + '</div><div class="m">' + esc(s.lvl || 'A1') + ' · ' + plural(s.lines.length, 'جملة', 'جملتان', 'جمل', 'جملة') + '</div></div><span class="st">' + (S.done[uid] ? '✅' : '‹') + '</span></a>'; }).join('') + '</div>' + footer() + '</div>';
   render(html, 'learn');
 }
@@ -691,7 +800,7 @@ function viewStory(id){
 /* ---------------- LETTERS ---------------- */
 function viewLetters(){
   var ls = SX.letters || [];
-  var html = '<div class="wrap"><div class="ph" style="--c:#3A86FF"><a class="back" href="#/learn">→ الدروس</a><span class="em">✉️</span><h1>رسائل جاهزة</h1><div class="g">Briefe und E-Mails</div><p>نماذج لرسائل قصيرة كما تُطلب في امتحان A1، بالصوت والترجمة.</p></div>' +
+  var html = '<div class="wrap"><div class="ph" style="--c:#3A86FF"><a class="back" href="#/learn/read">→ اقرأ واكتب</a><span class="em">✉️</span><h1>رسائل جاهزة</h1><div class="g">Briefe und E-Mails</div><p>نماذج لرسائل قصيرة كما تُطلب في امتحان A1، بالصوت والترجمة.</p></div>' +
     '<div class="tip tip"><b class="k">💡 القاعدة الذهبية</b>كل رسالة فيها: <b>تحية</b> ← <b>ثلاث نقاط</b> مطلوبة ← <b>خاتمة</b> ← <b>اسمك</b>. هذا كل ما يحتاجه الممتحن.</div><div class="list">' +
     ls.map(function(w){ var uid = 'w:' + w.id; return '<a class="it lesson" href="#/letter/' + w.id + '" style="--c:' + w.color + '"><span class="em">' + w.e + '</span><div class="tx"><b>' + esc(w.title) + '</b><div class="m">' + esc(w.sit) + '</div><div class="prog thin"><i style="width:' + unitPct(uid) + '%"></i></div></div><span class="st">' + (S.done[uid] ? '✅' : '‹') + '</span></a>'; }).join('') + '</div>' + footer() + '</div>';
   render(html, 'learn');
@@ -726,100 +835,168 @@ function viewLetter(id){
 }
 
 /* ---------------- EXAM ---------------- */
-var EXAM_PARTS = [{id:'listen',e:'🎧',c:'#FF6B2C',t:'الاستماع',d:'رسائل وإعلانات قصيرة'},{id:'read',e:'📰',c:'#3A86FF',t:'القراءة',d:'رسائل ولافتات وإعلانات'},
-  {id:'write',e:'✍️',c:'#19C79A',t:'الكتابة',d:'استمارة ورسالة قصيرة'},{id:'speak',e:'🗣️',c:'#FF3D7F',t:'المحادثة',d:'تعريف بالنفس وأسئلة وطلبات'}];
+var EXAM_PARTS = [{id:'listen',e:'🎧',c:'#FF6B2C',t:'الاستماع',de:'Hören',d:'3 أجزاء · 15 سؤالًا · 20 دقيقة'},{id:'read',e:'📰',c:'#3A86FF',t:'القراءة',de:'Lesen',d:'3 أجزاء · 15 سؤالًا · 25 دقيقة'},
+  {id:'write',e:'✍️',c:'#19C79A',t:'الكتابة',de:'Schreiben',d:'استمارة ورسالة قصيرة · 20 دقيقة'},{id:'speak',e:'🗣️',c:'#FF3D7F',t:'المحادثة',de:'Sprechen',d:'3 أجزاء: تعريف، أسئلة، طلبات'}];
+var ABCL = ['a', 'b', 'c'], ABCA = ['أ', 'ب', 'ج'];
+var examTimer = null;
+function stopExamTimer(){ if (examTimer){ clearInterval(examTimer); examTimer = null; } }
 function viewExam(){
   if (!SX.exam) return go('#/');
-  var html = '<div class="wrap"><div class="ph" style="--c:#8338EC"><a class="back" href="#/play">→ الألعاب</a><span class="em">📝</span><h1>تدريب على امتحان A1</h1><div class="g">Prüfungstraining A1</div><p>تمارين بنفس فكرة أجزاء الامتحان الأربعة. أسئلة مستقلة كتبناها خصيصًا للتدريب.</p></div>' +
-    '<div class="tiles big">' + EXAM_PARTS.map(function(p){ var best = S.exam[p.id]; return '<a class="tile" href="#/exam/' + p.id + '" style="--c:' + p.c + '"><span class="em">' + p.e + '</span><b>' + p.t + '</b><span>' + (best != null ? 'أفضل نتيجة: ' + ar(best) + '٪' : p.d) + '</span></a>'; }).join('') + '</div>' +
-    '<div class="tip tip" style="margin-top:14px"><b class="k">💡 نصيحة</b>في الامتحان الحقيقي اقرأ السؤال <b>قبل</b> الاستماع، وابحث عن الكلمات المهمة: الأرقام، والأيام، والأماكن.</div>' + footer() + '</div>';
-  render(html, 'play');
+  var html = '<div class="wrap"><div class="ph sm" style="--c:#8338EC"><a class="back" href="#/train">→ التدريب</a><span class="em">📝</span><h1>تدريب على امتحان A1</h1><div class="g">Prüfungstraining A1</div><p>بنفس نظام الامتحان الرسمي: أربعة أجزاء، والأسئلة بالألمانية، والنتيجة في النهاية.</p></div>' +
+    '<div class="tiles big">' + EXAM_PARTS.map(function(p){ var best = S.exam[p.id]; return '<a class="tile" href="#/exam/' + p.id + '" style="--c:' + p.c + '"><span class="em">' + p.e + '</span><b>' + p.t + ' · <span class="de">' + p.de + '</span></b><span>' + (best != null ? 'أفضل نتيجة: ' + best + '٪' : p.d) + '</span></a>'; }).join('') + '</div>' +
+    '<div class="tip tip" style="margin-top:14px"><b class="k">💡 كيف يعمل التدريب؟</b>لن ترى الإجابة الصحيحة أثناء الامتحان. اختر إجابتك وانتقل، ويمكنك الرجوع وتغييرها. في النهاية تظهر النتيجة ومراجعة كل سؤال مع الترجمة. النجاح من 60٪.</div>' + footer() + '</div>';
+  render(html, 'train');
 }
 function examDone(part, pct){
   S.exam[part] = Math.max(S.exam[part] || 0, pct); save(); addXP(Math.round(pct / 5));
   if (pct >= 60) complete('e:' + part);
 }
-function examResult(part, ok, total, extra){
-  var pct = Math.round(ok / Math.max(1, total) * 100); examDone(part, pct);
-  return '<div class="result"><div class="em">' + (pct >= 80 ? '🏆' : pct >= 60 ? '🚀' : '🌱') + '</div><h2>' + ar(pct) + '٪</h2><div>' + ar(ok) + ' من ' + ar(total) + '</div><p class="sub">' + (pct >= 60 ? 'نتيجة ناجحة! (النجاح يبدأ من 60٪)' : 'تحتاج إلى 60٪ للنجاح. راجع وحاول مرة أخرى.') + '</p>' + (extra || '') +
-    '<div class="row" style="justify-content:center;margin-top:8px"><button class="btn" data-retry="' + part + '">🔁 أعد المحاولة</button><a class="btn alt" href="#/exam" style="text-decoration:none">أجزاء أخرى</a></div></div>';
+function scoreHead(part, ok, total){
+  var pct = Math.round(ok / Math.max(1, total) * 100), pass = pct >= 60;
+  examDone(part, pct);
+  return '<div class="result exres"><div class="em">' + (pct >= 80 ? '🏆' : pass ? '🚀' : '🌱') + '</div><h2>' + pct + '٪</h2><div>' + ok + ' من ' + total + ' إجابة صحيحة</div>' +
+    '<div class="verdict ' + (pass ? 'pass' : 'fail') + '">' + (pass ? '✅ ناجح · bestanden' : '❌ لم تنجح بعد · nicht bestanden') + '</div><p class="sub">النجاح من 60٪.' + (pass ? '' : ' راجع أخطاءك بالأسفل وحاول مرة أخرى.') + '</p>' +
+    '<div class="row" style="justify-content:center;margin-top:8px"><button class="btn" data-retry="' + part + '">🔁 أعد الامتحان</button><a class="btn alt" href="#/exam" style="text-decoration:none">أجزاء أخرى</a></div></div>';
 }
+function timerToggle(){ return '<label class="tmr"><input type="checkbox" id="useTimer"' + (S.set.timer === false ? '' : ' checked') + '> ⏱️ امتحان بوقت محدد مثل الحقيقي</label>'; }
+function startScreen(P, info, minutes, onStart){
+  var stage = $('#stage');
+  stage.innerHTML = '<div class="panel exstart"><div class="big">' + P.e + '</div><h2>' + P.t + ' · <span class="de">' + P.de + '</span></h2>' + info + (minutes ? timerToggle() : '') + '<button class="btn wide" id="exGo">ابدأ الامتحان</button></div>';
+  $('#exGo').onclick = function(){ var t = $('#useTimer'); if (t){ S.set.timer = t.checked; save(); } onStart(minutes && (!t || t.checked) ? minutes : 0); };
+}
+function runTimer(minutes, onEnd){
+  stopExamTimer(); var bar = $('#exTimer'); if (!minutes || !bar) return;
+  var end = Date.now() + minutes * 60000;
+  function tick(){ var b = $('#exTimer'); if (!b){ stopExamTimer(); return; } var left = Math.max(0, Math.round((end - Date.now()) / 1000));
+    b.textContent = '⏱️ ' + Math.floor(left / 60) + ':' + ('0' + (left % 60)).slice(-2); b.classList.toggle('low', left <= 60);
+    if (!left){ stopExamTimer(); toast('انتهى الوقت، تم تسليم الامتحان'); onEnd(); } }
+  tick(); examTimer = setInterval(tick, 1000);
+}
+function flatItems(mod){ var out = []; mod.parts.forEach(function(p, pi){ p.items.forEach(function(it, ii){ out.push({p:p, pi:pi, ii:ii, it:it}); }); }); return out; }
 function viewExamPart(part){
   var E = SX.exam; if (!E) return go('#/');
   var P = EXAM_PARTS.find(function(p){ return p.id === part; }); if (!P) return go('#/exam');
-  useAudio('exam');
-  render('<div class="wrap"><div class="ph" style="--c:' + P.c + '"><a class="back" href="#/exam">→ التدريب</a><span class="em">' + P.e + '</span><h1>' + P.t + '</h1><p>' + P.d + '</p></div>' + ctlBar() + '<div id="stage"></div>' + footer() + '</div>', 'play'); bindCtl();
-  var stage = $('#stage');
-  if (part === 'listen'){
-    var L = E.listen, i = 0, ok = 0;
-    var nx = function(){
-      if (i >= L.length){ stage.innerHTML = examResult('listen', ok, L.length); return; }
-      var x = L[i], plays = 0; i++;
-      stage.innerHTML = '<div class="gamebar"><div class="prog"><i style="width:' + ((i - 1) / L.length * 100) + '%"></i></div><span class="hearts">' + ar(i) + '/' + ar(L.length) + '</span></div>' +
-        '<div class="qcard"><div class="em">' + (x.e || '🎧') + '</div><div class="q">' + esc(x.sit || '') + '</div><div class="bigar">' + esc(x.q) + '</div><button class="play" id="lp" style="width:76px;height:76px;margin:10px auto 4px">' + ICON_PLAY + '</button><div class="q" id="lpc">يمكنك الاستماع مرتين</div></div>' +
-        '<div class="opts">' + x.o.map(function(o, k){ return '<button class="opt" data-k="' + k + '">' + esc(o) + '</button>'; }).join('') + '</div><div id="tr"></div>';
-      var sayAll = function(){ stopAudio(); var my = token, j = 0; (function n2(){ if (my !== token || j >= x.say.length) return; speak(x.say[j++], function(){ if (my === token) setTimeout(n2, 350); }); token = my; })(); };
-      $('#lp').onclick = function(){ if (plays >= 2) return toast('في الامتحان تسمع مرتين فقط 🙂'); plays++; $('#lpc').textContent = plays >= 2 ? 'استمعت مرتين' : 'يمكنك الاستماع مرة أخرى'; sayAll(); };
-      $$('.opt').forEach(function(b){ b.onclick = function(){ var good = +b.dataset.k === x.a; if (good) ok++; b.classList.add(good ? 'ok' : 'no'); if (!good) $$('.opt')[x.a].classList.add('ok'); $$('.opt').forEach(function(z){ z.disabled = true; });
-        $('#tr').innerHTML = '<div class="panel trans"><b>النص المسموع:</b>' + x.say.map(function(s){ return '<div class="de">' + esc(s) + '</div>'; }).join('') + '<div class="m">' + esc(x.mn || '') + '</div><button class="btn wide" id="lnx" style="margin-top:10px">التالي</button></div>';
-        $('#lnx').onclick = nx; $('#lnx').scrollIntoView({block:'center', behavior:'smooth'}); }; });
-    };
-    nx(); return;
+  stopExamTimer(); useAudio('exam');
+  render('<div class="wrap"><div class="ph sm" style="--c:' + P.c + '"><a class="back" href="#/exam">→ التدريب على الامتحان</a><span class="em">' + P.e + '</span><h1>' + P.t + '</h1><div class="g">' + P.de + '</div><p>' + P.d + '</p></div>' + (part === 'listen' || part === 'speak' ? ctlBar('', true) : '') + '<div id="stage"></div>' + footer() + '</div>', 'train'); bindCtl();
+  leaveHook = stopExamTimer;
+  if (part === 'listen' || part === 'read') return objectiveExam(part, P, part === 'listen' ? E.listen : E.read);
+  if (part === 'write') return writeExam(P, E.write);
+  return speakExam(P, E.speak);
+}
+function objectiveExam(part, P, mod){
+  var items = flatItems(mod), ans = items.map(function(){ return null; }), plays = items.map(function(){ return 0; }), cur = 0, stage = $('#stage');
+  var info = '<p class="sub">' + mod.parts.length + ' أجزاء · ' + items.length + ' سؤالًا' + (part === 'listen' ? '. في بعض الأجزاء تسمع النص مرتين، وفي الجزء 2 مرة واحدة فقط، تمامًا مثل الامتحان.' : '. اقرأ كل نص جيدًا قبل أن تجيب.') + '</p>';
+  startScreen(P, info, mod.minutes, function(minutes){
+    stage.innerHTML = '<div class="exbar"><span id="exTimer" class="extimer"' + (minutes ? '' : ' hidden') + '></span><span id="exPos" class="expos"></span></div><div class="dots" id="exDots"></div><div id="exQ"></div>' +
+      '<div class="row exnav"><button class="btn alt" id="exPrev">→ السابق</button><button class="btn" id="exNext">التالي ←</button></div><button class="btn wide flame" id="exSubmit">✔ تسليم الامتحان</button>';
+    $('#exPrev').onclick = function(){ if (cur > 0){ cur--; show(); } };
+    $('#exNext').onclick = function(){ if (cur < items.length - 1){ cur++; show(); } };
+    $('#exSubmit').onclick = function(){ var miss = ans.filter(function(a){ return a == null; }).length;
+      if (miss && !$('#exSubmit').dataset.sure){ $('#exSubmit').dataset.sure = 1; $('#exSubmit').textContent = '⚠️ بقي ' + miss + ' بلا إجابة. اضغط مرة أخرى للتسليم'; return; } finish(); };
+    show(); runTimer(minutes, finish);
+  });
+  function dots(){ $('#exDots').innerHTML = items.map(function(x, i){ return '<button class="dot' + (i === cur ? ' cur' : '') + (ans[i] != null ? ' done' : '') + '" data-j="' + i + '" aria-label="سؤال ' + (i + 1) + '">' + (i + 1) + '</button>'; }).join('');
+    $$('#exDots .dot').forEach(function(b){ b.onclick = function(){ cur = +b.dataset.j; show(); }; }); }
+  function partHead(x){ return '<div class="exhead"><b>Teil ' + x.p.n + '</b><div class="de">' + esc(x.p.de) + '</div></div>'; }
+  function show(){
+    stopAudio();
+    var x = items[cur], it = x.it, p = x.p, h = partHead(x);
+    if (part === 'listen'){
+      var left = p.plays - plays[cur];
+      h += '<div class="qcard"><div class="em">' + (it.e || '🎧') + '</div><div class="q">Aufgabe ' + (cur + 1) + '</div>' +
+        '<button class="play" id="exPlay" style="width:76px;height:76px;margin:6px auto"' + (left <= 0 ? ' disabled' : '') + '>' + ICON_PLAY + '</button><div class="q" id="exPl">' + (left <= 0 ? 'استمعت إلى النص' : left === 2 ? 'تسمع النص مرتين' : 'تسمع النص مرة واحدة فقط') + '</div>' +
+        (p.kind === 'abc' ? '<div class="bigq de">' + esc(it.q) + '</div>' : '<div class="bigq de">' + esc(it.s) + '</div>') + '</div>';
+    } else if (p.kind === 'rf' && p.texts){
+      h += '<div class="panel rtexts">' + p.texts.map(function(t){ return '<div class="rt"><div class="rt-h">' + t.e + ' ' + esc(t.kind) + '</div>' + t.de.map(function(s){ return '<p>' + esc(s) + '</p>'; }).join('') + '</div>'; }).join('') + '</div>' +
+        '<div class="qcard"><div class="q">Aufgabe ' + (cur + 1) + '</div><div class="bigq de">' + esc(it.s) + '</div></div>';
+    } else if (p.kind === 'ab'){
+      h += '<div class="qcard"><div class="q">Aufgabe ' + (cur + 1) + '</div><div class="bigq de">' + esc(it.s) + '</div></div>' +
+        '<div class="ads">' + ['a', 'b'].map(function(k){ var ad = it[k]; return '<div class="ad"><span class="adk">' + k + '</span><b class="de">' + esc(ad.t) + '</b><div class="de">' + esc(ad.txt) + '</div></div>'; }).join('') + '</div>';
+    } else {
+      h += '<div class="sign"><div class="sign-e">' + it.e + '</div>' + it.sign.map(function(s){ return '<div class="de">' + esc(s) + '</div>'; }).join('') + '</div>' +
+        '<div class="qcard"><div class="q">Aufgabe ' + (cur + 1) + '</div><div class="bigq de">' + esc(it.s) + '</div></div>';
+    }
+    var opts = p.kind === 'abc' ? it.o.map(function(o, k){ return {v:k, l:'<span class="ok-k">' + ABCL[k] + '</span><span class="de">' + esc(o) + '</span>'}; })
+             : p.kind === 'ab' ? [{v:'a', l:'<span class="ok-k">a</span><span class="de">' + esc(it.a.t) + '</span>'}, {v:'b', l:'<span class="ok-k">b</span><span class="de">' + esc(it.b.t) + '</span>'}]
+             : [{v:true, l:'<span class="de">richtig</span>'}, {v:false, l:'<span class="de">falsch</span>'}];
+    h += '<div class="opts exopts' + (p.kind === 'abc' ? '' : ' two') + '">' + opts.map(function(o, k){ return '<button class="opt pick' + (ans[cur] === o.v ? ' chosen' : '') + '" data-k="' + k + '">' + o.l + '</button>'; }).join('') + '</div>';
+    $('#exQ').innerHTML = h; $('#exPos').textContent = 'سؤال ' + (cur + 1) + ' من ' + items.length; dots();
+    $('#exPrev').disabled = cur === 0; $('#exNext').disabled = cur === items.length - 1;
+    $$('#exQ .opt').forEach(function(b){ b.onclick = function(){ ans[cur] = opts[+b.dataset.k].v; $$('#exQ .opt').forEach(function(z){ z.classList.toggle('chosen', z === b); }); dots();
+      if (part !== 'listen' && cur < items.length - 1) setTimeout(function(){ if (ans[cur] != null){ cur++; show(); } }, 350); }; });
+    var pb = $('#exPlay'); if (pb) pb.onclick = function(){ if (plays[cur] >= p.plays) return; plays[cur]++; var l2 = p.plays - plays[cur];
+      $('#exPl').textContent = l2 > 0 ? 'يمكنك الاستماع مرة أخرى' : 'استمعت إلى النص'; if (l2 <= 0) pb.disabled = true;
+      stopAudio(); var my = token, j = 0; (function n2(){ if (my !== token || j >= it.say.length) return; speak(it.say[j++], function(){ if (my === token) setTimeout(n2, 400); }); token = my; })(); };
   }
-  if (part === 'read'){
-    var R = E.read, ti = 0, ok2 = 0, tot = 0;
-    R.forEach(function(t){ tot += t.qs.length; });
-    var nt = function(){
-      if (ti >= R.length){ stage.innerHTML = examResult('read', ok2, tot); return; }
-      var t = R[ti]; ti++;
-      stage.innerHTML = '<div class="gamebar"><div class="prog"><i style="width:' + ((ti - 1) / R.length * 100) + '%"></i></div><span class="hearts">نص ' + ar(ti) + '/' + ar(R.length) + '</span></div>' +
-        '<div class="panel rtext"><div class="rt-h">' + (t.e || '📰') + ' ' + esc(t.kind || '') + '</div><div class="de rt">' + t.text.map(function(s){ return '<p>' + esc(s) + '</p>'; }).join('') + '</div><button class="chip" id="rtr">إظهار الترجمة</button><div class="rtar" hidden>' + t.textAr.map(function(s){ return '<p>' + esc(s) + '</p>'; }).join('') + '</div></div>' +
-        '<div class="q center" style="color:var(--mute);margin:6px 0 10px">صحيح أم خطأ؟</div><div id="rq">' + t.qs.map(function(q, k){ return '<div class="rq" data-q="' + k + '"><div class="de">' + esc(q.s) + '</div><div class="m">' + esc(q.mn) + '</div><div class="tf"><button class="opt" data-v="1">✔ صحيح <span class="de">richtig</span></button><button class="opt" data-v="0">✘ خطأ <span class="de">falsch</span></button></div></div>'; }).join('') + '</div>' +
-        '<button class="btn wide" id="rnx" disabled>التالي</button>';
-      $('#rtr').onclick = function(){ var a = $('.rtar'); a.hidden = !a.hidden; this.textContent = a.hidden ? 'إظهار الترجمة' : 'إخفاء الترجمة'; };
-      var answered = 0;
-      $$('.rq').forEach(function(row){ var q = t.qs[+row.dataset.q];
-        $$('.opt', row).forEach(function(b){ b.onclick = function(){ var good = (b.dataset.v === '1') === q.a; if (good) ok2++; b.classList.add(good ? 'ok' : 'no'); if (!good) $$('.opt', row).forEach(function(z){ if ((z.dataset.v === '1') === q.a) z.classList.add('ok'); }); $$('.opt', row).forEach(function(z){ z.disabled = true; }); answered++; if (answered >= t.qs.length) $('#rnx').disabled = false; }; }); });
-      $('#rnx').onclick = function(){ nt(); scrollTo(0, 0); };
-    };
-    nt(); return;
+  function finish(){
+    stopExamTimer(); stopAudio();
+    var ok = 0, rows = '';
+    var lastP = -1;
+    items.forEach(function(x, i){ var it = x.it, p = x.p, right = p.kind === 'abc' ? it.a : p.kind === 'ab' ? it.ans : it.a, mine = ans[i], good = mine === right; if (good) ok++;
+      if (x.pi !== lastP){ lastP = x.pi; rows += '<div class="gh">Teil ' + p.n + ' · <span style="font-weight:600">' + esc(p.ar) + '</span></div>'; }
+      var lbl = function(v){ if (v == null) return 'بلا إجابة'; if (p.kind === 'abc') return ABCL[v] + ') <span class="de">' + esc(it.o[v]) + '</span> = ' + esc(it.oa[v]); if (p.kind === 'ab') return v + ') <span class="de">' + esc(it[v].t) + '</span>'; return v ? 'richtig (صحيح)' : 'falsch (خطأ)'; };
+      rows += '<div class="rv ' + (good ? 'good' : 'bad') + '"><div class="rv-h"><span>' + (good ? '✅' : '❌') + ' سؤال ' + (i + 1) + '</span></div>' +
+        '<div class="de rv-q">' + esc(p.kind === 'abc' ? it.q : it.s) + '</div><div class="rv-t">' + esc(p.kind === 'abc' ? it.qa : it.sa) + '</div>' +
+        (good ? '<div class="rv-a">إجابتك: ' + lbl(mine) + '</div>' : '<div class="rv-a bad">إجابتك: ' + lbl(mine) + '</div><div class="rv-a goodc">الصحيح: ' + lbl(right) + '</div>') +
+        (part === 'listen' ? '<details class="rv-x"><summary>النص المسموع والترجمة</summary>' + it.say.map(function(s){ return '<div class="de">' + esc(s) + '</div>'; }).join('') + '<div class="rv-t">' + esc(it.tr) + '</div><button class="chip" data-say="' + i + '">🔊 استمع مرة أخرى</button></details>' : '') +
+        (p.kind === 'ab' ? '<details class="rv-x"><summary>ترجمة الإعلانين</summary><div>a) ' + esc(it.a.ta) + ': ' + esc(it.a.txta) + '</div><div>b) ' + esc(it.b.ta) + ': ' + esc(it.b.txta) + '</div></details>' : '') +
+        (p.kind === 'rf' && it.signa ? '<details class="rv-x"><summary>ترجمة اللافتة</summary><div>' + esc(it.signa) + '</div></details>' : '') + '</div>';
+    });
+    var texts = '';
+    if (part === 'read') mod.parts.forEach(function(p){ (p.texts || []).forEach(function(t){ texts += '<details class="rv-x"><summary>' + t.e + ' ترجمة النص: ' + esc(t.kind) + '</summary>' + t.ar.map(function(s){ return '<div>' + esc(s) + '</div>'; }).join('') + '</details>'; }); });
+    stage.innerHTML = scoreHead(part, ok, items.length) + '<div class="sh"><h2>مراجعة الإجابات</h2></div>' + (texts ? '<div class="rv-texts">' + texts + '</div>' : '') + rows;
+    $$('[data-say]').forEach(function(b){ b.onclick = function(){ var it = items[+b.dataset.say].it; stopAudio(); var my = token, j = 0; (function n2(){ if (my !== token || j >= it.say.length) return; speak(it.say[j++], function(){ if (my === token) setTimeout(n2, 400); }); token = my; })(); }; });
+    scrollTo(0, 0);
   }
-  if (part === 'write'){
-    var W = E.write, f = W.form;
-    stage.innerHTML = '<div class="panel"><b>الجزء 1: املأ الاستمارة</b><p class="sub">' + esc(f.intro) + '</p><div class="de rt panel2">' + f.text.map(function(s){ return '<p>' + esc(s) + '</p>'; }).join('') + '</div>' +
-      '<div class="form">' + f.fields.map(function(x, k){ return '<label>' + esc(x.l) + ' <span class="de">' + esc(x.de) + '</span></label><input class="inp de" data-f="' + k + '" autocomplete="off" autocapitalize="off" spellcheck="false">'; }).join('') + '</div><button class="btn wide" id="fchk" style="margin-top:12px">تحقّق من الاستمارة</button><div id="fres"></div></div>' +
-      '<div class="panel"><b>الجزء 2: اكتب رسالة قصيرة</b><p class="sub">' + esc(W.task.sit) + '</p><ul>' + W.task.points.map(function(p){ return '<li>' + esc(p) + '</li>'; }).join('') + '</ul><textarea class="inp de" id="wt" rows="7" placeholder="Liebe …,"></textarea>' +
-      '<button class="btn wide" id="wchk" style="margin-top:10px">انتهيت، اعرض النموذج</button><div id="wres"></div></div><div id="wfin"></div>';
-    var formOk = null;
-    $('#fchk').onclick = function(){ var n = 0; $$('[data-f]').forEach(function(inp){ var x = f.fields[+inp.dataset.f], good = x.a.some(function(a){ return norm(a) === norm(inp.value); }); inp.classList.toggle('good', good); inp.classList.toggle('bad', !good); if (good) n++; });
-      formOk = n; $('#fres').innerHTML = '<p class="sub">' + ar(n) + ' من ' + ar(f.fields.length) + ' صحيحة. ' + (n < f.fields.length ? 'الإجابات الصحيحة: ' + f.fields.map(function(x){ return x.a[0]; }).join(' · ') : '🎉') + '</p>'; fin(); };
-    var selfOk = null;
-    $('#wchk').onclick = function(){ if ($('#wt').value.trim().split(/\s+/).length < 8) return toast('اكتب رسالتك أولًا (8 كلمات على الأقل)');
-      $('#wres').innerHTML = '<div class="panel2"><b>نموذج للإجابة:</b>' + W.task.model.map(function(s){ return '<div class="de">' + esc(s) + '</div>'; }).join('') + '</div><b>قيّم رسالتك بصدق:</b><div class="selfc">' + W.task.check.map(function(c, k){ return '<label><input type="checkbox" data-c="' + k + '"> ' + esc(c) + '</label>'; }).join('') + '</div><button class="btn wide" id="wsc">احسب نتيجتي</button>';
-      $('#wsc').onclick = function(){ selfOk = $$('[data-c]').filter(function(c){ return c.checked; }).length; fin(true); }; };
-    var fin = function(force){ if (formOk == null || selfOk == null) return; var tot2 = f.fields.length + W.task.check.length; $('#wfin').innerHTML = examResult('write', formOk + selfOk, tot2); if (force) $('#wfin').scrollIntoView({block:'center', behavior:'smooth'}); };
-    return;
+}
+function writeExam(P, W){
+  var stage = $('#stage'), f = W.form, t = W.task;
+  startScreen(P, '<p class="sub">جزءان: تملأ استمارة من 5 معلومات، ثم تكتب رسالة قصيرة من حوالي 30 كلمة. التصحيح يظهر بعد التسليم.</p>', W.minutes, function(minutes){
+    stage.innerHTML = '<div class="exbar"><span id="exTimer" class="extimer"' + (minutes ? '' : ' hidden') + '></span></div>' +
+      '<div class="panel"><div class="exhead"><b>Teil 1</b><div class="de">' + esc(f.de) + '</div></div><div class="rt">' + f.text.map(function(s){ return '<p>' + esc(s) + '</p>'; }).join('') + '</div>' +
+      '<div class="form">' + f.fields.map(function(x, k){ return '<label for="wf' + k + '" class="de">' + esc(x.de) + '</label><input class="inp de" id="wf' + k + '" data-f="' + k + '" autocomplete="off" autocapitalize="off" spellcheck="false">'; }).join('') + '</div></div>' +
+      '<div class="panel"><div class="exhead"><b>Teil 2</b><div class="de">' + esc(t.de) + '</div></div><ul class="de">' + t.points.map(function(p){ return '<li>' + esc(p[0]) + '</li>'; }).join('') + '</ul>' +
+      '<textarea class="inp de" id="wt" rows="7" placeholder="Lieber Marco, …"></textarea><div class="sub" id="wc">0 Wörter</div></div>' +
+      '<button class="btn wide flame" id="wSubmit">✔ تسليم</button><div id="wres"></div>';
+    $('#wt').oninput = function(){ var n = this.value.trim() ? this.value.trim().split(/\s+/).length : 0; $('#wc').textContent = n + ' Wörter'; };
+    $('#wSubmit').onclick = function(){ if ($('#wt').value.trim().split(/\s+/).length < 8 && !this.dataset.sure){ this.dataset.sure = 1; this.textContent = '⚠️ الرسالة قصيرة جدًا. اضغط مرة أخرى للتسليم'; return; } submit(); };
+    runTimer(minutes, submit);
+  });
+  function submit(){
+    stopExamTimer(); var formOk = 0;
+    var fr = f.fields.map(function(x, k){ var v = ($('#wf' + k) || {}).value || '', good = x.a.some(function(a){ return norm(a) === norm(v); }); if (good) formOk++;
+      return '<div class="rv ' + (good ? 'good' : 'bad') + '"><div class="rv-h"><span>' + (good ? '✅' : '❌') + ' <span class="de">' + esc(x.de) + '</span> · ' + esc(x.ar) + '</span></div><div class="rv-a' + (good ? '' : ' bad') + '">إجابتك: <span class="de">' + esc(v || '—') + '</span></div>' + (good ? '' : '<div class="rv-a goodc">الصحيح: <span class="de">' + esc(x.a[0]) + '</span></div>') + '</div>'; }).join('');
+    var mine = ($('#wt') || {}).value || '';
+    $$('#stage input, #stage textarea').forEach(function(el){ el.disabled = true; }); var sb = $('#wSubmit'); if (sb) sb.remove();
+    $('#wres').innerHTML = '<div class="sh"><h2>Teil 1 · الاستمارة: ' + formOk + ' من ' + f.fields.length + '</h2></div><details class="rv-x"><summary>ترجمة النص</summary>' + f.texta.map(function(s){ return '<div>' + esc(s) + '</div>'; }).join('') + '</details>' + fr +
+      '<div class="sh"><h2>Teil 2 · الرسالة</h2></div><div class="panel"><div class="rv-t">المطلوب: ' + esc(t.ar) + '</div><ul>' + t.points.map(function(p){ return '<li><span class="de">' + esc(p[0]) + '</span> · ' + esc(p[1]) + '</li>'; }).join('') + '</ul>' +
+      '<b>رسالتك:</b><div class="rt de mine">' + esc(mine || '—').replace(/\n/g, '<br>') + '</div><b>نموذج للإجابة:</b><div class="rt">' + t.model.map(function(s, k){ return '<p class="de">' + esc(s) + '</p><p class="rv-t">' + esc(t.modela[k]) + '</p>'; }).join('') + '</div>' +
+      '<b>قيّم رسالتك بصدق مقارنة بالنموذج:</b><div class="selfc">' + t.check.map(function(c, k){ return '<label><input type="checkbox" data-c="' + k + '"> ' + esc(c) + '</label>'; }).join('') + '</div><button class="btn wide" id="wsc">احسب نتيجتي</button></div><div id="wfin"></div>';
+    $('#wsc').onclick = function(){ var self = $$('[data-c]').filter(function(c){ return c.checked; }).length; this.remove(); $$('[data-c]').forEach(function(c){ c.disabled = true; });
+      $('#wfin').innerHTML = scoreHead('write', formOk + self, f.fields.length + t.check.length); $('#wfin').scrollIntoView({block:'start', behavior:'smooth'}); };
   }
-  if (part === 'speak'){
-    var SP = E.speak, cards = [];
-    SP.parts.forEach(function(p, pi){ p.cards.forEach(function(c){ cards.push(Object.assign({part:pi}, c)); }); });
-    var ci = 0, ok3 = 0;
-    var nc = function(){
-      if (ci >= cards.length){ stage.innerHTML = examResult('speak', ok3, cards.length); return; }
+}
+function speakExam(P, SP){
+  var stage = $('#stage'), cards = [];
+  SP.parts.forEach(function(p, pi){ p.cards.forEach(function(c){ cards.push(Object.assign({part:pi}, c)); }); });
+  startScreen(P, '<p class="sub">ثلاثة أجزاء. انظر إلى البطاقة وقل جملتك بصوت عالٍ، ثم اعرض النموذج وقيّم نفسك بصدق.</p>', 0, function(){
+    var ci = 0, ok = 0, res = [];
+    (function nc(){
+      if (ci >= cards.length){
+        var rows = cards.map(function(c, i){ return '<div class="rv ' + (res[i] ? 'good' : 'bad') + '"><div class="rv-h"><span>' + (res[i] ? '✅' : '🔁') + ' <span class="de">' + esc(c.w) + '</span> · ' + esc(c.mn) + '</span></div>' + c.model.map(function(m){ return '<div class="de">' + esc(m.de) + '</div><div class="rv-t">' + esc(m.mn) + '</div>'; }).join('') + '</div>'; }).join('');
+        stage.innerHTML = scoreHead('speak', ok, cards.length) + '<div class="sh"><h2>مراجعة البطاقات</h2></div>' + rows; scrollTo(0, 0); return; }
       var c = cards[ci], p = SP.parts[c.part]; ci++;
-      stage.innerHTML = '<div class="gamebar"><div class="prog"><i style="width:' + ((ci - 1) / cards.length * 100) + '%"></i></div><span class="hearts">' + ar(ci) + '/' + ar(cards.length) + '</span></div>' +
-        '<div class="panel"><b>' + esc(p.t) + '</b><p class="sub">' + esc(p.d) + '</p></div>' +
-        '<div class="scard"><div class="em">' + (c.e || '💬') + '</div><div class="de big">' + esc(c.w) + '</div><div class="m">' + esc(c.mn || '') + '</div></div>' +
+      stage.innerHTML = '<div class="exbar"><span class="expos">بطاقة ' + ci + ' من ' + cards.length + '</span></div><div class="exhead"><b>' + esc(p.t) + '</b><div class="de">' + esc(p.de) + '</div></div>' +
+        '<div class="scard"><div class="em">' + (c.e || '💬') + '</div><div class="de big">' + esc(c.w) + '</div></div>' +
         '<p class="center sub">قل جملتك بصوت عالٍ أولًا، ثم اضغط لترى النموذج.</p><button class="btn wide" id="rev">👀 اعرض النموذج</button><div id="model"></div>';
       $('#rev').onclick = function(){ this.remove();
-        $('#model').innerHTML = '<div class="list">' + c.model.map(function(m, k){ return '<button class="it" data-m="' + k + '" style="--c:' + P.c + '"><span class="tx"><span class="d">' + esc(m.de) + '</span><span class="m">' + esc(m.mn) + '</span></span><span class="play sm">' + ICON_PLAY + '</span></button>'; }).join('') + '</div>' +
+        $('#model').innerHTML = '<div class="rv-t" style="margin-bottom:8px">' + esc(p.ta) + ' · ' + esc(c.mn) + '</div><div class="list">' + c.model.map(function(m, k){ return '<button class="it" data-m="' + k + '" style="--c:' + P.c + '"><span class="tx"><span class="d">' + esc(m.de) + '</span><span class="m">' + esc(m.mn) + '</span></span><span class="play sm">' + ICON_PLAY + '</span></button>'; }).join('') + '</div>' +
           '<div class="row" style="margin-top:12px"><button class="btn alt" id="sNo" style="flex:1">🔁 لم أعرفها</button><button class="btn" id="sYes" style="flex:1">✅ قلتها صحيحة</button></div>';
         $$('[data-m]').forEach(function(b){ b.onclick = function(){ play({de:c.model[+b.dataset.m].de, grp:'exam'}, b); }; });
         play({de:c.model[0].de, grp:'exam'}, $('[data-m="0"]'));
-        $('#sYes').onclick = function(){ ok3++; nc(); }; $('#sNo').onclick = nc; };
-    };
-    nc(); return;
-  }
+        $('#sYes').onclick = function(){ ok++; res.push(true); nc(); }; $('#sNo').onclick = function(){ res.push(false); nc(); }; };
+    })();
+  });
 }
 
 /* ---------------- SPEAK (pronunciation) ---------------- */
@@ -833,11 +1010,11 @@ function viewSpeak(tid){
   if (pool.length < 3) pool = uniqBy(itemsOf('greet'), function(x){ return x.de; });
   pool = shuffle(pool).slice(0, 10);
   var opts = [{id:'greet', t:'التحيات'}, {id:'abc', t:'الحروف'}, {id:'num', t:'الأرقام'}, {id:'colors', t:'الألوان'}, {id:'family', t:'العائلة'}, {id:'food', t:'الطعام'}, {id:'animals', t:'الحيوانات'}, {id:'a1', t:'دروس A1'}];
-  var html = '<div class="wrap"><div class="ph" style="--c:#06A77D"><a class="back" href="#/play">→ الألعاب</a><span class="em">🎤</span><h1>اختبر نطقك</h1><div class="g">Aussprache</div><p>استمع إلى الكلمة، ثم اضغط على الميكروفون وانطقها.</p></div>' +
+  var html = '<div class="wrap"><div class="ph" style="--c:#06A77D"><a class="back" href="#/train">→ التدريب</a><span class="em">🎤</span><h1>اختبر نطقك</h1><div class="g">Aussprache</div><p>استمع إلى الكلمة، ثم اضغط على الميكروفون وانطقها.</p></div>' +
     '<div class="pick">' + opts.map(function(o){ return '<a class="chip ' + (o.id === tid ? 'on' : '') + '" href="#/speak/' + o.id + '" style="text-decoration:none">' + o.t + '</a>'; }).join('') + '</div>' +
     (Rec ? '' : '<div class="tip trap"><b class="k">⚠️ تنبيه</b>متصفحك لا يدعم التعرّف على الصوت. جرّب Google Chrome على أندرويد، أو Safari بعد تفعيل «الإملاء» في إعدادات الآيفون. يمكنك الاستماع والتدرّب على أي حال.</div>') +
     ctlBar() + '<div id="stage"></div>' + footer() + '</div>';
-  render(html, 'play'); bindCtl();
+  render(html, 'train'); bindCtl();
   pool.forEach(function(x){ useAudio(x.grp); });
   var i = 0, ok = 0, rec = null; var stage = $('#stage');
   leaveHook = function(){ if (rec){ try{ rec.abort(); }catch(e){} rec = null; } };
@@ -875,11 +1052,11 @@ function addMistake(q){ if (!q || !q.de) return; var k = q.de, m = S.mist[k] || 
 function fixMistake(q){ var m = q && S.mist[q.de]; if (!m) return; m.n--; if (m.n <= 0){ delete S.mist[q.de]; S.fixed = (S.fixed || 0) + 1; } save(); }
 function viewMistakes(){
   var keys = Object.keys(S.mist), list = keys.map(function(k){ return S.mist[k].it; });
-  var html = '<div class="wrap"><div class="ph" style="--c:#E63946"><a class="back" href="#/play">→ الألعاب</a><span class="em">🩹</span><h1>كرّاسة أخطائي</h1><div class="g">Meine Fehler</div><p>كل كلمة تخطئ فيها تُحفظ هنا، وتختفي عندما تجيبها صحيحة مرة أو اثنتين.</p></div>' +
+  var html = '<div class="wrap"><div class="ph" style="--c:#E63946"><a class="back" href="#/train">→ التدريب</a><span class="em">🩹</span><h1>كرّاسة أخطائي</h1><div class="g">Meine Fehler</div><p>كل كلمة تخطئ فيها تُحفظ هنا، وتختفي عندما تجيبها صحيحة مرة أو اثنتين.</p></div>' +
     (keys.length ? '<div class="tiles">' + ['meaning','listen','type','cards'].map(function(g){ return gameTile(GAMES.find(function(x){ return x.id === g; }), 'mist'); }).join('') + '</div>' +
       '<div class="sh"><h2>' + plural(keys.length, 'كلمة واحدة', 'كلمتان', 'كلمات', 'كلمة') + '</h2><span class="cnt">صحّحت ' + ar(S.fixed || 0) + '</span></div><div class="list">' + list.map(function(it, i){ return itemRow(it, i, '#E63946'); }).join('') + '</div>'
       : '<div class="empty"><i>🌟</i>لا توجد أخطاء الآن! العب أي لعبة، وأي كلمة تخطئ فيها ستظهر هنا للمراجعة.<br><br><a class="btn" href="#/play" style="text-decoration:none;display:inline-block">اذهب إلى الألعاب</a></div>') + footer() + '</div>';
-  render(html, 'play'); bindItems(list);
+  render(html, 'train'); bindItems(list);
   if (keys.length < 4 && keys.length) $$('.tiles .tile').forEach(function(t){ t.classList.add('dim'); t.onclick = function(e){ e.preventDefault(); toast('تحتاج 4 كلمات على الأقل للعب، والآن يمكنك الاستماع إليها'); }; });
 }
 
@@ -944,12 +1121,9 @@ var GAMES = [
 ];
 function gameTile(g, topic){ return '<a class="tile" href="#/g/' + g.id + '/' + (topic || 'all') + '" style="--c:' + g.c + '"><span class="em">' + g.e + '</span><b>' + g.t + '</b><span>' + g.d + '</span></a>'; }
 function viewPlay(){
-  var mc = Object.keys(S.mist).length;
-  var html = '<div class="wrap"><div class="ph" style="--c:#FF6B2C"><span class="em">🎮</span><h1>الألعاب</h1><div class="g">Spielen</div><p>كل إجابة صحيحة = 10 نقاط. اختر لعبة ثم اختر الموضوع.</p></div>' +
-    '<a class="mission ' + (S.daily[today()] ? 'done' : '') + '" href="#/daily" style="margin-top:0"><span class="em">🎯</span><div><b>مهمة اليوم</b><span>' + (S.daily[today()] ? 'أنهيتها ✅' : '10 أسئلة متنوعة + 50 نقطة') + '</span></div><span class="arr">‹</span></a>' +
-    '<div class="tiles big" style="margin-top:12px">' + bigTile('#/exam', '📝', '#8338EC', 'تدريب على امتحان A1', 'الأجزاء الأربعة') + bigTile('#/mistakes', '🩹', '#E63946', 'كرّاسة أخطائي', mc ? plural(mc, 'كلمة واحدة', 'كلمتان', 'كلمات', 'كلمة') + ' للمراجعة' : 'لا أخطاء الآن') +
-      bigTile('#/speak/greet', '🎤', '#06A77D', 'اختبر نطقك', 'تكلّم وتحقّق') + bigTile('#/test', '🧭', '#2B1F86', 'اختبار المستوى', S.test == null ? '12 سؤالًا' : 'نتيجتك: ' + ar(S.test) + ' / 12') + '</div>' +
-    '<div class="sh"><h2>الألعاب</h2></div><div class="tiles">' + GAMES.map(function(g){ return gameTile(g); }).join('') + '</div>' + footer() + '</div>';
+  var html = '<div class="wrap"><div class="ph sm" style="--c:#FF6B2C"><span class="em">🎮</span><h1>الألعاب</h1><div class="g">Spielen</div><p>كل إجابة صحيحة = 10 نقاط. اختر لعبة ثم اختر الموضوع.</p></div>' +
+    '<a class="mission ' + (S.daily[today()] ? 'done' : '') + '" href="#/daily" style="margin-top:0"><span class="em">🎯</span><div><b>مهمة اليوم</b><span>' + (S.daily[today()] ? 'أنهيتها ✅ عُد غدًا' : '10 أسئلة متنوعة + 50 نقطة') + '</span></div><span class="arr">‹</span></a>' +
+    '<div class="sh"><h2>اختر لعبة</h2><span class="cnt">' + GAMES.length + ' ألعاب</span></div><div class="tiles">' + GAMES.map(function(g){ return gameTile(g); }).join('') + '</div>' + footer() + '</div>';
   render(html, 'play');
 }
 function pickBar(game, cur){
@@ -985,7 +1159,7 @@ function viewGame(gid, tid, opts){
     return;
   }
   if (!opts.resume){ delete S.gs[KEY]; }
-  render('<div class="wrap">' + head + '<div id="stage"></div></div>', 'play');
+  render('<div class="wrap">' + head + (gid === 'speed' || gid === 'match' || gid === 'memory' || gid === 'order' || gid === 'type' || gid === 'artikel' ? '' : '<div class="ctl slim">' + prChip() + '</div>') + '<div id="stage"></div></div>', 'play'); bindCtl();
   var stage = $('#stage');
   var rnd = opts.daily ? seeded('daily' + today()) : Math.random;
   var R = {ok:0, total:0, mistakes:0};
@@ -1004,7 +1178,7 @@ function viewGame(gid, tid, opts){
       (R.mistakes && tid !== 'mist' ? '<div class="sub">الكلمات التي أخطأت فيها حُفظت في <a href="#/mistakes">كرّاسة أخطائي</a></div>' : '') +
       '<div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="again">🔁 العب مرة أخرى</button><a class="btn alt" href="' + (opts.daily ? '#/' : '#/play') + '" style="text-decoration:none">' + (opts.daily ? 'الرئيسية' : 'ألعاب أخرى') + '</a></div></div>';
     $('#again').onclick = function(){ viewGame(gid, tid, {daily:opts.daily, fresh:true}); };
-    if (!S.popup){ setTimeout(function(){ if ($('.result') && !S.popup){ S.popup = true; save(); subPopup(); } }, 1500); }
+    if (!S.popup && ytName()){ setTimeout(function(){ if ($('.result') && !S.popup){ S.popup = true; save(); subPopup(); } }, 1500); }
   }
   function bar(i, n){ return '<div class="gamebar"><div class="prog"><i style="width:' + (i / n * 100) + '%"></i></div><span class="hearts">' + ar(i) + '/' + ar(n) + '</span></div>'; }
   function others(item, n, key){ return shuffle(distract.filter(function(x){ return x[key] !== item[key]; }), rnd).slice(0, n); }
@@ -1151,7 +1325,7 @@ function hideFb(){ var fb = $('#fb'); if (fb) fb.classList.remove('show'); }
 /* ---------------- placement test ---------------- */
 function viewTest(){
   var qs = SR.placement, i = 0, score = 0;
-  render('<div class="wrap"><div class="ph" style="--c:#5B3DF5"><a class="back" href="#/">→ الرئيسية</a><span class="em">🧭</span><h1>اختبار المستوى</h1><div class="g">Einstufungstest</div><p>12 سؤالًا من السهل إلى الصعب. إن لم تعرف الإجابة فخمّن.</p></div><div id="stage"></div></div>', 'play');
+  render('<div class="wrap"><div class="ph" style="--c:#5B3DF5"><a class="back" href="#/train">→ التدريب</a><span class="em">🧭</span><h1>اختبار المستوى</h1><div class="g">Einstufungstest</div><p>12 سؤالًا من السهل إلى الصعب. إن لم تعرف الإجابة فخمّن.</p></div><div id="stage"></div></div>', 'train');
   var st = $('#stage');
   function q(){
     if (i >= qs.length) return done();
@@ -1184,6 +1358,7 @@ function viewMe(){
     '<div class="sh"><h2>الإعدادات</h2></div><div class="panel">' +
     setRow('dark', '🌙 الوضع الليلي', isDark()) + setRow('sp', '🔤 النطق بالحروف العربية', S.set.sp) + setRow('kids', '🧸 وضع الصغار', S.set.kids) +
     '<div class="set"><span>🐢 سرعة الصوت</span><div class="seg"><button data-sp="slow" class="' + (S.set.speed === 'slow' ? 'on' : '') + '">بطيء</button><button data-sp="normal" class="' + (S.set.speed !== 'slow' ? 'on' : '') + '">عادي</button></div></div>' +
+    '<div class="set"><span>🎯 الهدف اليومي</span><div class="seg" id="goalSeg">' + GOALS.map(function(g){ return '<button data-goal="' + g.x + '" class="' + (S.goal === g.x ? 'on' : '') + '">' + g.m + ' د</button>'; }).join('') + '</div></div>' +
     '<div class="set"><span>📲 ثبّت الموقع على شاشتك</span><button class="btn" id="installBtn">تثبيت</button></div>' +
     '<div class="set"><span>🗑️ ابدأ من جديد</span><button class="btn alt" id="reset">امسح تقدّمي</button></div></div>' +
     '<div class="sh"><h2>تواصل معي</h2></div>' + contactHTML(false) + footer() + '</div>';
@@ -1192,7 +1367,8 @@ function viewMe(){
     if (k === 'dark'){ S.set.theme = isDark() ? 'light' : 'dark'; }
     else S.set[k] = !S.set[k];
     save(); applySettings(); b.classList.toggle('on'); }; });
-  $('#reset').onclick = function(){ if (confirm('هل أنت متأكد؟ ستُمسح كل النقاط والأوسمة والتقدّم.')){ var keep = S.set, nm = S.name; S = blank(); S.set = keep; S.name = nm; S.popup = true; save(); viewMe(); } };
+  $$('[data-goal]').forEach(function(b){ b.onclick = function(){ S.goal = +b.dataset.goal; save(); $$('[data-goal]').forEach(function(x){ x.classList.toggle('on', x === b); }); toast('🎯 هدفك الجديد: ' + S.goal + ' نقطة يوميًا'); }; });
+  $('#reset').onclick = function(){ if (confirm('هل أنت متأكد؟ ستُمسح كل النقاط والأوسمة والتقدّم.')){ var keep = S.set, nm = S.name, gl = S.goal; S = blank(); S.set = keep; S.name = nm; S.goal = gl; S.onb = 1; S.popup = true; save(); viewMe(); } };
   $('#cert').onclick = function(){ var n = $('#cName').value.trim(); if (!n) return toast('اكتب اسمك أولًا'); S.name = n; save(); certificate(n); };
 }
 function setRow(k, label, on){ return '<div class="set"><span>' + label + '</span><button class="switch ' + (on ? 'on' : '') + '" data-set="' + k + '" aria-label="' + label + '"></button></div>'; }
@@ -1236,9 +1412,35 @@ function viewSearch(q){
   inp.oninput = run; run(); setTimeout(function(){ inp.focus(); }, 60);
 }
 
+/* ---------------- owner page ---------------- */
+function viewAdmin(){
+  var repo = String(CFG.repo || 'mohnned7/mohnned7.github.io').replace(/[^\w.\/-]/g, ''), gh = 'https://github.com/' + repo, code = String(CFG.goatcounter || '').trim().replace(/[^a-z0-9-]/gi, '');
+  var words = 0; topics().forEach(function(t){ words += itemsOf(t.id).length; });
+  var lessonItems = 0; SR.a1.concat(SR.a2).forEach(function(l){ lessonItems += l.items.length; });
+  function row(h, e, t, d){ return '<a class="it lesson" href="' + h + '" target="_blank" rel="noopener" style="--c:#5B3DF5"><span class="em">' + e + '</span><div class="tx"><b>' + t + '</b><div class="m">' + d + '</div></div><span class="st">↗</span></a>'; }
+  var cfgView = JSON.stringify({announcement:CFG.announcement, whatsapp:CFG.whatsapp, youtube:CFG.youtube, hide:CFG.hide, goatcounter:CFG.goatcounter, repo:CFG.repo}, null, 2);
+  var html = '<div class="wrap"><div class="ph sm" style="--c:#14103A"><span class="em">🔐</span><h1>لوحة المالك</h1><div class="g">MOHANNAD</div><p>صفحة خاصة بك. لا تشارك رابطها.</p></div>' +
+    '<div class="jsum"><div><b>' + UNITS.length + '</b><span>وحدة في الموقع</span></div><div><b>' + words + '</b><span>كلمة وجملة</span></div><div><b>' + lessonItems + '</b><span>مثال في الدروس</span></div></div>' +
+    '<div class="sh"><h2>📊 الإحصائيات</h2></div>' +
+    (code ? '<div class="list">' + row('https://' + code + '.goatcounter.com', '📈', 'زوار الموقع', 'عدد الزوار والصفحات والبلدان') + '</div>'
+          : '<div class="tip trap"><b class="k">لم تُفعَّل بعد</b>أنشئ حسابًا مجانيًا على goatcounter.com، ثم اكتب اسم الحساب في خانة <b>goatcounter</b> داخل ملف الإعدادات.</div>') +
+    '<div class="sh"><h2>⚙️ التحكم</h2></div><div class="list">' +
+      row(gh + '/edit/main/config.json', '📝', 'تعديل ملف الإعدادات', 'الإعلان، واتساب، يوتيوب، إخفاء الأقسام، الإحصائيات') +
+      row(gh + '/upload/main', '⬆️', 'رفع ملفات', 'رفع تحديث أو ملفات صوت') +
+      row(gh + '/actions', '🚦', 'حالة النشر', 'تتأكد أن آخر تحديث نُشر بنجاح') +
+      row(gh, '📁', 'كل ملفات الموقع', repo) + '</div>' +
+    '<div class="sh"><h2>📖 دليل ملف الإعدادات</h2></div><div class="panel guide">' +
+      '<p><b>الإعلان:</b> اكتب النص بين علامتي التنصيص في <span class="de">"text"</span>، فيظهر شريط أعلى الموقع. اتركه فارغًا <span class="de">""</span> لإخفائه. وفي <span class="de">"link"</span> ضع رابطًا إن أردت. الألوان: <span class="de">gold · violet · red · green</span>.</p>' +
+      '<p><b>إخفاء قسم:</b> اكتب اسمه داخل <span class="de">"hide"</span> مثل <span class="de">["exam", "speak"]</span>. الأسماء المتاحة:</p><div class="chips">' + Object.keys(HIDE_KEYS).map(function(k){ return '<span class="chip"><span class="de">' + k + '</span> · ' + HIDE_KEYS[k] + '</span>'; }).join('') + '</div>' +
+      '<p style="margin-top:10px"><b>بعد التعديل:</b> اضغط <b>Commit changes</b>، وانتظر دقيقة أو دقيقتين حتى يظهر التغيير.</p>' +
+      '<p class="sub">احذر: لا تحذف الفواصل <span class="de">,</span> ولا علامات التنصيص <span class="de">"</span>، وإلا سيتجاهل الموقع الملف ويستخدم الإعدادات الأساسية.</p></div>' +
+    '<div class="sh"><h2>الإعدادات المطبقة الآن</h2></div><pre class="cfg" dir="ltr">' + esc(cfgView) + '</pre>' + footer() + '</div>';
+  render(html, '');
+}
+
 /* ---------------- popups / install ---------------- */
 function subPopup(){
-  var m = modal('<div class="big">🚀</div><h3>هل أعجبتك الرحلة؟</h3><p>اشترك في قناة اليوتيوب ليصلك كل درس وكل لعبة جديدة.</p><a class="cbtn yt" style="justify-content:center" href="https://www.youtube.com/@u0_0z?sub_confirmation=1" target="_blank" rel="noopener"><i>▶</i>اشترك في القناة</a><button class="btn alt wide" style="margin-top:10px" id="later">لاحقًا</button>');
+  var m = modal('<div class="big">🚀</div><h3>هل أعجبتك الرحلة؟</h3><p>اشترك في قناة اليوتيوب ليصلك كل درس وكل لعبة جديدة.</p><a class="cbtn yt" style="justify-content:center" href="https://www.youtube.com/@' + encodeURIComponent(ytName()) + '?sub_confirmation=1" target="_blank" rel="noopener"><i>▶</i>اشترك في القناة</a><button class="btn alt wide" style="margin-top:10px" id="later">لاحقًا</button>');
   $('#later', m).onclick = function(){ m.remove(); }; m.querySelector('.cbtn').addEventListener('click', function(){ setTimeout(function(){ m.remove(); }, 300); });
 }
 var deferred = null;
@@ -1259,9 +1461,13 @@ function bindInstall(){
 function go(h){ location.hash = h; }
 function route(){
   var h = (location.hash || '#/').slice(1), parts = h.split('#'), p = parts[0].split('/').filter(Boolean), anchor = parts[1];
+  countView();
   if (!p.length) return viewHome();
+  var GUARD = {exam:'exam', test:'test', speak:'speak', mistakes:'mistakes', stories:'stories', story:'stories', letters:'letters', letter:'letters', tool:'tools', play:'games', g:'games', daily:'games', journey:'journey'};
+  if ((GUARD[p[0]] && hidden(GUARD[p[0]])) || (p[0] === 'l' && /^a2-/.test(p[1] || '') && hidden('a2'))){ toast('هذا القسم غير متاح حاليًا'); return viewHome(); }
   switch (p[0]){
-    case 'learn': return viewLearn(anchor);
+    case 'learn': return viewLearn(p[1] || anchor);
+    case 'train': return viewTrain();
     case 't': return viewTopic(p[1]);
     case 'l': return viewLesson(p[1]);
     case 'levels': return viewLevels();
@@ -1280,12 +1486,13 @@ function route(){
     case 'speak': return viewSpeak(p[1]);
     case 'mistakes': return viewMistakes();
     case 'search': return viewSearch(decodeURIComponent(p[1] || ''));
+    case 'admin-mohannad': return viewAdmin();
     default: return viewHome();
   }
 }
 buildUnits();
 if (!S.station) S.station = stationIdx();
-shell(); applySettings(); addEventListener('hashchange', route); route();
+shell(); applySettings(); addEventListener('hashchange', route); route(); loadConfig();
 if (S.last && S.last !== today() && S.last !== yesterday() && S.streak){ S.streak = 0; save(); updateRibbon(); }
 if ('serviceWorker' in navigator && location.protocol === 'https:'){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
 })();
