@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>الصفحة غير موجودة · Sprachrakete</title>
+<meta name="theme-color" content="#0D0A24">
+<link rel="icon" type="image/png" href="/icon-192.png">
+<style>
+@font-face{font-family:Readex;src:url(/Readex-Arabic.woff) format('woff');font-weight:300 700;font-display:swap}
+@font-face{font-family:Outfit;src:url(/Outfit-Bold.ttf) format('truetype');font-weight:700;font-display:swap}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px 16px;font-family:Readex,system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;color:#F3F0FF;text-align:center;
+background:radial-gradient(120% 60% at 100% 0%,#1B1450 0%,transparent 60%),radial-gradient(90% 50% at 0% 100%,#140F3C 0%,transparent 60%),#0B0820}
+.n{font-family:Outfit,sans-serif;font-weight:700;font-size:96px;line-height:1;background:linear-gradient(115deg,#8E74FF,#FF6B2C);-webkit-background-clip:text;background-clip:text;color:transparent}
+.e{font-size:64px;margin:10px 0;animation:f 3s ease-in-out infinite}
+@keyframes f{50%{transform:translateY(-10px) rotate(8deg)}}
+h1{font-size:24px;margin:6px 0 8px}
+p{color:#A7A2D1;margin:0 auto 20px;max-width:340px;line-height:1.7}
+a{display:inline-block;background:#5B3DF5;color:#fff;text-decoration:none;font-weight:700;padding:13px 26px;border-radius:999px;box-shadow:0 10px 24px rgba(91,61,245,.4)}
+small{display:block;margin-top:26px;color:#6C6893;font-family:Outfit,sans-serif}
+.try{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;margin-top:18px;color:#A7A2D1;font-size:14px;font-weight:700}
+.try a,.ct a{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.14);box-shadow:none;padding:8px 14px;font-size:14px}
+.help{margin:26px 0 10px;font-size:14px}
+.ct{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.ct a.wa{background:#1FA855;border-color:#1FA855}.ct a.yt{background:#E62117;border-color:#E62117}
+</style>
+</head>
+<body>
+<main>
+<div class="n">404</div>
+<div class="e">🛰️</div>
+<h1>يبدو أن صاروخك ضلّ الطريق!</h1>
+<p>هذه الصفحة غير موجودة. عُد إلى الرئيسية وواصل رحلتك في تعلّم الألمانية.</p>
+<a href="/">🏠 العودة إلى الرئيسية</a>
+<div class="try"><span>أو جرّب:</span><a href="/#/learn">📚 الدروس</a><a href="/#/play">🎮 الألعاب</a><a href="/#/exam">📝 الامتحان</a></div>
+<p class="help">تحتاج إلى مساعدة؟ تواصل معي</p>
+<div class="ct"><a class="wa" id="wa" href="https://wa.me/201080845228" target="_blank" rel="noopener">💬 واتساب</a><a class="yt" id="yt" href="https://www.youtube.com/@u0_0z" target="_blank" rel="noopener">▶ يوتيوب</a></div>
+<small>Sprachrakete 🚀</small>
+<script>fetch('/config.json',{cache:'no-store'}).then(function(r){return r.json()}).then(function(c){var w=String(c.whatsapp||'').replace(/\D/g,''),y=String(c.youtube||'').replace(/^@/,'');var a=document.getElementById('wa'),b=document.getElementById('yt');if(w)a.href='https://wa.me/'+w;else a.remove();if(y)b.href='https://www.youtube.com/@'+encodeURIComponent(y);else b.remove();}).catch(function(){});</script>
+</main>
+</body>
+</html>

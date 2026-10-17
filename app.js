@@ -15,6 +15,23 @@ function dkey(d){ return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getD
 function today(){ return dkey(new Date()); }
 function yesterday(){ return dkey(new Date(Date.now() - 864e5)); }
 function plural(n, one, two, few, many){ return n === 1 ? one : n === 2 ? two : (n >= 3 && n <= 10) ? ar(n) + ' ' + few : ar(n) + ' ' + many; }
+var ICONS = {
+  home:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  learn:'<path d="M12 6.5C10 5 7.5 4.5 3 4.5v14c4.5 0 7 .5 9 2 2-1.5 4.5-2 9-2v-14c-4.5 0-7 .5-9 2z"/><path d="M12 6.5v14"/>',
+  train:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/>',
+  play:'<path d="M7 7h10a5 5 0 0 1 4.9 6l-.7 3.4a2.5 2.5 0 0 1-4.3 1.2L14.5 15h-5l-2.4 2.6a2.5 2.5 0 0 1-4.3-1.2L2.1 13A5 5 0 0 1 7 7z"/><path d="M7.5 9.5v3.5M5.75 11.25h3.5"/><circle cx="16" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="18" cy="12.5" r="1" fill="currentColor" stroke="none"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M2.5 12h2M19.5 12h2M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>',
+  moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  me:'<circle cx="12" cy="9.5" r="6.5"/><rect x="8.2" y="7" width="7.6" height="4.6" rx="2.3"/><path d="M5.5 21.5c.6-2.8 3.2-4.3 6.5-4.3s5.9 1.5 6.5 4.3"/>',
+  words:'<circle cx="12" cy="12" r="5.5"/><path d="M6.3 14.6C3.6 16.5 2.5 18.2 3.3 19c1.3 1.3 6.6-1 11.7-5.3s8.2-8.8 7-10c-.7-.8-2.6 0-5 1.6"/>',
+  a1:'<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M9 8h6M9 11.5h4"/>',
+  a2:'<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 12.5 9 5 9-5"/><path d="m3 17 9 5 9-5"/>',
+  read:'<path d="M14 3H6.5A2.5 2.5 0 0 0 4 5.5v13A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
+  tools:'<rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><path d="M17.25 14v7M13.75 17.5h7"/>',
+  warn:'<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/>'
+};
+function ic(n, cls){ return '<svg class="ic' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONS[n] || '') + '</svg>'; }
 var ICON_PLAY = '<svg viewBox="0 0 24 24"><path d="M3 10v4h4l5 4V6L7 10H3zm13.5 2a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>';
 var ICON_MIC = '<svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>';
 var ART = {m:'der', f:'die', n:'das'};
@@ -76,8 +93,7 @@ function applySettings(){
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
   document.body.classList.toggle('kids', !!S.set.kids);
   document.body.classList.toggle('sp', !!S.set.sp);
-  var tb = $('#themeBtn'); if (tb){ tb.textContent = dark ? '☀️' : '🌙'; tb.title = dark ? 'الوضع النهاري' : 'الوضع الليلي'; }
-  var kb = $('#kidsBtn'); if (kb) kb.classList.toggle('on', !!S.set.kids);
+  var tb = $('#themeBtn'); if (tb){ tb.innerHTML = ic(dark ? 'sun' : 'moon'); tb.title = dark ? 'الوضع النهاري' : 'الوضع الليلي'; }
   var meta = $('meta[name=theme-color]'); if (meta) meta.setAttribute('content', dark ? '#0D0A24' : '#F3F1FF');
 }
 
@@ -352,13 +368,12 @@ function shell(){
   document.body.insertAdjacentHTML('afterbegin',
    '<header class="top" id="top"><div class="wrap"><a class="logo" href="#/"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="#14103A"/><circle cx="31" cy="10" r="1.3" fill="#fff"/><circle cx="9" cy="14" r="1" fill="#fff"/>'+
    '<path d="M20 7c6 5 7 13 5 21h-10c-2-8-1-16 5-21z" fill="#FFF7E8"/><path d="M20 7c3 2 5 5 5.6 9h-11.2C15 12 17 9 20 7z" fill="#FF6B2C"/><circle cx="20" cy="19" r="3" fill="#5B3DF5"/><path d="M17 28q3 8 6 0z" fill="#FFC53D"/></svg>'+
-   '<b>Sprach<span>rakete</span></b></a><a class="ibtn" id="meBtn" href="#/me" title="حسابي" aria-label="حسابي">🧑‍🚀</a><button class="ibtn" id="kidsBtn" title="وضع الصغار" aria-label="وضع الصغار">🧸</button><button class="ibtn" id="themeBtn" aria-label="الوضع الليلي أو النهاري">☀️</button></div></header>'+
+   '<b>Sprach<span>rakete</span></b></a><a class="ibtn me" id="meBtn" href="#/me" title="حسابي" aria-label="حسابي">' + ic('me') + '<small>أنا</small></a><button class="ibtn" id="themeBtn" aria-label="الوضع الليلي أو النهاري">' + ic('sun') + '</button></div></header>'+
    '<main id="app"></main>'+
    '<nav class="nav" aria-label="القائمة"><div class="in">'+
-   '<a href="#/" data-n="home"><i>🏠</i>الرئيسية</a><a href="#/learn" data-n="learn"><i>📚</i>الدروس</a><a href="#/train" data-n="train"><i>🎯</i>التدريب</a><a href="#/play" data-n="play"><i>🎮</i>الألعاب</a><a href="#/search" data-n="search"><i>🔍</i>بحث</a></div></nav>'+
+   '<a href="#/" data-n="home">' + ic('home') + 'الرئيسية</a><a href="#/learn" data-n="learn">' + ic('learn') + 'الدروس</a><a href="#/train" data-n="train">' + ic('train') + 'التدريب</a><a href="#/play" data-n="play">' + ic('play') + 'الألعاب</a><a href="#/search" data-n="search">' + ic('search') + 'بحث</a></div></nav>'+
    '<div class="toast" id="toast" role="status"></div><div class="feedback" id="fb"></div>');
   $('#themeBtn').onclick = function(){ S.set.theme = isDark() ? 'light' : 'dark'; save(); applySettings(); };
-  $('#kidsBtn').onclick = function(){ S.set.kids = !S.set.kids; save(); applySettings(); toast(S.set.kids ? '🧸 وضع الصغار مفعّل' : 'تم إيقاف وضع الصغار'); };
   addEventListener('scroll', function(){ $('#top').classList.toggle('scrolled', scrollY > 6); }, {passive:true});
 }
 function navHide(){ var g = $('.nav a[data-n="play"]'); if (g) g.hidden = hidden('games'); var n = $('.nav .in'); if (n) n.style.gridTemplateColumns = 'repeat(' + $$('.nav a').filter(function(a){ return !a.hidden; }).length + ',1fr)'; }
@@ -480,7 +495,22 @@ function viewHome(){
   $('#launch').onclick = countdown;
   bindInstall();
 }
-function footer(){ return '<div class="foot">Sprachrakete · MOHANNAD 🚀<br>النطق بالحروف العربية للمساعدة فقط، والأفضل الاعتماد على الصوت.</div>'; }
+function footer(){ return '<div class="foot"><div class="foot-l"><a href="#/about">عن الموقع</a><span>·</span><a href="#/me">الإعدادات</a></div>Sprachrakete 🚀 © ' + new Date().getFullYear() + ' مهند · جميع الحقوق محفوظة<br>النطق بالحروف العربية للمساعدة فقط، والأفضل الاعتماد على الصوت.</div>'; }
+function viewAbout(){
+  var html = '<div class="wrap"><div class="ph sm" style="--c:#5B3DF5"><a class="back" href="#/">→ الرئيسية</a><span class="em">🚀</span><h1>عن Sprachrakete</h1><div class="g">Über uns</div><p>موقع مجاني لتعلّم الألمانية بالعربية، من أول حرف حتى تتكلم.</p></div>' +
+    '<div class="panel about"><h3>👋 من أنا؟</h3><p>أنا مهند، وصنعت هذا الموقع لأساعد الناطقين بالعربية على تعلّم الألمانية بطريقة سهلة وممتعة، وليكون رفيقك اليومي: تتعلم الكلمة، وتسمعها، وتلعب بها، ثم تختبر نفسك.</p></div>' +
+    '<div class="panel about"><h3>🎯 ماذا ستجد هنا؟</h3><ul><li>كلمات وجمل بالصوت والمعنى في ' + SR.modules.length + ' موضوعًا.</li><li>دروس قواعد A1 وA2 بشرح بسيط وأمثلة.</li><li>قصص قصيرة ورسائل جاهزة للكتابة.</li><li>تدريب كامل على امتحان A1 بأجزائه الأربعة.</li><li>ألعاب ونقاط وأوسمة ورحلة فضائية تحفّزك كل يوم.</li></ul></div>' +
+    '<div class="panel about"><h3>🔒 خصوصيتك</h3><p>لا تحتاج إلى حساب أو بريد إلكتروني. تقدّمك ونقاطك محفوظة على جهازك فقط، ولا نجمع أي بيانات شخصية. نستخدم عدّاد زيارات بسيطًا لا يتعرّف عليك ولا يستخدم ملفات تعريف الارتباط.</p></div>' +
+    '<div class="panel about"><h3>💡 نصائح للاستفادة</h3><ul><li>استمع إلى كل كلمة وكرّرها بصوت عالٍ.</li><li>عشر دقائق كل يوم أفضل من ساعتين مرة في الأسبوع.</li><li>راجع كرّاسة أخطائي باستمرار.</li></ul></div>' +
+    '<div class="sh"><h2>تواصل معي</h2></div>' + contactHTML(false) +
+    '<p class="sub center" style="margin-top:16px">الخط العربي: Readex Pro (رخصة SIL OFL). جميع المحتويات والتصميم © مهند.</p>' + footer() + '</div>';
+  render(html, 'home');
+}
+function viewNotFound(){
+  render('<div class="wrap"><div class="nf"><div class="nf-n de">404</div><div class="nf-e">🛰️</div><h1>يبدو أن صاروخك ضلّ الطريق!</h1><p class="sub">هذه الصفحة غير موجودة. لا تقلق، يمكنك العودة إلى الرئيسية ومواصلة رحلتك.</p><a class="btn" href="#/" style="text-decoration:none;display:inline-block;margin-top:8px">🏠 العودة إلى الرئيسية</a>' +
+    '<div class="nf-try"><span>أو جرّب:</span><a class="chip" href="#/learn">📚 الدروس</a>' + (hidden('games') ? '' : '<a class="chip" href="#/play">🎮 الألعاب</a>') + (hidden('exam') ? '' : '<a class="chip" href="#/exam">📝 الامتحان</a>') + '</div></div>' +
+    '<p class="sub center" style="margin:18px 0 8px">تحتاج إلى مساعدة؟ تواصل معي</p>' + contactHTML(false) + footer() + '</div>', 'home');
+}
 function bigTile(h, e, c, t, d){ return '<a class="tile" href="' + h + '" style="--c:' + c + '"><span class="em">' + e + '</span><b>' + t + '</b><span>' + d + '</span></a>'; }
 function planet(t){
   var uid = 't:' + t.id, its = itemsOf(t.id).length, pct = unitPct(uid), dn = S.done[uid];
@@ -521,8 +551,8 @@ function countdown(){
 }
 
 /* ---------------- LEARN ---------------- */
-var LTABS = [{id:'words', e:'🪐', t:'الكلمات'}, {id:'a1', e:'📘', t:'دروس A1'}, {id:'a2', e:'📗', t:'دروس A2'}, {id:'read', e:'📖', t:'اقرأ واكتب'}, {id:'tools', e:'🧰', t:'أدوات'}];
-function tabBar(list, cur, base){ return '<div class="tabs" role="tablist">' + list.map(function(t){ return '<a role="tab" aria-selected="' + (t.id === cur) + '" class="tab' + (t.id === cur ? ' on' : '') + '" href="' + base + t.id + '"><span>' + t.e + '</span>' + t.t + '</a>'; }).join('') + '</div>'; }
+var LTABS = [{id:'words', i:'words', t:'الكلمات'}, {id:'a1', i:'a1', t:'دروس A1'}, {id:'a2', i:'a2', t:'دروس A2'}, {id:'read', i:'read', t:'اقرأ واكتب'}, {id:'tools', i:'tools', t:'أدوات'}];
+function tabBar(list, cur, base){ return '<div class="tabs" role="tablist">' + list.map(function(t){ return '<a role="tab" aria-selected="' + (t.id === cur) + '" class="tab' + (t.id === cur ? ' on' : '') + '" href="' + base + t.id + '">' + (t.i ? ic(t.i) : '<span>' + t.e + '</span>') + t.t + '</a>'; }).join('') + '</div>'; }
 function viewLearn(tab){
   var LT = LTABS.filter(function(t){ return !(t.id === 'a2' && hidden('a2')) && !(t.id === 'tools' && hidden('tools')) && !(t.id === 'read' && hidden('stories') && hidden('letters')); });
   if (!LT.some(function(t){ return t.id === tab; })) tab = '';
@@ -575,6 +605,18 @@ function itemRow(it, i, c){
     '<span class="tx"><span class="d">' + deHTML(it) + '</span><span class="pr arp">' + pron(it.ar || '') + '</span><span class="m">' + esc(it.mn) + '</span>' +
     (it.conj ? '<span class="cj">' + esc(it.conj) + '</span>' : '') + '</span><span class="play sm" aria-hidden="true">' + ICON_PLAY + '</span>' + (it.u != null && S.heard[it.u] && S.heard[it.u][it.k] ? '<span class="hd">✓</span>' : '') + '</button>';
 }
+/* picture cards: real photos load per topic from pics_<topic>.js (window.SRPIC), emoji is the fallback */
+var PIC_TOPICS = [];
+window.SRP = window.SRP || {};
+window.SRPIC = function(o){ for (var k in o) SRP[k] = o[k]; $$('.pic[data-n]').forEach(function(el){ var u = SRP[el.dataset.n]; if (u && !el.querySelector('img')) el.innerHTML = '<img src="' + u + '" alt="" loading="lazy" decoding="async">'; }); };
+var picLoaded = {};
+function loadPics(id){ if (PIC_TOPICS.indexOf(id) < 0 || picLoaded[id]) return; picLoaded[id] = 1; var sc = document.createElement('script'); sc.src = 'pics_' + id + '.js'; sc.async = true; document.head.appendChild(sc); }
+function picHTML(it){ var u = SRP[it.n]; return '<span class="pic" data-n="' + esc(it.n) + '">' + (u ? '<img src="' + u + '" alt="" loading="lazy" decoding="async">' : '<span class="pe">' + (it.e || '🔹') + '</span>') + '</span>'; }
+function picCard(it, i, c){
+  return '<button class="it pcard" data-i="' + i + '" style="--c:' + (c || 'var(--violet)') + '">' + picHTML(it) +
+    '<span class="tx"><span class="d">' + deHTML(it) + '</span><span class="pr arp">' + pron(it.ar || '') + '</span><span class="m">' + esc(it.mn) + '</span></span>' +
+    '<span class="play sm" aria-hidden="true">' + ICON_PLAY + '</span>' + (it.u != null && S.heard[it.u] && S.heard[it.u][it.k] ? '<span class="hd">✓</span>' : '') + '</button>';
+}
 function bindItems(list){
   $$('.it[data-i]').forEach(function(el){ el.onclick = function(){ var it = list[+el.dataset.i]; play(it, el); if (it.u != null && !el.querySelector('.hd')) el.insertAdjacentHTML('beforeend', '<span class="hd">✓</span>'); }; });
   var pa = $('#playAll'); if (pa) pa.onclick = function(){ playAllList(list); };
@@ -604,7 +646,12 @@ function viewTopic(id){
   } else {
     list = m.items.map(function(it, k){ return Object.assign({grp:m.id, u:uid, k:k}, it); });
     if (list.some(function(x){ return x.g; })) html += artLegend();
-    html += '<div class="list">' + list.map(function(it, i){ return itemRow(it, i, m.color); }).join('') + '</div>';
+    var nouns = list.filter(function(x){ return x.g && x.n && x.n.indexOf(' ') < 0; }), rest = list.filter(function(x){ return nouns.indexOf(x) < 0; });
+    if (nouns.length >= 4){
+      html += '<div class="pgrid">' + nouns.map(function(it){ return picCard(it, list.indexOf(it), m.color); }).join('') + '</div>' +
+        (rest.length ? '<div class="sh"><h2>جمل مفيدة</h2></div><div class="list">' + rest.map(function(it){ return itemRow(it, list.indexOf(it), m.color); }).join('') + '</div>' : '');
+      loadPics(m.id);
+    } else html += '<div class="list">' + list.map(function(it, i){ return itemRow(it, i, m.color); }).join('') + '</div>';
   }
   html += practiceTiles(m.id, !m.dialogs) + footer() + '</div>';
   render(html, 'learn'); bindCtl(); bindItems(list);
@@ -877,7 +924,7 @@ function viewExamPart(part){
   var E = SX.exam; if (!E) return go('#/');
   var P = EXAM_PARTS.find(function(p){ return p.id === part; }); if (!P) return go('#/exam');
   stopExamTimer(); useAudio('exam');
-  render('<div class="wrap"><div class="ph sm" style="--c:' + P.c + '"><a class="back" href="#/exam">→ التدريب على الامتحان</a><span class="em">' + P.e + '</span><h1>' + P.t + '</h1><div class="g">' + P.de + '</div><p>' + P.d + '</p></div>' + (part === 'listen' || part === 'speak' ? ctlBar('', true) : '') + '<div id="stage"></div>' + footer() + '</div>', 'train'); bindCtl();
+  render('<div class="wrap exwrap"><div class="ph sm" style="--c:' + P.c + '"><a class="back" href="#/exam">→ التدريب على الامتحان</a><span class="em">' + P.e + '</span><h1>' + P.t + '</h1><div class="g">' + P.de + '</div><p>' + P.d + '</p></div>' + (part === 'listen' || part === 'speak' ? ctlBar('', true) : '') + '<div id="stage"></div>' + footer() + '</div>', 'train'); bindCtl();
   leaveHook = stopExamTimer;
   if (part === 'listen' || part === 'read') return objectiveExam(part, P, part === 'listen' ? E.listen : E.read);
   if (part === 'write') return writeExam(P, E.write);
@@ -890,13 +937,14 @@ function objectiveExam(part, P, mod){
     stage.innerHTML = '<div class="exbar"><span id="exTimer" class="extimer"' + (minutes ? '' : ' hidden') + '></span><span id="exPos" class="expos"></span></div><div class="dots" id="exDots"></div><div id="exQ"></div>' +
       '<div class="row exnav"><button class="btn alt" id="exPrev">→ السابق</button><button class="btn" id="exNext">التالي ←</button></div><button class="btn wide flame" id="exSubmit">✔ تسليم الامتحان</button>';
     $('#exPrev').onclick = function(){ if (cur > 0){ cur--; show(); } };
-    $('#exNext').onclick = function(){ if (cur < items.length - 1){ cur++; show(); } };
+    $('#exNext').onclick = function(){ if (cur < items.length - 1){ skipNote(); cur++; show(); } };
     $('#exSubmit').onclick = function(){ var miss = ans.filter(function(a){ return a == null; }).length;
       if (miss && !$('#exSubmit').dataset.sure){ $('#exSubmit').dataset.sure = 1; $('#exSubmit').textContent = '⚠️ بقي ' + miss + ' بلا إجابة. اضغط مرة أخرى للتسليم'; return; } finish(); };
     show(); runTimer(minutes, finish);
   });
   function dots(){ $('#exDots').innerHTML = items.map(function(x, i){ return '<button class="dot' + (i === cur ? ' cur' : '') + (ans[i] != null ? ' done' : '') + '" data-j="' + i + '" aria-label="سؤال ' + (i + 1) + '">' + (i + 1) + '</button>'; }).join('');
-    $$('#exDots .dot').forEach(function(b){ b.onclick = function(){ cur = +b.dataset.j; show(); }; }); }
+    $$('#exDots .dot').forEach(function(b){ b.onclick = function(){ var j = +b.dataset.j; if (j === cur) return; skipNote(); cur = j; show(); }; }); }
+  function skipNote(){ if (ans[cur] == null) toast('⚠️ السؤال ' + (cur + 1) + ' بلا إجابة، يمكنك الرجوع إليه لاحقًا'); }
   function partHead(x){ return '<div class="exhead"><b>Teil ' + x.p.n + '</b><div class="de">' + esc(x.p.de) + '</div></div>'; }
   function show(){
     stopAudio();
@@ -1356,7 +1404,7 @@ function viewMe(){
     BADGES.map(function(b){ return '<div class="bd ' + (S.badges[b.id] ? 'got' : '') + '"><i>' + b.e + '</i><b>' + b.t + '</b><span>' + b.d + '</span></div>'; }).join('') + '</div>' +
     '<div class="sh"><h2>شهادتي</h2></div><div class="panel"><p class="sub" style="margin:0 0 10px">اكتب اسمك واحصل على شهادة بمحطتك ونقاطك، تحفظها كصورة وتشاركها.</p><input class="inp de" id="cName" placeholder="Your name" value="' + esc(S.name) + '" aria-label="اسمك"><button class="btn wide flame" id="cert" style="margin-top:10px">🏅 اصنع شهادتي</button></div>' +
     '<div class="sh"><h2>الإعدادات</h2></div><div class="panel">' +
-    setRow('dark', '🌙 الوضع الليلي', isDark()) + setRow('sp', '🔤 النطق بالحروف العربية', S.set.sp) + setRow('kids', '🧸 وضع الصغار', S.set.kids) +
+    setRow('dark', '🌙 الوضع الليلي', isDark()) + setRow('sp', '🔤 النطق بالحروف العربية', S.set.sp) + setRow('kids', '🔠 خط كبير وأزرار أكبر', S.set.kids) +
     '<div class="set"><span>🐢 سرعة الصوت</span><div class="seg"><button data-sp="slow" class="' + (S.set.speed === 'slow' ? 'on' : '') + '">بطيء</button><button data-sp="normal" class="' + (S.set.speed !== 'slow' ? 'on' : '') + '">عادي</button></div></div>' +
     '<div class="set"><span>🎯 الهدف اليومي</span><div class="seg" id="goalSeg">' + GOALS.map(function(g){ return '<button data-goal="' + g.x + '" class="' + (S.goal === g.x ? 'on' : '') + '">' + g.m + ' د</button>'; }).join('') + '</div></div>' +
     '<div class="set"><span>📲 ثبّت الموقع على شاشتك</span><button class="btn" id="installBtn">تثبيت</button></div>' +
@@ -1487,7 +1535,8 @@ function route(){
     case 'mistakes': return viewMistakes();
     case 'search': return viewSearch(decodeURIComponent(p[1] || ''));
     case 'admin-mohannad': return viewAdmin();
-    default: return viewHome();
+    case 'about': return viewAbout();
+    default: return viewNotFound();
   }
 }
 buildUnits();
