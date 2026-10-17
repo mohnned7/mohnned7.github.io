@@ -1,63 +1,85 @@
-/* Sprachrakete 🚀 — Deutsch lernen auf Arabisch */
+/* Sprachrakete 🚀 — تعلّم الألمانية بالعربية · MOHANNAD */
 (function(){
 'use strict';
-var SR = window.SR;
+var SR = window.SR, SX = window.SRX || {stories:[], letters:[], exam:null};
 var $ = function(s, r){ return (r||document).querySelector(s); };
 var $$ = function(s, r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 function pron(s){ return esc(s).replace(/\{u:([^}]*)\}/g,'<span class="uu">$1</span>').replace(/\{o:([^}]*)\}/g,'<span class="oo">$1</span>'); }
 function rich(s){ return String(s).replace(/<de>(.*?)<\/de>/g,'<span class="de">$1</span>'); }
-function ar(n){ return String(n).replace(/\d/g, function(d){ return '٠١٢٣٤٥٦٧٨٩'[d]; }); }
+function ar(n){ return String(n); }
 function shuffle(a, rnd){ a = a.slice(); rnd = rnd || Math.random; for (var i = a.length - 1; i > 0; i--){ var j = Math.floor(rnd() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
 function seeded(str){ var h = 1779033703 ^ str.length; for (var i = 0; i < str.length; i++){ h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; }
   return function(){ h = Math.imul(h ^ h >>> 16, 2246822507); h = Math.imul(h ^ h >>> 13, 3266489909); h ^= h >>> 16; return (h >>> 0) / 4294967296; }; }
-function today(){ var d = new Date(); return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate(); }
-function yesterday(){ var d = new Date(Date.now() - 864e5); return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate(); }
+function dkey(d){ return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate(); }
+function today(){ return dkey(new Date()); }
+function yesterday(){ return dkey(new Date(Date.now() - 864e5)); }
+function plural(n, one, two, few, many){ return n === 1 ? one : n === 2 ? two : (n >= 3 && n <= 10) ? ar(n) + ' ' + few : ar(n) + ' ' + many; }
 var ICON_PLAY = '<svg viewBox="0 0 24 24"><path d="M3 10v4h4l5 4V6L7 10H3zm13.5 2a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>';
+var ICON_MIC = '<svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>';
 var ART = {m:'der', f:'die', n:'das'};
+var ARTINFO = {m:'<b>der</b> أداة للمذكّر، مثل «الـ» في العربية.<br>مثال: <span class="de">der Hund</span> = الكلب', f:'<b>die</b> أداة للمؤنّث، مثل «الـ» في العربية.<br>مثال: <span class="de">die Katze</span> = القطة', n:'<b>das</b> أداة للمحايد (لا مذكّر ولا مؤنّث)، مثل «الـ» في العربية.<br>مثال: <span class="de">das Haus</span> = البيت'};
 
 /* ---------------- storage ---------------- */
+function blank(){ return {xp:0, streak:0, last:'', days:{}, badges:{}, heard:{}, done:{}, gs:{}, mist:{}, fixed:0, cards:{}, games:{}, daily:{}, tools:{}, name:'', set:{theme:'dark', kids:false, sp:false, speed:'slow'}, v:3, perfect:false, test:null, popup:false, station:0, exam:{}, spoke:0}; }
 var S = (function(){
-  var d = {xp:0, streak:0, last:'', days:{}, badges:{}, seen:{}, cards:{}, games:{}, daily:{}, tools:{}, name:'', set:{theme:'', kids:false, sp:true, speed:'slow'}, perfect:false, test:null, popup:false};
-  try{ var x = JSON.parse(localStorage.getItem('sprachrakete') || 'null'); if (x){ for (var k in x) d[k] = x[k]; d.set = Object.assign({theme:'', kids:false, sp:true, speed:'slow'}, x.set || {}); } }catch(e){}
+  var d = blank();
+  try{ var x = JSON.parse(localStorage.getItem('sprachrakete') || 'null');
+    if (x){ for (var k in x) if (k !== 'seen') d[k] = x[k];
+      d.set = Object.assign({theme:'dark', kids:false, sp:false, speed:'slow'}, x.set || {});
+      if ((x.v || 1) < 3){ d.set.sp = false; if (!x.set || x.set.theme !== 'light') d.set.theme = 'dark'; d.v = 3; }
+      ['heard','done','gs','mist','exam','days','badges','cards','games','daily','tools'].forEach(function(k){ if (!d[k] || typeof d[k] !== 'object') d[k] = {}; });
+    } }catch(e){}
   return d;
 })();
 function save(){ try{ localStorage.setItem('sprachrakete', JSON.stringify(S)); }catch(e){} }
 
 /* ---------------- theme / settings ---------------- */
+function isDark(){ return S.set.theme !== 'light'; }
 function applySettings(){
-  var dark = S.set.theme ? S.set.theme === 'dark' : (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+  var dark = isDark();
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
   document.body.classList.toggle('kids', !!S.set.kids);
   document.body.classList.toggle('sp', !!S.set.sp);
-  var tb = $('#themeBtn'); if (tb) tb.textContent = dark ? '☀️' : '🌙';
+  var tb = $('#themeBtn'); if (tb){ tb.textContent = dark ? '☀️' : '🌙'; tb.title = dark ? 'الوضع النهاري' : 'الوضع الليلي'; }
   var kb = $('#kidsBtn'); if (kb) kb.classList.toggle('on', !!S.set.kids);
   var meta = $('meta[name=theme-color]'); if (meta) meta.setAttribute('content', dark ? '#0D0A24' : '#F3F1FF');
 }
 
 /* ---------------- audio ---------------- */
-var AUD = {}; window.SRA = function(o){ for (var k in o) AUD[k] = o[k]; };
-var loaded = {};
+var AUD = {}, AUDS = {};
+window.SRA = function(o){ for (var k in o) AUD[k] = o[k]; };
+window.SRAS = function(o){ for (var k in o) AUDS[k] = o[k]; };
+var IDX = null, idxDone = false, pend = [], loadedF = {};
+window.SRI = function(o){ IDX = o || null; };
+(function(){ var s = document.createElement('script'); s.src = 'audio_index.js'; s.async = true;
+  function fin(){ idxDone = true; var p = pend; pend = []; p.forEach(function(g){ loadAudio(g); }); }
+  s.onload = fin; s.onerror = function(){ s.remove(); fin(); }; document.head.appendChild(s); })();
+function addScript(f){ if (loadedF[f]) return; loadedF[f] = 1; var s = document.createElement('script'); s.src = f; s.async = true; s.onerror = function(){ s.remove(); }; document.head.appendChild(s); }
 function loadAudio(grp){
-  var f = SR.audioGroups[grp]; if (!f || loaded[f]) return;
-  loaded[f] = 1; var s = document.createElement('script'); s.src = f; s.async = true; s.onerror = function(){ s.remove(); }; document.head.appendChild(s);
+  if (!grp) return;
+  if (!idxDone){ if (pend.indexOf(grp) < 0) pend.push(grp); return; }
+  if (IDX && IDX[grp]){ (IDX[grp].n || []).forEach(addScript); if (S.set.speed === 'slow') (IDX[grp].s || []).forEach(addScript); return; }
+  var f = SR.audioGroups && SR.audioGroups[grp]; if (f) addScript(f);
 }
+var usedGroups = {};
+function useAudio(grp){ usedGroups[grp] = 1; loadAudio(grp); }
 var synth = window.speechSynthesis, voice = null, curA = null, token = 0;
 function pickVoice(){
   if (!synth) return; var v = synth.getVoices() || []; var de = v.filter(function(x){ return /^de/i.test(x.lang); });
-  var good = de.filter(function(x){ return /natural|neural|enhanced|premium|google|anna|katja/i.test(x.name); });
+  var good = de.filter(function(x){ return /natural|neural|enhanced|premium|google|anna|katja|petra|helena/i.test(x.name); });
   voice = good.find(function(x){ return /de[-_]DE/i.test(x.lang); }) || good[0] || de.find(function(x){ return /de[-_]DE/i.test(x.lang); }) || de[0] || null;
 }
 if (synth){ pickVoice(); synth.onvoiceschanged = pickVoice; }
 function stopAudio(){ token++; if (synth) synth.cancel(); if (curA){ try{ curA.pause(); }catch(e){} curA = null; } }
 function speak(text, done){
   if (curA){ try{ curA.pause(); }catch(e){} curA = null; }
-  var slow = S.set.speed === 'slow'; var b = AUD[text];
+  var slow = S.set.speed === 'slow', b = slow && AUDS[text] ? AUDS[text] : AUD[text], native = slow && !!AUDS[text];
   var fin = false; function end(){ if (fin) return; fin = true; if (done) done(); }
   if (b){
     if (synth) synth.cancel();
-    var a = new Audio('data:audio/mpeg;base64,' + b); a.playbackRate = slow ? 0.75 : 0.92;
-    try{ a.preservesPitch = true; }catch(e){}
+    var a = new Audio('data:audio/mpeg;base64,' + b); a.playbackRate = native ? 1 : (slow ? 0.82 : 1);
+    try{ a.preservesPitch = true; a.mozPreservesPitch = true; a.webkitPreservesPitch = true; }catch(e){}
     a.onended = end; a.onerror = function(){ fin = true; tts(text, done); };
     curA = a; a.play().catch(function(){ if (!fin){ fin = true; tts(text, done); } });
     return;
@@ -68,84 +90,145 @@ function tts(text, done){
   if (!synth){ if (done) setTimeout(done, 600); return; }
   synth.cancel(); var u = new SpeechSynthesisUtterance(text);
   u.lang = voice ? voice.lang : 'de-DE'; if (voice) u.voice = voice;
-  u.rate = S.set.speed === 'slow' ? 0.55 : 0.8;
+  u.rate = S.set.speed === 'slow' ? 0.62 : 0.88;
   var fired = false; function f(){ if (fired) return; fired = true; if (done) done(); }
   u.onend = f; u.onerror = f; synth.speak(u);
-  setTimeout(f, 1200 + text.length * 160);
+  setTimeout(f, 1400 + text.length * 150);
+}
+
+/* ---------------- units & progress ---------------- */
+var TOPIC_EXTRA = [{id:'abc',e:'🔤',color:'#5B3DF5',title:'الحروف',de:'Das Alphabet',desc:'30 حرفًا بأسمائها وأصواتها'},
+                   {id:'num',e:'🔢',color:'#FF6B2C',title:'الأرقام',de:'Die Zahlen',desc:'من الصفر إلى المليون'}];
+function modById(id){ return SR.modules.find(function(m){ return m.id === id; }); }
+function topics(){ return TOPIC_EXTRA.concat(SR.modules); }
+var UNITS = [], UMAP = {};
+function buildUnits(){
+  UNITS = []; UMAP = {};
+  function add(u){ UNITS.push(u); UMAP[u.id] = u; }
+  topics().forEach(function(t){ add({id:'t:' + t.id, kind:'topic', key:t.id, title:t.title, e:t.e, color:t.color, href:'#/t/' + t.id, size:itemsOf(t.id).length}); });
+  SR.a1.forEach(function(l){ add({id:'l:' + l.id, kind:'a1', key:l.id, title:l.title, e:'📘', color:l.color, href:'#/l/' + l.id, size:l.items.length, num:l.num}); });
+  SR.a2.forEach(function(l){ add({id:'l:' + l.id, kind:'a2', key:l.id, title:l.title, e:l.e || '📗', color:l.color, href:'#/l/' + l.id, size:l.items.length}); });
+  (SX.stories || []).forEach(function(s){ add({id:'s:' + s.id, kind:'story', key:s.id, title:s.title, e:s.e, color:s.color, href:'#/story/' + s.id, size:1}); });
+  (SX.letters || []).forEach(function(w){ add({id:'w:' + w.id, kind:'letter', key:w.id, title:w.title, e:w.e, color:w.color, href:'#/letter/' + w.id, size:w.lines.length}); });
+  if (SX.exam) EXAM_PARTS.forEach(function(p){ add({id:'e:' + p.id, kind:'exam', key:p.id, title:'تدريب الامتحان: ' + p.t, e:p.e, color:p.c, href:'#/exam/' + p.id, size:1}); });
+}
+var PATH = ['t:abc','t:num','t:greet','t:intro','l:a1-1','l:a1-2','l:a1-3','t:colors','t:family','l:a1-4','l:a1-5','t:food','t:home','l:a1-6','l:a1-7','t:body','t:animals','l:a1-8','l:a1-9','t:jobs','t:weather','l:a1-10','l:a1-11','t:travel','t:verbs','t:calendar','t:situations'];
+function pathOrder(){ var o = PATH.filter(function(id){ return UMAP[id]; }); UNITS.forEach(function(u){ if (o.indexOf(u.id) < 0) o.push(u.id); }); return o; }
+function heardCount(uid){ var h = S.heard[uid]; return h ? Object.keys(h).length : 0; }
+function unitPct(uid){ var u = UMAP[uid]; if (!u) return 0; if (S.done[uid]) return 100; return Math.min(99, Math.round(heardCount(uid) / Math.max(1, u.size) * 100)); }
+function doneCount(){ return UNITS.filter(function(u){ return S.done[u.id]; }).length; }
+function markHeard(uid, k){
+  var u = UMAP[uid]; if (!u || k == null) return;
+  S.heard[uid] = S.heard[uid] || {};
+  if (S.heard[uid][k]) return;
+  S.heard[uid][k] = 1; save();
+  if (!S.done[uid]){ addXP(2, true); if (heardCount(uid) >= u.size) complete(uid); }
+  updUnitBar(uid);
+}
+function updUnitBar(uid){
+  var b = $('#ubar'); if (!b || b.dataset.u !== uid) return; var u = UMAP[uid], n = Math.min(heardCount(uid), u.size);
+  b.innerHTML = unitBarInner(uid);
+}
+function unitBarInner(uid){ var u = UMAP[uid], n = S.done[uid] ? u.size : Math.min(heardCount(uid), u.size), pct = unitPct(uid);
+  return '<div class="ubtop"><b>' + (S.done[uid] ? '✅ أكملتَ هذا الدرس' : '🎧 استمعتَ إلى ' + ar(n) + ' من ' + ar(u.size)) + '</b><span>' + ar(pct) + '٪</span></div><div class="prog"><i style="width:' + pct + '%"></i></div>' +
+    (S.done[uid] ? '' : '<small>استمع إلى كل الكلمات، أو العب لعبة على الموضوع واحصل على 70٪ أو أكثر.</small>'); }
+function unitBar(uid){ return UMAP[uid] ? '<div class="ubar" id="ubar" data-u="' + uid + '">' + unitBarInner(uid) + '</div>' : ''; }
+function complete(uid){
+  if (!UMAP[uid] || S.done[uid]) return;
+  S.done[uid] = today(); save(); addXP(20, true);
+  var u = UMAP[uid]; setTimeout(function(){ toast('✅ أكملت: ' + u.title + ' (+20)'); confetti(); }, 250);
+  updUnitBar(uid); checkBadges(); setTimeout(checkStation, 1200);
+}
+
+/* ---------------- stations (space journey) ---------------- */
+var STATIONS = [{f:0,e:'🌍',a:'الأرض',d:'منصة الإطلاق'},{f:.06,e:'☁️',a:'فوق السحاب',d:'أول خطوة'},{f:.15,e:'🛰️',a:'المدار',d:'بدأت الرحلة فعلًا'},
+  {f:.28,e:'🌙',a:'القمر',d:'أساس قوي'},{f:.45,e:'🔴',a:'المريخ',d:'نصف الطريق تقريبًا'},{f:.62,e:'🟠',a:'المشتري',d:'مستوى رائع'},{f:.8,e:'🪐',a:'زحل',d:'قريب جدًا من النهاية'},{f:1,e:'🌌',a:'المجرة',d:'أكملت كل شيء!'}];
+function stNeed(i){ return Math.ceil(STATIONS[i].f * UNITS.length); }
+function stationIdx(){ var n = doneCount(), r = 0; STATIONS.forEach(function(s, i){ if (n >= stNeed(i)) r = i; }); return r; }
+function station(){ return STATIONS[stationIdx()]; }
+var pendingSt = false;
+function checkStation(){
+  var i = stationIdx(); if (i <= (S.station || 0)) return;
+  if (($('#stage') && !$('.result')) || $('.modal')){ pendingSt = true; return; }
+  pendingSt = false;
+  S.station = i; save(); var st = STATIONS[i];
+  var m = modal('<div class="big">' + st.e + '</div><h3>وصلتَ إلى ' + st.a + '!</h3><p>' + st.d + ' · أكملت ' + ar(doneCount()) + ' من ' + ar(UNITS.length) + ' وحدة.</p><button class="btn wide flame" id="shareSt">📸 شارك إنجازك</button><a class="btn alt wide" href="#/journey" id="seeJ" style="display:block;margin-top:8px;text-decoration:none">🚀 شاهد رحلتك</a>');
+  confetti(); $('#shareSt', m).onclick = function(){ m.remove(); shareBadge(); }; $('#seeJ', m).onclick = function(){ m.remove(); };
 }
 
 /* ---------------- XP, streak, badges ---------------- */
-var RANKS = [{x:0,e:'🛫',de:'Startrampe',a:'منصة الإطلاق'},{x:100,e:'☁️',de:'Wolken',a:'فوق السحاب'},{x:300,e:'🛰️',de:'Orbit',a:'في المدار'},
-  {x:700,e:'🌙',de:'Mond',a:'على القمر'},{x:1500,e:'🔴',de:'Mars',a:'على المريخ'},{x:3000,e:'🌌',de:'Galaxie',a:'في المجرة'}];
-function rankOf(xp){ var r = RANKS[0]; RANKS.forEach(function(k){ if (xp >= k.x) r = k; }); return r; }
 var BADGES = [
-  {id:'start',e:'🚀',t:'الإقلاع',d:'أول نقطة ليك'},
-  {id:'test',e:'🧭',t:'عرفت مستواك',d:'عملت اختبار المستوى'},
-  {id:'streak3',e:'🔥',t:'ولّعت',d:'٣ أيام ورا بعض'},
-  {id:'streak7',e:'☄️',t:'أسبوع نار',d:'٧ أيام ورا بعض'},
-  {id:'xp500',e:'🌙',t:'وصلت القمر',d:'٧٠٠ نقطة'},
-  {id:'perfect',e:'💯',t:'من غير غلطة',d:'جولة كاملة صح'},
-  {id:'games5',e:'🎮',t:'لعيب',d:'جرّبت ٥ ألعاب مختلفة'},
-  {id:'cards50',e:'🧠',t:'ذاكرة حديد',d:'حفظت ٥٠ كارت'},
-  {id:'daily5',e:'🎯',t:'ملتزم',d:'خلصت ٥ مهمات يومية'},
-  {id:'tools',e:'🧰',t:'المخترع',d:'جرّبت الأدوات الأربعة'},
-  {id:'explorer',e:'🪐',t:'مستكشف',d:'زرت ١٠ مواضيع'},
-  {id:'a1',e:'🏆',t:'بطل A1',d:'فتحت كل دروس A1'}
+  {id:'start',e:'🚀',t:'الإقلاع',d:'أول نقطة لك'},
+  {id:'test',e:'🧭',t:'عرفتَ مستواك',d:'أنهيت اختبار المستوى'},
+  {id:'streak3',e:'🔥',t:'اشتعلت',d:'3 أيام متتالية'},
+  {id:'streak7',e:'☄️',t:'أسبوع كامل',d:'7 أيام متتالية'},
+  {id:'xp500',e:'⚡',t:'500 نقطة',d:'جمعت 500 نقطة'},
+  {id:'perfect',e:'💯',t:'بلا أخطاء',d:'جولة كاملة صحيحة'},
+  {id:'games5',e:'🎮',t:'لاعب محترف',d:'جرّبت 5 ألعاب مختلفة'},
+  {id:'cards50',e:'🧠',t:'ذاكرة قوية',d:'حفظت 50 بطاقة'},
+  {id:'daily5',e:'🎯',t:'ملتزم',d:'أنهيت 5 مهام يومية'},
+  {id:'fixer',e:'🩹',t:'صحّحت أخطائي',d:'صحّحت 20 خطأ'},
+  {id:'explorer',e:'🪐',t:'مستكشف',d:'أكملت 10 مواضيع'},
+  {id:'a1',e:'🏆',t:'بطل A1',d:'أكملت كل دروس A1'},
+  {id:'story3',e:'📖',t:'قارئ',d:'أكملت 3 قصص'},
+  {id:'exam',e:'📝',t:'جاهز للامتحان',d:'أكملت أجزاء التدريب الأربعة'},
+  {id:'speaker',e:'🎤',t:'نطق ممتاز',d:'نطقت 20 كلمة صحيحة'}
 ];
 function checkBadges(){
   var got = [];
   function give(id){ if (!S.badges[id]){ S.badges[id] = today(); got.push(id); } }
+  var done = function(kind){ return UNITS.filter(function(u){ return u.kind === kind && S.done[u.id]; }).length; };
   if (S.xp > 0) give('start');
   if (S.test != null) give('test');
   if (S.streak >= 3) give('streak3');
   if (S.streak >= 7) give('streak7');
-  if (S.xp >= 700) give('xp500');
+  if (S.xp >= 500) give('xp500');
   if (S.perfect) give('perfect');
   if (Object.keys(S.games).length >= 5) give('games5');
   if (Object.keys(S.cards).filter(function(k){ return S.cards[k] >= 3; }).length >= 50) give('cards50');
   if (Object.keys(S.daily).length >= 5) give('daily5');
-  if (['num','clock','cal','intro'].every(function(k){ return S.tools[k]; })) give('tools');
-  if (Object.keys(S.seen).filter(function(k){ return k.indexOf('a1-') !== 0; }).length >= 10) give('explorer');
-  if (SR.a1.every(function(l){ return S.seen[l.id]; })) give('a1');
+  if ((S.fixed || 0) >= 20) give('fixer');
+  if (done('topic') >= 10) give('explorer');
+  if (SR.a1.length && done('a1') >= SR.a1.length) give('a1');
+  if (done('story') >= 3) give('story3');
+  if (SX.exam && done('exam') >= 4) give('exam');
+  if ((S.spoke || 0) >= 20) give('speaker');
   if (got.length){ save(); var b = BADGES.find(function(x){ return x.id === got[0]; }); setTimeout(function(){ toast(b.e + ' وسام جديد: ' + b.t); confetti(); }, 700); }
 }
-function addXP(n){
-  var before = rankOf(S.xp);
+function addXP(n, quiet){
   S.xp += n; var t = today();
   if (S.last !== t){ S.streak = (S.last === yesterday()) ? S.streak + 1 : 1; S.last = t; }
   S.days[t] = (S.days[t] || 0) + n; save();
-  var after = rankOf(S.xp);
-  if (after !== before){ setTimeout(function(){ toast(after.e + ' طلعت لـ ' + after.a + '!'); confetti(); }, 300); }
-  checkBadges(); updateRibbon();
+  if (!quiet) checkBadges(); updateRibbon();
 }
-function touch(tool){ S.tools[tool] = 1; save(); checkBadges(); }
+function touch(tool){ S.tools[tool] = 1; save(); }
 
-/* ---------------- toast / confetti ---------------- */
+/* ---------------- toast / confetti / modal ---------------- */
 var toastT;
-function toast(msg){ var t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function(){ t.classList.remove('show'); }, 2400); }
+function toast(msg){ var t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function(){ t.classList.remove('show'); }, 2600); }
 function confetti(){
   if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   var c = document.createElement('canvas'); c.className = 'confetti'; document.body.appendChild(c);
   var W = c.width = innerWidth, H = c.height = innerHeight, x = c.getContext('2d');
-  var cols = ['#FFC53D','#FF6B2C','#5B3DF5','#19C79A','#FF3D7F','#3A86FF'];
+  var cols = ['#FFC53D','#FF6B2C','#7C5CFF','#19C79A','#FF3D7F','#3A86FF'];
   var P = []; for (var i = 0; i < 120; i++) P.push({x:W/2, y:H/3, vx:(Math.random()-.5)*12, vy:Math.random()*-12-4, r:Math.random()*6+3, c:cols[i%cols.length], a:Math.random()*6});
   var f = 0; (function tick(){ x.clearRect(0,0,W,H); P.forEach(function(p){ p.vy += .35; p.x += p.vx; p.y += p.vy; p.a += .2; x.save(); x.translate(p.x,p.y); x.rotate(p.a); x.fillStyle = p.c; x.fillRect(-p.r/2,-p.r/2,p.r,p.r*.6); x.restore(); });
     if (++f < 110) requestAnimationFrame(tick); else c.remove(); })();
 }
+function modal(inner, cls){
+  var m = document.createElement('div'); m.className = 'modal';
+  m.innerHTML = '<div class="mcard ' + (cls || '') + '"><button class="x" aria-label="إغلاق">✕</button>' + inner + '</div>';
+  document.body.appendChild(m); m.querySelector('.x').onclick = function(){ m.remove(); }; m.onclick = function(e){ if (e.target === m) m.remove(); };
+  return m;
+}
 
 /* ---------------- data helpers ---------------- */
-function modById(id){ return SR.modules.find(function(m){ return m.id === id; }); }
-function topics(){
-  var t = [{id:'abc',e:'🔤',color:'#5B3DF5',title:'الحروف',de:'Das Alphabet',desc:'٣٠ حرف باسمهم وصوتهم'},
-           {id:'num',e:'🔢',color:'#FF6B2C',title:'الأرقام',de:'Die Zahlen',desc:'من صفر لمليون'}];
-  SR.modules.forEach(function(m){ t.push(m); });
-  return t;
-}
 function itemsOf(tid){
   if (tid === 'abc') return SR.letters.map(function(l){ return {de:ART[l.g] + ' ' + l.de, ar:({m:'ديا',f:'دي',n:'داس'})[l.g] + ' ' + l.ar, mn:l.mn, e:l.e, g:l.g, n:l.de, grp:'abc'}; });
   if (tid === 'num') return SR.nums.map(function(n){ return {de:n.de, ar:n.ar, mn:n.mn + ' (' + n.big + ')', e:'🔢', grp:'num'}; });
   if (tid === 'a1') { var o = []; SR.a1.forEach(function(l){ l.items.forEach(function(it){ o.push(Object.assign({grp:'a1'}, it)); }); }); return o; }
   if (tid === 'a2') { var p = []; SR.a2.forEach(function(l){ l.items.forEach(function(it){ p.push(Object.assign({grp:'a2'}, it)); }); }); return p; }
+  if (tid === 'mist') return Object.keys(S.mist).map(function(k){ return S.mist[k].it; }).filter(Boolean);
   if (tid === 'all') { var all = []; topics().forEach(function(t){ if (t.id !== 'situations') all = all.concat(itemsOf(t.id)); }); return all; }
   var m = modById(tid); if (!m) return [];
   if (m.dialogs){ var d = []; m.dialogs.forEach(function(x){ x.lines.forEach(function(l){ d.push({de:l.de, ar:l.ar, mn:l.mn, e:x.e, grp:m.id}); }); }); return d; }
@@ -153,13 +236,27 @@ function itemsOf(tid){
 }
 function sayOf(it){ return it.say || it.de; }
 function play(it, el, done){
-  loadAudio(it.grp); $$('.on.it,.on.bub,.on.lt').forEach(function(x){ x.classList.remove('on'); }); if (el) el.classList.add('on');
+  useAudio(it.grp); $$('.on.it,.on.bub,.on.lt,.on.sline').forEach(function(x){ x.classList.remove('on'); }); if (el) el.classList.add('on');
+  if (it.u != null) markHeard(it.u, it.k);
   speak(sayOf(it), function(){ if (el) el.classList.remove('on'); if (done) done(); });
 }
 function deHTML(it){
-  if (it.g && it.n){ return '<span class="art ' + it.g + '">' + ART[it.g] + '</span> ' + esc(it.n); }
+  if (it.g && it.n){ return '<span class="art ' + it.g + '" data-g="' + it.g + '">' + ART[it.g] + '</span> ' + esc(it.n); }
   return esc(it.de);
 }
+function artLegend(){ return '<div class="legend"><span class="art m">der</span> مذكّر <span class="art f">die</span> مؤنّث <span class="art n">das</span> محايد<small>اضغط على الأداة الملوّنة لمعرفة المزيد</small></div>'; }
+var tipEl = null;
+document.addEventListener('click', function(e){
+  var rt = e.target.closest && e.target.closest('[data-retry]'); if (rt){ viewExamPart(rt.dataset.retry); return; }
+  var a = e.target.closest && e.target.closest('.art[data-g]');
+  if (tipEl){ tipEl.remove(); tipEl = null; }
+  if (!a || a.closest('.opt,.mc,.mb,.artb,.wchip,.fc,.qcard')) return;
+  var r = a.getBoundingClientRect(); tipEl = document.createElement('div'); tipEl.className = 'arttip'; tipEl.innerHTML = ARTINFO[a.dataset.g];
+  document.body.appendChild(tipEl);
+  var w = tipEl.offsetWidth, left = Math.min(innerWidth - w - 10, Math.max(10, r.left + r.width / 2 - w / 2));
+  tipEl.style.left = left + 'px'; tipEl.style.top = (r.bottom + scrollY + 8) + 'px';
+  setTimeout(function(){ if (tipEl){ tipEl.remove(); tipEl = null; } }, 4500);
+});
 
 /* ---------------- numbers ---------------- */
 var NW = ['null','eins','zwei','drei','vier','fünf','sechs','sieben','acht','neun','zehn','elf','zwölf','dreizehn','vierzehn','fünfzehn','sechzehn','siebzehn','achtzehn','neunzehn'];
@@ -200,210 +297,268 @@ function sentAr(s){
 }
 
 /* ---------------- shell ---------------- */
-var ROCKET = '<svg viewBox="0 0 88 150" class="rocket" aria-hidden="true"><g class="flame"><path d="M30 118 Q44 150 58 118 Z" fill="#FFC53D"/><path d="M36 118 Q44 140 52 118 Z" fill="#FF6B2C"/></g>'+
-  '<path d="M44 4 C66 22 70 60 64 112 H24 C18 60 22 22 44 4 Z" fill="#FFF7E8"/><path d="M44 4 C56 14 62 28 64 42 H24 C26 28 32 14 44 4 Z" fill="#FF6B2C"/>'+
-  '<circle cx="44" cy="64" r="11" fill="#5B3DF5" stroke="#14103A" stroke-width="3"/><circle cx="40" cy="60" r="3" fill="#B9AEFF"/>'+
-  '<path d="M24 86 L8 112 L24 108 Z" fill="#FF3D7F"/><path d="M64 86 L80 112 L64 108 Z" fill="#FF3D7F"/><rect x="38" y="96" width="12" height="20" rx="4" fill="#FF3D7F"/></svg>';
+var ROCKET = '<svg viewBox="0 0 120 230" class="rocket" aria-hidden="true"><defs>' +
+  '<linearGradient id="rkB" x1="0" x2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset=".55" stop-color="#F1EEFF"/><stop offset="1" stop-color="#BDB3F5"/></linearGradient>' +
+  '<linearGradient id="rkN" x1="0" x2="1"><stop offset="0" stop-color="#FF9A5A"/><stop offset=".6" stop-color="#FF6B2C"/><stop offset="1" stop-color="#D9480F"/></linearGradient>' +
+  '<linearGradient id="rkF" x1="0" x2="1"><stop offset="0" stop-color="#FF6FA3"/><stop offset="1" stop-color="#C2185B"/></linearGradient>' +
+  '<radialGradient id="rkW" cx=".35" cy=".35" r=".8"><stop offset="0" stop-color="#B9A8FF"/><stop offset=".5" stop-color="#6A4DFF"/><stop offset="1" stop-color="#2A1A8C"/></radialGradient>' +
+  '<linearGradient id="rkFl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF4C2"/><stop offset=".35" stop-color="#FFC53D"/><stop offset=".75" stop-color="#FF6B2C"/><stop offset="1" stop-color="#FF3D7F" stop-opacity="0"/></linearGradient></defs>' +
+  '<g class="flame"><path d="M44 168 Q60 236 76 168 Z" fill="url(#rkFl)"/><path d="M51 168 Q60 210 69 168 Z" fill="#FFF4C2" opacity=".9"/></g>' +
+  '<path d="M30 120 L8 160 Q6 168 14 166 L34 156 Z" fill="url(#rkF)"/><path d="M90 120 L112 160 Q114 168 106 166 L86 156 Z" fill="url(#rkF)"/>' +
+  '<path d="M60 6 C88 30 94 84 88 150 Q60 160 32 150 C26 84 32 30 60 6 Z" fill="url(#rkB)"/>' +
+  '<path d="M60 6 C76 20 85 38 88 58 Q60 66 32 58 C35 38 44 20 60 6 Z" fill="url(#rkN)"/>' +
+  '<path d="M32 58 Q60 66 88 58 L89 66 Q60 74 31 66 Z" fill="#14103A" opacity=".18"/>' +
+  '<circle cx="60" cy="94" r="17" fill="#14103A"/><circle cx="60" cy="94" r="13" fill="url(#rkW)"/><ellipse cx="54" cy="88" rx="4.5" ry="3" fill="#fff" opacity=".85" transform="rotate(-30 54 88)"/>' +
+  '<circle cx="42" cy="124" r="2" fill="#B2A8E6"/><circle cx="78" cy="124" r="2" fill="#B2A8E6"/>' +
+  '<path d="M52 128 L60 122 L68 128 L68 162 Q60 166 52 162 Z" fill="url(#rkF)"/>' +
+  '<path d="M42 150 Q60 158 78 150 L74 168 Q60 172 46 168 Z" fill="#3A2F7A"/></svg>';
 
 function shell(){
   document.body.insertAdjacentHTML('afterbegin',
    '<header class="top" id="top"><div class="wrap"><a class="logo" href="#/"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="#14103A"/><circle cx="31" cy="10" r="1.3" fill="#fff"/><circle cx="9" cy="14" r="1" fill="#fff"/>'+
    '<path d="M20 7c6 5 7 13 5 21h-10c-2-8-1-16 5-21z" fill="#FFF7E8"/><path d="M20 7c3 2 5 5 5.6 9h-11.2C15 12 17 9 20 7z" fill="#FF6B2C"/><circle cx="20" cy="19" r="3" fill="#5B3DF5"/><path d="M17 28q3 8 6 0z" fill="#FFC53D"/></svg>'+
-   '<b>Sprach<span>rakete</span></b></a><button class="ibtn" id="kidsBtn" title="وضع الصغار" aria-label="وضع الصغار">🧸</button><button class="ibtn" id="themeBtn" title="ليلي / نهاري" aria-label="ليلي / نهاري">🌙</button></div></header>'+
+   '<b>Sprach<span>rakete</span></b></a><button class="ibtn" id="kidsBtn" title="وضع الصغار" aria-label="وضع الصغار">🧸</button><button class="ibtn" id="themeBtn" aria-label="الوضع الليلي أو النهاري">☀️</button></div></header>'+
    '<main id="app"></main>'+
-   '<nav class="nav" aria-label="القايمة"><div class="in">'+
-   '<a href="#/" data-n="home"><i>🏠</i>الرئيسية</a><a href="#/learn" data-n="learn"><i>📚</i>اتعلّم</a><a href="#/play" data-n="play"><i>🎮</i>العب</a><a href="#/me" data-n="me"><i>🏆</i>أنا</a><a href="#/search" data-n="search"><i>🔍</i>دوّر</a></div></nav>'+
+   '<nav class="nav" aria-label="القائمة"><div class="in">'+
+   '<a href="#/" data-n="home"><i>🏠</i>الرئيسية</a><a href="#/learn" data-n="learn"><i>📚</i>الدروس</a><a href="#/play" data-n="play"><i>🎮</i>الألعاب</a><a href="#/me" data-n="me"><i>🧑‍🚀</i>حسابي</a><a href="#/search" data-n="search"><i>🔍</i>بحث</a></div></nav>'+
    '<div class="toast" id="toast" role="status"></div><div class="feedback" id="fb"></div>');
-  $('#themeBtn').onclick = function(){ var dark = document.documentElement.getAttribute('data-theme') === 'dark'; S.set.theme = dark ? 'light' : 'dark'; save(); applySettings(); };
-  $('#kidsBtn').onclick = function(){ S.set.kids = !S.set.kids; save(); applySettings(); toast(S.set.kids ? '🧸 وضع الصغار شغال' : 'وضع الصغار اتقفل'); };
+  $('#themeBtn').onclick = function(){ S.set.theme = isDark() ? 'light' : 'dark'; save(); applySettings(); };
+  $('#kidsBtn').onclick = function(){ S.set.kids = !S.set.kids; save(); applySettings(); toast(S.set.kids ? '🧸 وضع الصغار مفعّل' : 'تم إيقاف وضع الصغار'); };
   addEventListener('scroll', function(){ $('#top').classList.toggle('scrolled', scrollY > 6); }, {passive:true});
 }
 function setNav(n){ $$('.nav a').forEach(function(a){ a.classList.toggle('on', a.dataset.n === n); }); }
-function render(html, nav){ stopAudio(); hideFb(); $$('.modal').forEach(function(m){ m.remove(); }); $('#app').innerHTML = html; setNav(nav); window.scrollTo(0, 0); }
+var leaveHook = null;
+function render(html, nav){
+  if (leaveHook){ try{ leaveHook(); }catch(e){} leaveHook = null; }
+  stopAudio(); hideFb(); $$('.modal').forEach(function(m){ m.remove(); }); if (tipEl){ tipEl.remove(); tipEl = null; }
+  var app = $('#app'); app.innerHTML = html; app.classList.remove('enter'); void app.offsetWidth; app.classList.add('enter');
+  setNav(nav); window.scrollTo(0, 0);
+  if (pendingSt && !$('#stage')) setTimeout(checkStation, 700);
+}
 function ctlBar(extra){
   return '<div class="ctl"><div class="seg" role="group" aria-label="سرعة الصوت"><button data-sp="slow" class="' + (S.set.speed === 'slow' ? 'on' : '') + '">🐢 بطيء</button><button data-sp="normal" class="' + (S.set.speed !== 'slow' ? 'on' : '') + '">عادي</button></div>' +
-    '<button class="chip ' + (S.set.sp ? 'on' : '') + '" data-pr>النطق العربي</button>' + (extra || '') + '</div>';
+    '<button class="chip ' + (S.set.sp ? 'on' : '') + '" data-pr>النطق بالعربية</button>' + (extra || '') + '</div>';
 }
+function setSpeed(v){ S.set.speed = v; save(); if (v === 'slow') Object.keys(usedGroups).forEach(loadAudio); }
 function bindCtl(){
-  $$('[data-sp]').forEach(function(b){ b.onclick = function(){ S.set.speed = b.dataset.sp; save(); $$('[data-sp]').forEach(function(x){ x.classList.toggle('on', x === b); }); }; });
-  $$('[data-pr]').forEach(function(b){ b.onclick = function(){ S.set.sp = !S.set.sp; save(); applySettings(); b.classList.toggle('on', S.set.sp); }; });
+  $$('[data-sp]').forEach(function(b){ b.onclick = function(){ setSpeed(b.dataset.sp); $$('[data-sp]').forEach(function(x){ x.classList.toggle('on', x.dataset.sp === b.dataset.sp); }); }; });
+  $$('[data-pr]').forEach(function(b){ b.onclick = function(){ S.set.sp = !S.set.sp; save(); applySettings(); $$('[data-pr]').forEach(function(x){ x.classList.toggle('on', S.set.sp); }); }; });
 }
-function updateRibbon(){ var r = $('#ribbon'); if (r) r.innerHTML = ribbonHTML(); }
-function ribbonHTML(){ var rk = rankOf(S.xp);
-  return '<div class="stat"><i>⚡</i><div><b>' + ar(S.xp) + '</b><span>نقطة</span></div></div><div class="stat"><i>🔥</i><div><b>' + ar(S.last === today() || S.last === yesterday() ? S.streak : 0) + '</b><span>يوم ورا بعض</span></div></div>' +
-    '<div class="stat"><i>' + rk.e + '</i><div><b class="de" style="font-size:15px">' + rk.de + '</b><span>' + rk.a + '</span></div></div>'; }
+function streakNow(){ return (S.last === today() || S.last === yesterday()) ? S.streak : 0; }
+function updateRibbon(){ var r = $('#ribbon'); if (r){ r.innerHTML = ribbonHTML(); bindRibbon(); } }
+function ribbonHTML(){ var st = station();
+  return '<button class="stat" data-st="xp"><i>⚡</i><b>' + S.xp + '</b><span>نقطة</span></button><button class="stat" data-st="streak"><i>🔥</i><b>' + streakNow() + '</b><span>أيام متتالية</span></button>' +
+    '<button class="stat" data-st="station"><i>' + st.e + '</i><b class="sm">' + st.a + '</b><span>محطتك</span></button>'; }
+function bindRibbon(){ $$('[data-st]').forEach(function(b){ b.onclick = function(){ var k = b.dataset.st; if (k === 'xp') xpInfo(); else if (k === 'streak') streakInfo(); else go('#/journey'); }; }); }
+function xpInfo(){
+  var days = [], mx = 1, names = ['أحد','إثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت'];
+  for (var i = 6; i >= 0; i--){ var d = new Date(Date.now() - i * 864e5), v = S.days[dkey(d)] || 0; mx = Math.max(mx, v); days.push({v:v, n:i === 0 ? 'اليوم' : names[d.getDay()]}); }
+  var bars = '<div class="bars">' + days.map(function(d){ return '<div class="bcol"><span>' + (d.v ? d.v : '') + '</span><i style="height:' + Math.max(4, d.v / mx * 100) + '%"></i><small>' + d.n + '</small></div>'; }).join('') + '</div>';
+  modal('<div class="big">⚡</div><h3>' + S.xp + ' نقطة</h3><p>نقاطك في آخر 7 أيام:</p>' + bars +
+    '<div class="howto"><b>كيف تجمع النقاط؟</b><div>🎧 كل كلمة جديدة تستمع إليها: <b>+2</b></div><div>✅ إكمال درس أو موضوع: <b>+20</b></div><div>🎮 كل إجابة صحيحة في الألعاب: <b>+10</b></div><div>🎯 مهمة اليوم: <b>+50</b></div><div>🎤 نطق كلمة صحيح: <b>+5</b></div></div>');
+}
+function streakInfo(){
+  var d = new Date(), y = d.getFullYear(), mo = d.getMonth(), first = new Date(y, mo, 1), off = first.getDay(), dim = new Date(y, mo + 1, 0).getDate(), cells = '';
+  ['ح','ن','ث','ر','خ','ج','س'].forEach(function(x){ cells += '<span class="h">' + x + '</span>'; });
+  for (var i = 0; i < off; i++) cells += '<span></span>';
+  for (var k = 1; k <= dim; k++){ var on = S.days[y + '-' + (mo + 1) + '-' + k]; cells += '<span class="' + (on ? 'f' : '') + (k === d.getDate() ? ' t' : '') + '">' + (on ? '🔥' : ar(k)) + '</span>'; }
+  var act = Object.keys(S.days).length;
+  modal('<div class="big">🔥</div><h3>' + (streakNow() ? plural(streakNow(), 'يوم واحد متتالٍ', 'يومان متتاليان', 'أيام متتالية', 'يومًا متتاليًا') : 'ابدأ سلسلتك اليوم') + '</h3><p>تعلّم كل يوم ولو 5 دقائق حتى لا تنقطع السلسلة.</p>' +
+    '<div class="cal rtl">' + cells + '</div><p style="margin-top:10px">مجموع أيام التعلّم: <b>' + ar(act) + '</b></p>');
+}
 
 /* ---------------- HOME ---------------- */
 function wordOfDay(){
   var pool = []; SR.modules.forEach(function(m){ (m.items || []).forEach(function(it){ if (it.e && it.de.split(' ').length <= 2 && !/[?!.]/.test(it.de)) pool.push(Object.assign({grp:m.id}, it)); }); });
   return pool[Math.floor(seeded(today())() * pool.length)];
 }
+function nextUnit(){
+  var o = pathOrder(), started = o.find(function(id){ return !S.done[id] && heardCount(id) > 0; });
+  return UMAP[started || o.find(function(id){ return !S.done[id]; }) || o[0]];
+}
 function viewHome(){
-  var w = wordOfDay(), done = !!S.daily[today()];
-  var tp = topics();
-  var html = '<section class="hero" id="hero"><div class="stars"></div><div class="planet p1"></div><div class="planet p2"></div>' +
-   '<div class="txt"><h1><span class="de">Sprachrakete</span>الألماني بالعربي، من أول حرف لحد ما تتكلم</h1><p>دروس بالصوت، وألعاب، ونقط بتطلّعك من الأرض للمجرة.</p></div>' +
+  var w = wordOfDay(), done = !!S.daily[today()], nu = nextUnit(), mc = Object.keys(S.mist).length, si = stationIdx(), st = STATIONS[si], nx = STATIONS[si + 1];
+  var html = '<section class="hero" id="hero"><div class="stars s1"></div><div class="stars s2"></div><div class="planet p1"><i></i></div><div class="planet p2"></div><div class="comet"></div>' +
+   '<div class="txt"><h1><span class="de">Sprachrakete</span>تعلّم الألمانية بالعربية من أول حرف حتى تتكلم</h1><p>دروس بالصوت، وألعاب، ونقاط تأخذك من الأرض إلى المجرة.</p></div>' +
    '<div class="count" id="count" aria-live="polite"></div>' +
-   '<div class="launch"><button class="go" id="launch">🚀 عدّ معايا بالألماني</button>' + ROCKET + '</div></section>' +
+   '<div class="launch"><button class="go" id="launch">🚀 عُدّ معي بالألمانية</button><div class="rkwrap">' + ROCKET + '</div></div></section>' +
    '<div class="wrap"><div class="ribbon" id="ribbon">' + ribbonHTML() + '</div>' +
-   '<div class="sh"><h2>كلمة النهارده</h2></div>' +
-   '<div class="wod"><div class="em">' + (w.e || '⭐') + '</div><div style="flex:1;min-width:0"><div class="w">' + deHTML(w) + '</div><div class="pr arp">' + pron(w.ar) + '</div><div class="m">' + esc(w.mn) + '</div></div><button class="play" id="wodPlay" aria-label="اسمع">' + ICON_PLAY + '</button></div>' +
-   '<a class="mission ' + (done ? 'done' : '') + '" href="#/daily"><span class="em">' + (done ? '✅' : '🎯') + '</span><div><b>' + (done ? 'خلّصت مهمة النهارده!' : 'مهمة النهارده') + '</b><span>' + (done ? 'ارجع بكرة عشان السلسلة 🔥 متقطعش' : '١٠ أسئلة سريعة و٥٠ نقطة زيادة') + '</span></div><span class="arr">‹</span></a>' +
-   (S.test == null ? '<a class="mission" style="background:linear-gradient(115deg,#5B3DF5,#2B1F86)" href="#/test"><span class="em">🧭</span><div><b>مش عارف تبدأ منين؟</b><span>اختبار ١٢ سؤال يقولك مستواك</span></div><span class="arr">‹</span></a>' : '') +
-   '<div class="sh"><h2>كواكب الكلمات</h2><a href="#/learn">كله</a></div><div class="planets">' + tp.slice(0, 6).map(planet).join('') + '</div>' +
-   '<div class="sh"><h2>أدوات سحرية</h2></div><div class="tiles">' + toolsHTML() + '</div>' +
-   '<div class="sh"><h2>العب واكسب نقط</h2><a href="#/play">كل الألعاب</a></div><div class="tiles">' + GAMES.slice(0, 4).map(gameTile).join('') + '</div>' +
-   '<div class="sh"><h2>سلّم المستويات</h2><a href="#/levels">التفاصيل</a></div>' + ladderHTML() +
-   '<div class="sh"><h2>خلّيك قريب</h2></div>' + contactHTML() +
-   '<div class="foot">Sprachrakete · MOHANNAD 🚀<br>النطق العربي للمساعدة فقط، اعتمد على الصوت.</div></div>';
-  render(html, 'home');
+   (nu ? '<a class="cont" href="' + nu.href + '" style="--c:' + nu.color + '"><span class="em">' + nu.e + '</span><div class="tx"><small>' + (heardCount(nu.id) ? 'تابع من حيث توقفت' : 'ابدأ من هنا') + '</small><b>' + esc(nu.title) + '</b><div class="prog"><i style="width:' + unitPct(nu.id) + '%"></i></div></div><span class="arr">‹</span></a>' : '') +
+   '<a class="mission ' + (done ? 'done' : '') + '" href="#/daily"><span class="em">' + (done ? '✅' : '🎯') + '</span><div><b>' + (done ? 'أنهيت مهمة اليوم!' : 'مهمة اليوم') + '</b><span>' + (done ? 'عُد غدًا حتى لا تنقطع السلسلة 🔥' : '10 أسئلة سريعة و50 نقطة إضافية') + '</span></div><span class="arr">‹</span></a>' +
+   (mc ? '<a class="mission mist" href="#/mistakes"><span class="em">🩹</span><div><b>كرّاسة أخطائي</b><span>' + plural(mc, 'كلمة واحدة تحتاج مراجعة', 'كلمتان تحتاجان مراجعة', 'كلمات تحتاج مراجعة', 'كلمة تحتاج مراجعة') + '</span></div><span class="arr">‹</span></a>' : '') +
+   (S.test == null ? '<a class="mission test" href="#/test"><span class="em">🧭</span><div><b>لا تعرف من أين تبدأ؟</b><span>اختبار من 12 سؤالًا يحدد مستواك</span></div><span class="arr">‹</span></a>' : '') +
+   '<a class="jmini" href="#/journey"><div class="jm-l"><span>' + st.e + '</span><b>رحلتك الفضائية</b><small>' + (nx ? 'أنت في ' + st.a + ' · المحطة التالية ' + nx.e + ' ' + nx.a : 'وصلت إلى المجرة! 🎉') + '</small></div><div class="prog"><i style="width:' + Math.round(doneCount() / Math.max(1, UNITS.length) * 100) + '%"></i></div></a>' +
+   '<div class="sh"><h2>كلمة اليوم</h2></div>' +
+   '<div class="wod"><div class="em">' + (w.e || '⭐') + '</div><div style="flex:1;min-width:0"><div class="w">' + deHTML(w) + '</div><div class="pr arp">' + pron(w.ar) + '</div><div class="m">' + esc(w.mn) + '</div></div><button class="play" id="wodPlay" aria-label="استمع">' + ICON_PLAY + '</button></div>' +
+   '<div class="sh"><h2>تعلّم</h2><a href="#/learn">كل الدروس</a></div><div class="tiles big">' +
+     bigTile('#/learn#a1', '📘', '#5B3DF5', 'دروس A1', plural(SR.a1.length, 'درس واحد', 'درسان', 'دروس', 'درسًا') + ' بالترتيب') + bigTile('#/learn#planets', '🪐', '#19C79A', 'كواكب الكلمات', plural(topics().length, 'موضوع واحد', 'موضوعان', 'مواضيع', 'موضوعًا') + ' بالصوت') +
+     bigTile('#/stories', '📖', '#FF3D7F', 'قصص قصيرة', 'استمع واقرأ وأجب') + bigTile('#/letters', '✉️', '#3A86FF', 'رسائل جاهزة', 'نماذج للكتابة') + '</div>' +
+   '<div class="sh"><h2>تدرّب</h2><a href="#/play">كل الألعاب</a></div><div class="tiles big">' +
+     bigTile('#/play', '🎮', '#FF6B2C', 'الألعاب', '9 ألعاب ممتعة') + bigTile('#/exam', '📝', '#8338EC', 'تدريب على امتحان A1', 'استماع، قراءة، كتابة، محادثة') +
+     bigTile('#/speak/greet', '🎤', '#06A77D', 'اختبر نطقك', 'تكلّم والموقع يصحح لك') + bigTile('#/mistakes', '🩹', '#E63946', 'كرّاسة أخطائي', mc ? plural(mc, 'كلمة واحدة', 'كلمتان', 'كلمات', 'كلمة') + ' للمراجعة' : 'أخطاؤك تُحفظ هنا') + '</div>' +
+   '<div class="sh"><h2>أدوات ذكية</h2></div><div class="tiles">' + toolsHTML() + '</div>' +
+   '<div class="sh"><h2>تواصل معي</h2></div>' + contactHTML(true) +
+   footer() + '</div>';
+  render(html, 'home'); bindRibbon();
   $('#wodPlay').onclick = function(){ play(w); };
   $('#launch').onclick = countdown;
   bindInstall();
 }
+function footer(){ return '<div class="foot">Sprachrakete · MOHANNAD 🚀<br>النطق بالحروف العربية للمساعدة فقط، والأفضل الاعتماد على الصوت.</div>'; }
+function bigTile(h, e, c, t, d){ return '<a class="tile" href="' + h + '" style="--c:' + c + '"><span class="em">' + e + '</span><b>' + t + '</b><span>' + d + '</span></a>'; }
 function planet(t){
-  var its = itemsOf(t.id).length, seen = S.seen[t.id];
-  return '<a class="pl" href="#/t/' + t.id + '" style="--c:' + t.color + '">' + (seen ? '<span class="done">✅</span>' : '') + '<div class="orb">' + t.e + '</div><b>' + esc(t.title) + '</b><div class="g">' + esc(t.de) + '</div>' +
-    '<div class="m" style="font-size:12px;color:var(--mute);margin:2px 0 8px">' + ar(its) + ' كلمة وجملة</div><div class="bar"><i style="width:' + (seen ? 100 : 0) + '%"></i></div></a>';
+  var uid = 't:' + t.id, its = itemsOf(t.id).length, pct = unitPct(uid), dn = S.done[uid];
+  return '<a class="pl" href="#/t/' + t.id + '" style="--c:' + t.color + '">' + (dn ? '<span class="done">✅</span>' : '') + '<div class="orb">' + t.e + '</div><b>' + esc(t.title) + '</b><div class="g">' + esc(t.de) + '</div>' +
+    '<div class="m">' + ar(its) + ' كلمة وجملة</div><div class="bar"><i style="width:' + pct + '%"></i></div></a>';
 }
-var TOOLS = [{h:'#/tool/numbers',e:'🔢',c:'#FF6B2C',t:'مصنع الأرقام',d:'اكتب أي رقم واسمعه'},{h:'#/tool/clock',e:'🕐',c:'#5B3DF5',t:'الساعة الناطقة',d:'حرّك العقارب واسمع الوقت'},
-  {h:'#/tool/calendar',e:'🗓️',c:'#19C79A',t:'التقويم الحي',d:'النهارده بالألماني'},{h:'#/tool/intro',e:'🙋',c:'#FF3D7F',t:'قدّم نفسك',d:'اكتب بياناتك وخد تعريفك'}];
-function toolsHTML(){ return TOOLS.map(function(t){ return '<a class="tile" href="' + t.h + '" style="--c:' + t.c + '"><span class="em">' + t.e + '</span><b>' + t.t + '</b><span>' + t.d + '</span></a>'; }).join(''); }
+var TOOLS = [{h:'#/tool/numbers',e:'🔢',c:'#FF6B2C',t:'مصنع الأرقام',d:'اكتب أي رقم واستمع إليه'},{h:'#/tool/clock',e:'🕐',c:'#5B3DF5',t:'الساعة الناطقة',d:'حرّك العقارب واستمع للوقت'},
+  {h:'#/tool/calendar',e:'🗓️',c:'#19C79A',t:'التقويم الحي',d:'تاريخ اليوم بالألمانية'},{h:'#/tool/intro',e:'🙋',c:'#FF3D7F',t:'قدّم نفسك',d:'اكتب بياناتك واحصل على تعريفك'}];
+function toolsHTML(){ return TOOLS.map(function(t){ return bigTile(t.h, t.e, t.c, t.t, t.d); }).join(''); }
 function ladderHTML(){
   return '<div class="ladder">' + SR.levels.map(function(l, i){ var open = l[3] === 'open';
     return '<a class="rung ' + (open ? 'open' : '') + (i === 0 ? ' here' : '') + '" href="#/levels"><span class="lv de">' + l[0] + '</span><div><b>' + esc(l[1]) + '</b><span>' + esc(l[2]) + '</span></div><em>' + (open ? (i === 0 ? '📍 ابدأ هنا' : 'متاح') : 'قريبًا') + '</em></a>'; }).join('') + '</div>';
 }
-function contactHTML(){
-  return '<div class="contact"><a class="cbtn yt" href="https://www.youtube.com/@u0_0z?sub_confirmation=1" target="_blank" rel="noopener"><i>▶</i><div>اشترك في القناة<small>@u0_0z</small></div></a>' +
-    '<a class="cbtn wa" href="https://wa.me/201080845228?text=' + encodeURIComponent('أهلًا! جيت من موقع Sprachrakete 🚀') + '" target="_blank" rel="noopener"><i>💬</i><div>كلّمني واتساب<small>+201080845228</small></div></a></div>' +
-    '<div class="panel" id="installCard" style="margin-top:12px;display:flex;align-items:center;gap:12px"><span style="font-size:34px">📲</span><div style="flex:1"><b>حط Sprachrakete على شاشتك</b><div style="font-size:13px;color:var(--mute)">يفتح زي التطبيق من غير ما تدوّر عليه</div></div><button class="btn" id="installBtn">تثبيت</button></div>';
+function contactHTML(withInstall){
+  return '<div class="contact"><a class="cbtn wa" href="https://wa.me/201080845228?text=' + encodeURIComponent('مرحبًا! وصلت إليك من موقع Sprachrakete 🚀') + '" target="_blank" rel="noopener"><i>💬</i><div>راسلني على واتساب<small>+201080845228</small></div></a>' +
+    '<a class="cbtn yt" href="https://www.youtube.com/@u0_0z?sub_confirmation=1" target="_blank" rel="noopener"><i>▶</i><div>اشترك في القناة<small>@u0_0z</small></div></a></div>' +
+    (withInstall ? '<div class="panel install" id="installCard"><span class="em">📲</span><div style="flex:1"><b>ثبّت Sprachrakete على شاشتك</b><div class="sub">يفتح مثل التطبيق بضغطة واحدة</div></div><button class="btn" id="installBtn">تثبيت</button></div>' : '');
 }
 var running = false;
 function countdown(){
   if (running) return; running = true;
   var hero = $('#hero'), c = $('#count'), btn = $('#launch');
   var words = [['10','Zehn'],['9','Neun'],['8','Acht'],['7','Sieben'],['6','Sechs'],['5','Fünf'],['4','Vier'],['3','Drei'],['2','Zwei'],['1','Eins']];
-  btn.disabled = true; btn.textContent = '🔊 اسمع وعدّ معايا'; loadAudio('num'); hero.classList.add('firing');
+  btn.disabled = true; btn.textContent = '🔊 استمع وعُدّ معي'; useAudio('num'); hero.classList.add('firing');
   var i = 0, my = token;
   (function next(){
     if (my !== token){ running = false; return; }
-    if (i < words.length){ var w = words[i++]; c.innerHTML = '<div>' + w[0] + '<small>' + w[1] + '</small></div>'; speak(w[1], function(){ setTimeout(next, 120); }); return; }
-    c.innerHTML = '<div style="font-size:64px">Start!<small>يلا بينا 🚀</small></div>'; speak('Start!');
+    if (i < words.length){ var w = words[i++]; c.innerHTML = '<div class="n">' + w[0] + '</div><div class="w de">' + w[1] + '</div>'; c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop'); speak(w[1], function(){ setTimeout(next, 120); }); return; }
+    c.innerHTML = '<div class="n de sm">Start!</div><div class="w">انطلق 🚀</div>'; speak('Start!');
     hero.classList.add('lift');
-    setTimeout(function(){ c.innerHTML = '<div style="font-size:46px">Los geht\'s!<small>دلوقتي إنت عرفت تعدّ من ١٠ لـ١ 👏</small></div>'; btn.disabled = false; btn.textContent = '🔁 تاني'; running = false;
-      if (!S.seen.countdown){ S.seen.countdown = 1; addXP(10); toast('+١٠ نقط ⚡'); }
-      hero.classList.remove('lift','firing'); }, 1600);
+    setTimeout(function(){
+      if (my !== token){ running = false; return; }
+      c.innerHTML = '<div class="n de sm">Los geht\'s!</div><div class="w">أحسنت! الآن تعرف العدّ من 10 إلى 1 👏</div>';
+      setTimeout(function(){ if (!$('#hero')) { running = false; return; } hero.classList.remove('lift','firing'); c.innerHTML = ''; btn.disabled = false; btn.textContent = '🔁 مرة أخرى'; running = false; }, 2600);
+      if (!S.tools.countdown){ S.tools.countdown = 1; addXP(10); toast('+10 نقاط ⚡'); }
+    }, 1500);
   })();
 }
 
 /* ---------------- LEARN ---------------- */
-function viewLearn(){
-  var html = '<div class="wrap"><div class="ph" style="--c:#5B3DF5"><span class="em">📚</span><h1>اتعلّم</h1><div class="g">Lernen</div><p>اختار كوكب وابدأ. كل كلمة بصوتها ونطقها ومعناها.</p></div>' +
-    '<div class="sh"><h2>كواكب الكلمات</h2></div><div class="planets">' + topics().map(planet).join('') + '</div>' +
-    '<div class="sh"><h2>دروس A1</h2><a href="#/levels">إيه هو A1؟</a></div><div class="list">' + SR.a1.map(lessonRow).join('') + '</div>' +
+function viewLearn(anchor){
+  var a1d = SR.a1.filter(function(l){ return S.done['l:' + l.id]; }).length;
+  var html = '<div class="wrap"><div class="ph" style="--c:#5B3DF5"><span class="em">📚</span><h1>الدروس</h1><div class="g">Lernen</div><p>كل كلمة بصوتها ومعناها. أكمل الدروس لتتقدم في رحلتك.</p></div>' +
+    '<div class="sh" id="a1"><h2>دروس A1</h2><span class="cnt">' + a1d + ' من ' + SR.a1.length + '</span></div><div class="list">' + SR.a1.map(lessonRow).join('') + '</div>' +
+    '<div class="sh" id="planets"><h2>كواكب الكلمات</h2></div><div class="planets">' + topics().map(planet).join('') + '</div>' +
+    '<div class="sh"><h2>اقرأ واكتب</h2></div><div class="tiles big">' + bigTile('#/stories', '📖', '#FF3D7F', 'قصص قصيرة', plural((SX.stories || []).length, 'قصة واحدة', 'قصتان', 'قصص', 'قصة') + ' بالصوت') + bigTile('#/letters', '✉️', '#3A86FF', 'رسائل جاهزة', plural((SX.letters || []).length, 'نموذج واحد', 'نموذجان', 'نماذج', 'نموذجًا') + ' للكتابة') + '</div>' +
     '<div class="sh"><h2>دروس A2</h2></div><div class="list">' + SR.a2.map(lessonRow).join('') + '</div>' +
-    '<div class="sh"><h2>أدوات سحرية</h2></div><div class="tiles">' + toolsHTML() + '</div><div class="foot">النطق العربي للمساعدة فقط، اعتمد على الصوت.</div></div>';
+    '<div class="sh"><h2>أدوات ذكية</h2></div><div class="tiles">' + toolsHTML() + '</div>' +
+    '<div class="sh"><h2>سلّم المستويات</h2><a href="#/levels">التفاصيل</a></div>' + ladderHTML() + footer() + '</div>';
   render(html, 'learn');
+  if (anchor){ var el = document.getElementById(anchor); if (el) setTimeout(function(){ el.scrollIntoView({block:'start'}); scrollBy(0, -70); }, 30); }
 }
 function lessonRow(l){
-  var n = l.num ? ar(l.num) : (l.e || '');
-  return '<a class="it" href="#/l/' + l.id + '" style="--c:' + l.color + ';text-decoration:none"><span class="em" style="font-family:Outfit;font-weight:700;color:' + l.color + '">' + n + '</span><div class="tx"><b style="font-size:16px">' + esc(l.title) + '</b><div class="cj">' + esc(l.de) + '</div></div><span>' + (S.seen[l.id] ? '✅' : '‹') + '</span></a>';
+  var uid = 'l:' + l.id, n = l.num ? ar(l.num) : (l.e || ''), pct = unitPct(uid);
+  return '<a class="it lesson" href="#/l/' + l.id + '" style="--c:' + l.color + '"><span class="em num">' + n + '</span><div class="tx"><b>' + esc(l.title) + '</b><div class="cj">' + esc(l.de) + '</div><div class="prog thin"><i style="width:' + pct + '%"></i></div></div><span class="st">' + (S.done[uid] ? '✅' : pct ? ar(pct) + '٪' : '‹') + '</span></a>';
 }
 function itemRow(it, i, c){
   return '<button class="it" data-i="' + i + '" style="--c:' + (c || 'var(--violet)') + '">' + (it.c ? '<span class="sw" style="background:' + it.c + '"></span>' : '<span class="em">' + (it.e || '🔹') + '</span>') +
-    '<span class="tx"><span class="d" style="display:block">' + deHTML(it) + '</span><span class="pr arp" style="display:block">' + pron(it.ar) + '</span><span class="m">' + esc(it.mn) + '</span>' +
-    (it.conj ? '<span class="cj" style="display:block">' + esc(it.conj) + '</span>' : '') + '</span><span class="play sm" aria-hidden="true">' + ICON_PLAY + '</span></button>';
+    '<span class="tx"><span class="d">' + deHTML(it) + '</span><span class="pr arp">' + pron(it.ar || '') + '</span><span class="m">' + esc(it.mn) + '</span>' +
+    (it.conj ? '<span class="cj">' + esc(it.conj) + '</span>' : '') + '</span><span class="play sm" aria-hidden="true">' + ICON_PLAY + '</span>' + (it.u != null && S.heard[it.u] && S.heard[it.u][it.k] ? '<span class="hd">✓</span>' : '') + '</button>';
 }
-function bindItems(list, c){
-  $$('.it[data-i]').forEach(function(el){ el.onclick = function(){ var it = list[+el.dataset.i]; play(it, el); }; });
+function bindItems(list){
+  $$('.it[data-i]').forEach(function(el){ el.onclick = function(){ var it = list[+el.dataset.i]; play(it, el); if (it.u != null && !el.querySelector('.hd')) el.insertAdjacentHTML('beforeend', '<span class="hd">✓</span>'); }; });
   var pa = $('#playAll'); if (pa) pa.onclick = function(){ playAllList(list); };
 }
 function playAllList(list){
   stopAudio(); var my = token, i = 0, els = $$('.it[data-i]');
   (function next(){ if (my !== token || i >= els.length) return; var el = els[i], it = list[+el.dataset.i]; i++; el.scrollIntoView({block:'center', behavior:'smooth'});
+    if (it.u != null && !el.querySelector('.hd')) el.insertAdjacentHTML('beforeend', '<span class="hd">✓</span>');
     play(it, el, function(){ if (my === token) setTimeout(next, S.set.speed === 'slow' ? 900 : 600); }); token = my; })();
 }
-function markSeen(id, xp){ if (!S.seen[id]){ S.seen[id] = 1; save(); addXP(xp || 10); } else checkBadges(); }
-
+function practiceTiles(tid, withSpeak){
+  return '<div class="sh"><h2>جرّب نفسك</h2></div><div class="tiles">' + GAMES.slice(0, 4).map(function(g){ return gameTile(g, tid); }).join('') + '</div>' +
+    (withSpeak ? '<a class="mission speak" href="#/speak/' + tid + '"><span class="em">🎤</span><div><b>اختبر نطقك</b><span>انطق الكلمات والموقع يخبرك هل نطقك صحيح</span></div><span class="arr">‹</span></a>' : '');
+}
 function viewTopic(id){
   if (id === 'abc') return viewABC(); if (id === 'num') return viewNumbers();
   var m = modById(id); if (!m) return go('#/learn');
-  loadAudio(m.id);
-  var html = '<div class="wrap"><div class="ph" style="--c:' + m.color + '"><a class="back" href="#/learn">→ اتعلّم</a><span class="em">' + m.e + '</span><h1>' + esc(m.title) + '</h1><div class="g">' + esc(m.de) + '</div><p>' + esc(m.desc) + '</p></div>' +
-    ctlBar(m.items ? '<button class="chip go2" id="playAll">▶ شغّل الكل</button>' : '');
+  var uid = 't:' + id; useAudio(m.id);
+  var html = '<div class="wrap"><div class="ph" style="--c:' + m.color + '"><a class="back" href="#/learn">→ الدروس</a><span class="em">' + m.e + '</span><h1>' + esc(m.title) + '</h1><div class="g">' + esc(m.de) + '</div><p>' + esc(m.desc) + '</p></div>' +
+    unitBar(uid) + ctlBar(m.items ? '<button class="chip go2" id="playAll">▶ تشغيل الكل</button>' : '');
   var list = [];
   if (m.dialogs){
     m.dialogs.forEach(function(d){ html += '<div class="dlg" style="--c:' + m.color + '"><h3>' + d.e + ' ' + esc(d.t) + '</h3>';
-      d.lines.forEach(function(l){ var k = list.length; list.push({de:l.de, ar:l.ar, mn:l.mn, grp:m.id});
+      d.lines.forEach(function(l){ var k = list.length; list.push({de:l.de, ar:l.ar, mn:l.mn, grp:m.id, u:uid, k:k});
         html += '<button class="bub ' + (l.s === 'A' ? 'a' : 'b') + '" data-b="' + k + '"><div class="who">' + esc(d.who[l.s === 'A' ? 0 : 1]) + '</div><div class="d">' + esc(l.de) + '</div><div class="pr arp">' + pron(l.ar) + '</div><div class="m">' + esc(l.mn) + '</div></button>'; });
-      html += '<button class="chip" data-dlg="' + (list.length - d.lines.length) + '-' + list.length + '">▶ شغّل الحوار</button></div>'; });
+      html += '<button class="chip" data-dlg="' + (list.length - d.lines.length) + '-' + list.length + '">▶ تشغيل الحوار</button></div>'; });
   } else {
-    list = m.items.map(function(it){ return Object.assign({grp:m.id}, it); });
+    list = m.items.map(function(it, k){ return Object.assign({grp:m.id, u:uid, k:k}, it); });
+    if (list.some(function(x){ return x.g; })) html += artLegend();
     html += '<div class="list">' + list.map(function(it, i){ return itemRow(it, i, m.color); }).join('') + '</div>';
   }
-  html += '<div class="sh"><h2>جرّب نفسك</h2></div><div class="tiles">' + GAMES.slice(0, 4).map(function(g){ return gameTile(g, m.id); }).join('') + '</div><div class="foot">النطق العربي للمساعدة فقط، اعتمد على الصوت.</div></div>';
-  render(html, 'learn'); bindCtl(); bindItems(list, m.color);
+  html += practiceTiles(m.id, !m.dialogs) + footer() + '</div>';
+  render(html, 'learn'); bindCtl(); bindItems(list);
   $$('[data-b]').forEach(function(b){ b.onclick = function(){ play(list[+b.dataset.b], b); }; });
   $$('[data-dlg]').forEach(function(b){ b.onclick = function(){ var r = b.dataset.dlg.split('-'), a = +r[0], z = +r[1]; stopAudio(); var my = token, i = a;
     (function next(){ if (my !== token || i >= z) return; var el = $('[data-b="' + i + '"]'); var it = list[i]; i++; el.scrollIntoView({block:'center', behavior:'smooth'}); play(it, el, function(){ if (my === token) setTimeout(next, 700); }); token = my; })(); }; });
-  markSeen(m.id);
 }
 function viewABC(){
-  loadAudio('abc');
-  var html = '<div class="wrap"><div class="ph" style="--c:#5B3DF5"><a class="back" href="#/learn">→ اتعلّم</a><span class="em">🔤</span><h1>الحروف</h1><div class="g">Das Alphabet</div><p>دوس على الحرف: هتسمع اسمه وبعدين كلمة بيه.</p></div>' + ctlBar() +
-    '<div class="abc">' + SR.letters.map(function(l, i){ return '<button class="lt" data-l="' + i + '"><div class="L">' + esc(l.L) + '</div><div class="nm">اسمه: <span class="pr">' + pron(l.lp) + '</span></div><span class="em">' + l.e + '</span><div class="w"><span class="art ' + l.g + '">' + ART[l.g] + '</span> ' + esc(l.de) + '</div><div class="nm">' + esc(l.mn) + '</div></button>'; }).join('') + '</div>' +
-    '<div class="sh"><h2>العب بالحروف</h2></div><div class="tiles">' + GAMES.slice(0, 4).map(function(g){ return gameTile(g, 'abc'); }).join('') + '</div></div>';
+  useAudio('abc'); var uid = 't:abc';
+  var html = '<div class="wrap"><div class="ph" style="--c:#5B3DF5"><a class="back" href="#/learn">→ الدروس</a><span class="em">🔤</span><h1>الحروف</h1><div class="g">Das Alphabet</div><p>اضغط على الحرف لتسمع نطقه، واضغط على الكلمة لتسمعها.</p></div>' + unitBar(uid) + ctlBar() + artLegend() +
+    '<div class="abc">' + SR.letters.map(function(l, i){ var hd = S.heard[uid] && S.heard[uid][i]; return '<button class="lt" data-l="' + i + '">' + (hd ? '<span class="hd">✓</span>' : '') + '<div class="L">' + esc(l.L) + '</div><div class="nm arpw">اسمه: <span class="pr">' + pron(l.lp) + '</span></div><span class="em">' + l.e + '</span><div class="w"><span class="art ' + l.g + '">' + ART[l.g] + '</span> ' + esc(l.de) + '</div><div class="nm">' + esc(l.mn) + '</div></button>'; }).join('') + '</div>' +
+    '<div class="sh"><h2>العب بالحروف</h2></div><div class="tiles">' + GAMES.slice(0, 4).map(function(g){ return gameTile(g, 'abc'); }).join('') + '</div>' + footer() + '</div>';
   render(html, 'learn'); bindCtl();
-  $$('[data-l]').forEach(function(b){ b.onclick = function(){ var l = SR.letters[+b.dataset.l]; $$('.lt.on').forEach(function(x){ x.classList.remove('on'); }); b.classList.add('on');
-    speak(l.ls, function(){ setTimeout(function(){ speak(ART[l.g] + ' ' + l.de, function(){ b.classList.remove('on'); }); }, 250); }); }; });
-  markSeen('abc');
+  $$('[data-l]').forEach(function(b){ b.onclick = function(ev){ var i = +b.dataset.l, l = SR.letters[i]; $$('.lt.on').forEach(function(x){ x.classList.remove('on'); }); b.classList.add('on');
+    var word = ev && ev.target && ev.target.closest && ev.target.closest('.w');
+    markHeard(uid, i); if (!b.querySelector('.hd')) b.insertAdjacentHTML('afterbegin', '<span class="hd">✓</span>');
+    speak(word ? ART[l.g] + ' ' + l.de : l.ls, function(){ b.classList.remove('on'); }); }; });
 }
 function viewNumbers(){
-  loadAudio('num');
-  var list = itemsOf('num');
-  var html = '<div class="wrap"><div class="ph" style="--c:#FF6B2C"><a class="back" href="#/learn">→ اتعلّم</a><span class="em">🔢</span><h1>الأرقام</h1><div class="g">Die Zahlen</div><p>احفظ دول، والباقي هيركب لوحده. وجرّب مصنع الأرقام تحت.</p></div>' +
-    ctlBar('<button class="chip go2" id="playAll">▶ شغّل الكل</button>') +
-    '<a class="mission" href="#/tool/numbers" style="background:linear-gradient(115deg,#FF6B2C,#FFC53D);color:#1A1446;margin:0 0 12px"><span class="em">🏭</span><div><b>مصنع الأرقام</b><span>اكتب أي رقم من ٠ لمليون واسمعه</span></div><span class="arr">‹</span></a>' +
-    '<div class="tip memo"><b class="k">🧠 السر</b>من ٢١ لـ٩٩ الألمان بيقولوا الآحاد الأول: <span class="de">einundzwanzig</span> = واحد و<b>عشرين</b>، زي ما بنقول بالعربي بالظبط!</div>' +
-    '<div class="list">' + SR.nums.map(function(n, i){ return '<button class="it" data-i="' + i + '" style="--c:#FF6B2C"><span class="em" style="font-family:Outfit;font-weight:700;font-size:24px;color:#FF6B2C">' + n.big + '</span><span class="tx"><span class="d" style="display:block">' + esc(n.de) + '</span><span class="pr arp" style="display:block">' + pron(n.ar) + '</span><span class="m">' + esc(n.mn) + '</span></span><span class="play sm">' + ICON_PLAY + '</span></button>'; }).join('') + '</div></div>';
+  useAudio('num'); var uid = 't:num';
+  var list = itemsOf('num').map(function(it, k){ return Object.assign({u:uid, k:k}, it); });
+  var html = '<div class="wrap"><div class="ph" style="--c:#FF6B2C"><a class="back" href="#/learn">→ الدروس</a><span class="em">🔢</span><h1>الأرقام</h1><div class="g">Die Zahlen</div><p>احفظ هذه الأرقام، والباقي يُركَّب منها. جرّب مصنع الأرقام بالأسفل.</p></div>' + unitBar(uid) +
+    ctlBar('<button class="chip go2" id="playAll">▶ تشغيل الكل</button>') +
+    '<a class="mission" href="#/tool/numbers" style="background:linear-gradient(115deg,#FF6B2C,#FFC53D);color:#1A1446;margin:0 0 12px"><span class="em">🏭</span><div><b>مصنع الأرقام</b><span>اكتب أي رقم من 0 إلى مليون واستمع إليه</span></div><span class="arr">‹</span></a>' +
+    '<div class="tip memo"><b class="k">🧠 السر</b>من 21 إلى 99 يقول الألمان الآحاد أولًا: <span class="de">einundzwanzig</span> = واحد و<b>عشرون</b>، تمامًا كما نقول بالعربية!</div>' +
+    '<div class="list">' + SR.nums.map(function(n, i){ var hd = S.heard[uid] && S.heard[uid][i]; return '<button class="it" data-i="' + i + '" style="--c:#FF6B2C"><span class="em num" style="color:#FF6B2C">' + n.big + '</span><span class="tx"><span class="d">' + esc(n.de) + '</span><span class="pr arp">' + pron(n.ar) + '</span><span class="m">' + esc(n.mn) + '</span></span><span class="play sm">' + ICON_PLAY + '</span>' + (hd ? '<span class="hd">✓</span>' : '') + '</button>'; }).join('') + '</div>' +
+    practiceTiles('num', false) + footer() + '</div>';
   render(html, 'learn'); bindCtl(); bindItems(list);
-  markSeen('num');
 }
 function viewLesson(id){
   var l = SR.a1.concat(SR.a2).find(function(x){ return x.id === id; }); if (!l) return go('#/learn');
-  var grp = id.indexOf('a1') === 0 ? 'a1' : 'a2'; loadAudio(grp);
-  var list = l.items.map(function(it){ return Object.assign({grp:grp}, it); });
-  var TK = {tip:'💡 معلومة', trap:'⚠️ فخ', memo:'🧠 احفظها كده'};
-  var html = '<div class="wrap"><div class="ph" style="--c:' + l.color + '"><a class="back" href="#/learn">→ اتعلّم</a><span class="em">' + (l.e || '📘') + '</span><h1>' + esc(l.title) + '</h1><div class="g">' + esc(l.de) + '</div>' + (l.mission ? '<p>🎯 ' + esc(l.mission) + '</p>' : '') + '</div>' +
-    l.rules.map(function(r){ return '<div class="rule">' + rich(r) + '</div>'; }).join('') +
+  var uid = 'l:' + id, grp = id.indexOf('a1') === 0 ? 'a1' : 'a2'; useAudio(grp);
+  var list = l.items.map(function(it, k){ return Object.assign({grp:grp, u:uid, k:k}, it); });
+  var TK = {tip:'💡 معلومة', trap:'⚠️ انتبه', memo:'🧠 احفظها هكذا'};
+  var html = '<div class="wrap"><div class="ph" style="--c:' + l.color + '"><a class="back" href="#/learn">→ الدروس</a><span class="em">' + (l.e || '📘') + '</span><h1>' + esc(l.title) + '</h1><div class="g">' + esc(l.de) + '</div>' + (l.mission ? '<p>🎯 ' + esc(l.mission) + '</p>' : '') + '</div>' +
+    unitBar(uid) + l.rules.map(function(r){ return '<div class="rule">' + rich(r) + '</div>'; }).join('') +
     (l.tips || []).map(function(t){ return '<div class="tip ' + t.k + '"><b class="k">' + TK[t.k] + '</b>' + rich(t.t) + '</div>'; }).join('') +
-    ctlBar('<button class="chip go2" id="playAll">▶ شغّل الكل</button>') + '<div class="list">';
+    ctlBar('<button class="chip go2" id="playAll">▶ تشغيل الكل</button>') + '<div class="list">';
   var last = null;
-  list.forEach(function(it, i){ if (it.grp2 !== undefined) {} if (it.grpTitle) {} if (l.items[i].grp && l.items[i].grp !== last){ last = l.items[i].grp; html += '<div class="gh" style="--c:' + l.color + '">' + esc(last) + '</div>'; } html += itemRow(it, i, l.color); });
+  list.forEach(function(it, i){ if (l.items[i].grp && l.items[i].grp !== last){ last = l.items[i].grp; html += '<div class="gh" style="--c:' + l.color + '">' + esc(last) + '</div>'; } html += itemRow(it, i, l.color); });
   var all = SR.a1.concat(SR.a2), k = all.indexOf(l), nx = all[k + 1];
-  html += '</div>' + (nx ? '<a class="mission" href="#/l/' + nx.id + '" style="background:linear-gradient(115deg,' + nx.color + ',#14103A)"><span class="em">⏭️</span><div><b>الدرس اللي بعده</b><span>' + esc(nx.title) + '</span></div><span class="arr">‹</span></a>' : '') +
-    '<div class="foot">النطق العربي للمساعدة فقط، اعتمد على الصوت.</div></div>';
+  html += '</div><a class="mission speak" href="#/speak/' + grp + '"><span class="em">🎤</span><div><b>اختبر نطقك</b><span>انطق كلمات الدروس والموقع يصحح لك</span></div><span class="arr">‹</span></a>' +
+    (nx ? '<a class="mission" href="#/l/' + nx.id + '" style="background:linear-gradient(115deg,' + nx.color + ',#14103A)"><span class="em">⏭️</span><div><b>الدرس التالي</b><span>' + esc(nx.title) + '</span></div><span class="arr">‹</span></a>' : '') + footer() + '</div>';
   render(html, 'learn'); bindCtl(); bindItems(list);
-  markSeen(l.id, 15);
 }
 function viewLevels(){
-  var html = '<div class="wrap"><div class="ph" style="--c:#2B1F86"><span class="em">🧗</span><h1>سلّم المستويات</h1><div class="g">A1 → C2</div><p>المستويات دي معيار أوروبي (CEFR) بيستخدموه في الامتحانات والشغل.</p></div>' + ladderHTML() +
+  var html = '<div class="wrap"><div class="ph" style="--c:#2B1F86"><a class="back" href="#/learn">→ الدروس</a><span class="em">🧗</span><h1>سلّم المستويات</h1><div class="g">A1 → C2</div><p>هذه المستويات معيار أوروبي (CEFR) يُستخدم في الامتحانات والعمل.</p></div>' + ladderHTML() +
     '<div class="sh"><h2>A1 · مبتدئ</h2></div><div class="list">' + SR.a1.map(lessonRow).join('') + '</div>' +
     '<div class="sh"><h2>A2 · أساسي</h2></div><div class="list">' + SR.a2.map(lessonRow).join('') + '</div>' +
-    '<div class="panel center" style="margin-top:16px"><div style="font-size:44px">🛸</div><b>B1 وما فوق جايين قريب</b><p style="color:var(--mute);font-size:14px;margin:6px 0 12px">اشترك في القناة عشان يوصلك أول ما ينزلوا.</p>' + contactHTML().split('<div class="panel" id="installCard"')[0] + '</div></div>';
-  render(html, 'learn'); bindInstall();
+    '<div class="panel center" style="margin-top:16px"><div style="font-size:44px">🛸</div><b>مستوى B1 وما بعده قريبًا</b><p style="color:var(--mute);font-size:14px;margin:6px 0 12px">اشترك في القناة ليصلك كل جديد.</p>' + contactHTML(false) + '</div>' + footer() + '</div>';
+  render(html, 'learn');
 }
 
 /* ---------------- TOOLS ---------------- */
 function viewNumTool(){
-  loadAudio('num');
-  var html = '<div class="wrap"><div class="ph" style="--c:#FF6B2C"><a class="back" href="#/learn">→ اتعلّم</a><span class="em">🏭</span><h1>مصنع الأرقام</h1><div class="g">Zahlen-Fabrik</div><p>اكتب أي رقم من ٠ لـ ١٠٠٠٠٠٠ وشوف إزاي بيتركّب.</p></div>' + ctlBar() +
+  useAudio('num');
+  var html = '<div class="wrap"><div class="ph" style="--c:#FF6B2C"><a class="back" href="#/learn">→ الدروس</a><span class="em">🏭</span><h1>مصنع الأرقام</h1><div class="g">Zahlen-Fabrik</div><p>اكتب أي رقم من 0 إلى 1000000 وشاهد كيف يُركَّب.</p></div>' + ctlBar() +
     '<div class="panel"><input class="inp de" id="nIn" inputmode="numeric" placeholder="مثلًا 2026" value="21" aria-label="الرقم"><div class="bigout" id="nOut"></div><div class="pr arp center" id="nAr" style="font-size:18px"></div>' +
-    '<div class="row" style="justify-content:center;margin-top:12px"><button class="btn" id="nPlay">🔊 اسمع</button><button class="btn alt" id="nRand">🎲 رقم عشوائي</button></div></div>' +
-    '<div class="panel"><b>🎧 تحدّي: اسمع واكتب الرقم</b><p style="color:var(--mute);font-size:14px;margin:4px 0 10px">هتسمع رقم بالألماني، اكتبه بالأرقام.</p><div class="row"><button class="btn flame" id="qPlay">▶ اسمع الرقم</button><input class="inp de" id="qIn" inputmode="numeric" style="flex:1;min-width:120px" aria-label="إجابتك"><button class="btn" id="qChk">صح؟</button></div><div id="qRes" class="center" style="margin-top:8px;font-weight:800"></div></div></div>';
+    '<div class="row" style="justify-content:center;margin-top:12px"><button class="btn" id="nPlay">🔊 استمع</button><button class="btn alt" id="nRand">🎲 رقم عشوائي</button></div></div>' +
+    '<div class="panel"><b>🎧 تحدٍّ: استمع واكتب الرقم</b><p style="color:var(--mute);font-size:14px;margin:4px 0 10px">ستسمع رقمًا بالألمانية، اكتبه بالأرقام.</p><div class="row"><button class="btn flame" id="qPlay">▶ استمع إلى الرقم</button><input class="inp de" id="qIn" inputmode="numeric" style="flex:1;min-width:120px" aria-label="إجابتك"><button class="btn" id="qChk">تحقّق</button></div><div id="qRes" class="center" style="margin-top:8px;font-weight:800"></div></div>' + footer() + '</div>';
   render(html, 'learn'); bindCtl(); touch('num');
   function upd(){ var v = parseInt(($('#nIn').value || '').replace(/[^\d]/g,''), 10);
-    if (isNaN(v) || v > 1000000){ $('#nOut').textContent = '؟'; $('#nAr').textContent = 'اكتب رقم من ٠ لمليون'; return null; }
+    if (isNaN(v) || v > 1000000){ $('#nOut').textContent = '؟'; $('#nAr').textContent = 'اكتب رقمًا من 0 إلى مليون'; return null; }
     $('#nOut').textContent = numDe(v); $('#nAr').innerHTML = pron(numAr(v)); return v; }
   $('#nIn').oninput = upd; upd();
   $('#nPlay').onclick = function(){ var v = upd(); if (v != null) speak(numDe(v)); };
@@ -411,8 +566,8 @@ function viewNumTool(){
   var target = null;
   $('#qPlay').onclick = function(){ if (target == null) target = Math.floor(Math.random()*999) + 1; speak(numDe(target)); $('#qRes').textContent = ''; };
   $('#qChk').onclick = function(){ if (target == null) return; var v = parseInt($('#qIn').value, 10);
-    if (v === target){ $('#qRes').innerHTML = '✅ صح! ' + target + ' = <span class="de">' + numDe(target) + '</span>'; addXP(5); target = null; $('#qIn').value = ''; }
-    else $('#qRes').textContent = '❌ مش هو، اسمعه تاني'; };
+    if (v === target){ $('#qRes').innerHTML = '✅ صحيح! ' + target + ' = <span class="de">' + numDe(target) + '</span>'; addXP(5); target = null; $('#qIn').value = ''; }
+    else $('#qRes').textContent = '❌ ليس هو، استمع مرة أخرى'; };
 }
 function clockSVG(h, m){
   var ha = ((h % 12) + m/60) * 30, ma = m * 6, t = '';
@@ -423,11 +578,11 @@ function clockSVG(h, m){
 }
 function viewClock(){
   var now = new Date(), st = {h:now.getHours(), m:Math.floor(now.getMinutes()/5)*5};
-  var html = '<div class="wrap"><div class="ph" style="--c:#5B3DF5"><a class="back" href="#/learn">→ اتعلّم</a><span class="em">🕐</span><h1>الساعة الناطقة</h1><div class="g">Wie spät ist es?</div><p>غيّر الساعة والدقايق، وشوف الوقت بالطريقتين.</p></div>' + ctlBar() +
-    '<div class="panel"><div class="clockwrap" id="ck"></div><div class="steps"><button class="btn alt" data-d="h-1">− ساعة</button><button class="btn alt" data-d="h1">+ ساعة</button><button class="btn alt" data-d="m-5">− ٥ د</button><button class="btn alt" data-d="m5">+ ٥ د</button></div></div>' +
-    '<div class="panel"><b>💬 في الكلام العادي</b><div class="bigout sm" id="inf"></div><div class="pr arp center" id="infAr"></div><div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="pInf">🔊 اسمع</button></div></div>' +
-    '<div class="panel"><b>🚉 الرسمي (المواعيد والقطارات)</b><div class="bigout sm" id="frm"></div><div class="pr arp center" id="frmAr"></div><div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="pFrm">🔊 اسمع</button></div></div>' +
-    '<div class="tip trap"><b class="k">⚠️ فخ</b><span class="de">halb acht</span> مش تمانية ونص! معناها «نص ساعة قبل ٨» يعني ٧:٣٠.</div></div>';
+  var html = '<div class="wrap"><div class="ph" style="--c:#5B3DF5"><a class="back" href="#/learn">→ الدروس</a><span class="em">🕐</span><h1>الساعة الناطقة</h1><div class="g">Wie spät ist es?</div><p>غيّر الساعة والدقائق، وشاهد الوقت بالطريقتين.</p></div>' + ctlBar() +
+    '<div class="panel"><div class="clockwrap" id="ck"></div><div class="steps"><button class="btn alt" data-d="h-1">− ساعة</button><button class="btn alt" data-d="h1">+ ساعة</button><button class="btn alt" data-d="m-5">− 5 د</button><button class="btn alt" data-d="m5">+ 5 د</button></div></div>' +
+    '<div class="panel"><b>💬 في الكلام اليومي</b><div class="bigout sm" id="inf"></div><div class="pr arp center" id="infAr"></div><div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="pInf">🔊 استمع</button></div></div>' +
+    '<div class="panel"><b>🚉 الصيغة الرسمية (المواعيد والقطارات)</b><div class="bigout sm" id="frm"></div><div class="pr arp center" id="frmAr"></div><div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="pFrm">🔊 استمع</button></div></div>' +
+    '<div class="tip trap"><b class="k">⚠️ انتبه</b><span class="de">halb acht</span> لا تعني الثامنة والنصف! معناها «نصف ساعة قبل الثامنة» أي 7:30.</div>' + footer() + '</div>';
   render(html, 'learn'); bindCtl(); touch('clock');
   function upd(){ $('#ck').innerHTML = clockSVG(st.h, st.m); var a = informal(st.h, st.m), b = formal(st.h, st.m);
     $('#inf').textContent = a; $('#infAr').innerHTML = pron(sentAr(a)); $('#frm').textContent = b; $('#frmAr').innerHTML = pron(sentAr(b)); }
@@ -438,7 +593,7 @@ function viewClock(){
   upd();
 }
 function viewCalendar(){
-  loadAudio('calendar');
+  useAudio('calendar');
   var d = new Date(), wd = (d.getDay() + 6) % 7, day = SR.days[wd], mon = SR.months[d.getMonth()], dn = d.getDate(), y = d.getFullYear();
   var sDe = 'Heute ist ' + day[0] + ', der ' + ordDe(dn) + ' ' + mon[0] + ' ' + numDe(y) + '.';
   var sAr = 'هويته ايست ' + day[1] + '، ديا ' + ordAr(dn) + ' ' + mon[1] + ' ' + numAr(y) + '.';
@@ -446,45 +601,46 @@ function viewCalendar(){
   ['Mo','Di','Mi','Do','Fr','Sa','So'].forEach(function(x){ cells += '<span class="h">' + x + '</span>'; });
   for (var i = 0; i < off; i++) cells += '<span></span>';
   for (var k = 1; k <= dim; k++) cells += '<span class="' + (k === dn ? 't' : '') + '">' + k + '</span>';
-  var html = '<div class="wrap"><div class="ph" style="--c:#19C79A"><a class="back" href="#/learn">→ اتعلّم</a><span class="em">🗓️</span><h1>التقويم الحي</h1><div class="g">' + esc(day[0]) + ' · ' + esc(mon[0]) + '</div><p>تاريخ النهارده والساعة دلوقتي، بالألماني.</p></div>' + ctlBar() +
-    '<div class="panel"><b>📍 النهارده</b><div class="bigout sm">' + esc(sDe) + '</div><div class="pr arp center">' + pron(sAr) + '</div><div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="pD">🔊 اسمع</button></div>' +
+  var html = '<div class="wrap"><div class="ph" style="--c:#19C79A"><a class="back" href="#/learn">→ الدروس</a><span class="em">🗓️</span><h1>التقويم الحي</h1><div class="g">' + esc(day[0]) + ' · ' + esc(mon[0]) + '</div><p>تاريخ اليوم والساعة الآن بالألمانية.</p></div>' + ctlBar() +
+    '<div class="panel"><b>📍 اليوم</b><div class="bigout sm">' + esc(sDe) + '</div><div class="pr arp center">' + pron(sAr) + '</div><div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="pD">🔊 استمع</button></div>' +
     '<div class="center" style="font-family:Outfit;font-weight:700;margin-top:14px">' + esc(mon[0]) + ' ' + y + '</div><div class="cal">' + cells + '</div></div>' +
-    '<div class="panel"><b>⏰ الساعة دلوقتي</b><div class="bigout sm" id="tNow"></div><div class="pr arp center" id="tAr"></div><div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="pT">🔊 اسمع</button></div></div>' +
-    '<div class="tip memo"><b class="k">🧠 احفظها كده</b>التاريخ بيتقال برقم ترتيبي: <span class="de">der erste, der zweite, der dritte</span>… ومن ٢٠ وطالع بنزوّد <span class="de">-ste</span>.</div>' +
-    '<a class="mission" href="#/t/calendar"><span class="em">🗓️</span><div><b>كل الأيام والشهور</b><span>بالصوت والنطق</span></div><span class="arr">‹</span></a></div>';
+    '<div class="panel"><b>⏰ الساعة الآن</b><div class="bigout sm" id="tNow"></div><div class="pr arp center" id="tAr"></div><div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="pT">🔊 استمع</button></div></div>' +
+    '<div class="tip memo"><b class="k">🧠 احفظها هكذا</b>يُقال التاريخ بالعدد الترتيبي: <span class="de">der erste, der zweite, der dritte</span>… ومن 20 فما فوق نضيف <span class="de">-ste</span>.</div>' +
+    '<a class="mission" href="#/t/calendar"><span class="em">🗓️</span><div><b>كل الأيام والشهور</b><span>بالصوت والنطق</span></div><span class="arr">‹</span></a>' + footer() + '</div>';
   render(html, 'learn'); bindCtl(); touch('cal');
   function tick(){ if (!$('#tNow')) return clearInterval(iv); var n = new Date(), s = formal(n.getHours(), n.getMinutes()); $('#tNow').textContent = s; $('#tAr').innerHTML = pron(sentAr(s)); }
   var iv = setInterval(tick, 15000); tick();
   $('#pD').onclick = function(){ speak(sDe); };
   $('#pT').onclick = function(){ speak($('#tNow').textContent); };
 }
+function femAr(s){ return s.split(' ').map(function(w){ return /[ةى]$/.test(w) ? w : w + 'ة'; }).join(' '); }
 function viewIntro(){
   var st = {name:S.name || '', g:'m', c:0, city:'', age:'', job:0, langs:{0:1, 3:1}};
-  var html = '<div class="wrap"><div class="ph" style="--c:#FF3D7F"><a class="back" href="#/learn">→ اتعلّم</a><span class="em">🙋</span><h1>قدّم نفسك</h1><div class="g">Ich stelle mich vor</div><p>املا بياناتك، وخد تعريف نفسك بالألماني جاهز بالصوت.</p></div>' + ctlBar() +
-    '<div class="panel form"><label for="iN">اسمك (بالإنجليزي أحسن)</label><input class="inp de" id="iN" placeholder="Ali" value="' + esc(st.name) + '">' +
-    '<label>أنا</label><div class="seg" style="width:max-content"><button data-gg="m" class="on">👦 ولد</button><button data-gg="f">👧 بنت</button></div>' +
+  var html = '<div class="wrap"><div class="ph" style="--c:#FF3D7F"><a class="back" href="#/learn">→ الدروس</a><span class="em">🙋</span><h1>قدّم نفسك</h1><div class="g">Ich stelle mich vor</div><p>املأ بياناتك واحصل على تعريف نفسك بالألمانية جاهزًا بالصوت.</p></div>' + ctlBar() +
+    '<div class="panel form"><label for="iN">اسمك (بالحروف اللاتينية أفضل)</label><input class="inp de" id="iN" placeholder="Ali" value="' + esc(st.name) + '">' +
+    '<label>أنا</label><div class="seg" style="width:max-content"><button data-gg="m" class="on">👦 ذكر</button><button data-gg="f">👧 أنثى</button></div>' +
     '<label for="iC">بلدك</label><select class="inp" id="iC">' + SR.countries.map(function(c, i){ return '<option value="' + i + '">' + c[3] + ' ' + c[2] + '</option>'; }).join('') + '</select>' +
     '<label for="iT">مدينتك</label><input class="inp de" id="iT" placeholder="Kairo">' +
-    '<label for="iA">سنك</label><input class="inp de" id="iA" inputmode="numeric" placeholder="20">' +
-    '<label for="iJ">شغلك أو دراستك</label><select class="inp" id="iJ">' + SR.jobs.map(function(j, i){ return '<option value="' + i + '">' + j[4] + '</option>'; }).join('') + '</select>' +
-    '<label>بتتكلم لغات إيه؟</label><div class="chips" id="iL">' + SR.langs.map(function(l, i){ return '<button class="chip ' + (st.langs[i] ? 'on' : '') + '" data-l="' + i + '">' + l[2] + '</button>'; }).join('') + '</div></div>' +
-    '<div class="panel out" id="iOut"></div><div class="row"><button class="btn wide" id="iPlay">🔊 اسمع تعريفك كله</button></div></div>';
+    '<label for="iA">عمرك</label><input class="inp de" id="iA" inputmode="numeric" placeholder="20">' +
+    '<label for="iJ">عملك أو دراستك</label><select class="inp" id="iJ">' + SR.jobs.map(function(j, i){ return '<option value="' + i + '">' + j[4] + '</option>'; }).join('') + '</select>' +
+    '<label>ما اللغات التي تتحدثها؟</label><div class="chips" id="iL">' + SR.langs.map(function(l, i){ return '<button class="chip ' + (st.langs[i] ? 'on' : '') + '" data-l="' + i + '">' + l[2] + '</button>'; }).join('') + '</div></div>' +
+    '<div class="panel out" id="iOut"></div><div class="row"><button class="btn wide" id="iPlay">🔊 استمع إلى تعريفك كاملًا</button></div>' + footer() + '</div>';
   render(html, 'learn'); bindCtl();
   var lines = [];
   function build(){
     st.name = $('#iN').value.trim(); st.city = $('#iT').value.trim(); st.age = parseInt($('#iA').value, 10); st.c = +$('#iC').value; st.job = +$('#iJ').value;
-    var c = SR.countries[st.c], j = SR.jobs[st.job], L = SR.langs.filter(function(x, i){ return st.langs[i]; });
+    var c = SR.countries[st.c], j = SR.jobs[st.job], L = SR.langs.filter(function(x, i){ return st.langs[i]; }), f = st.g === 'f';
     lines = [];
-    lines.push(['Hallo! Ich heiße ' + (st.name || '…') + '.', 'هالو! ايش هايسه ' + (st.name || '…') + '.', 'أهلًا! اسمي ' + (st.name || '…') + '.']);
+    lines.push(['Hallo! Ich heiße ' + (st.name || '…') + '.', 'هالو! ايش هايسه ' + (st.name || '…') + '.', 'مرحبًا! اسمي ' + (st.name || '…') + '.']);
     lines.push(['Ich komme aus ' + c[0] + '.', 'ايش كومه اوس ' + c[1] + '.', 'أنا من ' + c[2] + '.']);
-    if (st.city) lines.push(['Ich wohne in ' + st.city + '.', 'ايش ڤونه ان ' + st.city + '.', 'ساكن في ' + st.city + '.']);
-    if (st.age > 0 && st.age < 120) lines.push(['Ich bin ' + numDe(st.age) + ' Jahre alt.', 'ايش بين ' + numAr(st.age) + ' ياغه الت.', 'عندي ' + ar(st.age) + ' سنة.']);
-    lines.push(['Ich bin ' + (st.g === 'f' ? j[2] : j[0]) + '.', 'ايش بين ' + (st.g === 'f' ? j[3] : j[1]) + '.', 'أنا ' + j[4] + (st.g === 'f' ? 'ة' : '') + '.']);
+    if (st.city) lines.push(['Ich wohne in ' + st.city + '.', 'ايش ڤونه ان ' + st.city + '.', 'أسكن في ' + st.city + '.']);
+    if (st.age > 0 && st.age < 120) lines.push(['Ich bin ' + numDe(st.age) + ' Jahre alt.', 'ايش بين ' + numAr(st.age) + ' ياغه الت.', 'عمري ' + ar(st.age) + ' سنة.']);
+    lines.push(['Ich bin ' + (f ? j[2] : j[0]) + '.', 'ايش بين ' + (f ? j[3] : j[1]) + '.', 'أنا ' + (f ? femAr(j[4]) : j[4]) + '.']);
     if (L.length){ var de = L.map(function(x){ return x[0]; }), arp = L.map(function(x){ return x[1]; }), mn = L.map(function(x){ return x[2]; });
       var jd = de.length > 1 ? de.slice(0, -1).join(', ') + ' und ' + de[de.length-1] : de[0], ja = arp.length > 1 ? arp.slice(0, -1).join('، ') + ' اونت ' + arp[arp.length-1] : arp[0];
-      lines.push(['Ich spreche ' + jd + '.', 'ايش شبغيشه ' + ja + '.', 'بتكلم ' + mn.join(' و') + '.']); }
-    lines.push(['Freut mich!', 'فغويت ميش!', 'اتشرفت بيك!']);
-    $('#iOut').innerHTML = lines.map(function(l, i){ return '<button class="it" data-x="' + i + '" style="--c:#FF3D7F"><span class="tx"><span class="d" style="display:block">' + esc(l[0]) + '</span><span class="pr arp" style="display:block">' + pron(l[1]) + '</span><span class="m">' + esc(l[2]) + '</span></span><span class="play sm">' + ICON_PLAY + '</span></button>'; }).join('');
+      lines.push(['Ich spreche ' + jd + '.', 'ايش شبغيشه ' + ja + '.', 'أتحدث ' + mn.join(' و') + '.']); }
+    lines.push(['Freut mich!', 'فغويت ميش!', 'تشرفت بمعرفتك!']);
+    $('#iOut').innerHTML = lines.map(function(l, i){ return '<button class="it" data-x="' + i + '" style="--c:#FF3D7F"><span class="tx"><span class="d">' + esc(l[0]) + '</span><span class="pr arp">' + pron(l[1]) + '</span><span class="m">' + esc(l[2]) + '</span></span><span class="play sm">' + ICON_PLAY + '</span></button>'; }).join('');
     $$('[data-x]').forEach(function(b){ b.onclick = function(){ $$('.it.on').forEach(function(x){ x.classList.remove('on'); }); b.classList.add('on'); speak(lines[+b.dataset.x][0], function(){ b.classList.remove('on'); }); }; });
   }
   ['#iN','#iT','#iA'].forEach(function(s){ $(s).oninput = build; }); ['#iC','#iJ'].forEach(function(s){ $(s).onchange = build; });
@@ -495,27 +651,310 @@ function viewIntro(){
   build();
 }
 
+/* ---------------- STORIES ---------------- */
+function viewStories(){
+  var st = SX.stories || [];
+  var html = '<div class="wrap"><div class="ph" style="--c:#FF3D7F"><a class="back" href="#/learn">→ الدروس</a><span class="em">📖</span><h1>قصص قصيرة</h1><div class="g">Kurze Geschichten</div><p>استمع إلى القصة جملة جملة، ثم أجب عن الأسئلة.</p></div><div class="list">' +
+    st.map(function(s, i){ var uid = 's:' + s.id; return '<a class="it lesson" href="#/story/' + s.id + '" style="--c:' + s.color + '"><span class="em">' + s.e + '</span><div class="tx"><b>' + esc(s.title) + '</b><div class="cj">' + esc(s.de) + '</div><div class="m">' + esc(s.lvl || 'A1') + ' · ' + plural(s.lines.length, 'جملة', 'جملتان', 'جمل', 'جملة') + '</div></div><span class="st">' + (S.done[uid] ? '✅' : '‹') + '</span></a>'; }).join('') + '</div>' + footer() + '</div>';
+  render(html, 'learn');
+}
+function viewStory(id){
+  var s = (SX.stories || []).find(function(x){ return x.id === id; }); if (!s) return go('#/stories');
+  var uid = 's:' + id; useAudio('story');
+  var list = s.lines.map(function(l){ return {de:l.de, mn:l.mn, grp:'story'}; });
+  var html = '<div class="wrap"><div class="ph" style="--c:' + s.color + '"><a class="back" href="#/stories">→ القصص</a><span class="em">' + s.e + '</span><h1>' + esc(s.title) + '</h1><div class="g">' + esc(s.de) + '</div><p>' + esc(s.intro || '') + '</p></div>' +
+    ctlBar('<button class="chip go2" id="playAll">▶ تشغيل القصة</button>') +
+    '<div class="seg2"><button class="chip on" id="trOn">إخفاء الترجمة</button></div><div class="story" id="story">' + s.lines.map(function(l, i){ return '<button class="sline" data-s="' + i + '"><span class="d de">' + esc(l.de) + '</span><span class="m">' + esc(l.mn) + '</span></button>'; }).join('') + '</div>' +
+    '<div class="sh"><h2>هل فهمت القصة؟</h2></div><div id="sq"></div>' + footer() + '</div>';
+  render(html, 'learn'); bindCtl();
+  var showTr = true; $('#trOn').onclick = function(){ showTr = !showTr; $('#story').classList.toggle('notr', !showTr); this.classList.toggle('on', showTr); this.textContent = showTr ? 'إخفاء الترجمة' : 'إظهار الترجمة'; };
+  $$('[data-s]').forEach(function(b){ b.onclick = function(){ play(list[+b.dataset.s], b); }; });
+  $('#playAll').onclick = function(){ stopAudio(); var my = token, i = 0, els = $$('.sline');
+    (function next(){ if (my !== token || i >= els.length) return; var el = els[i], it = list[i]; i++; el.scrollIntoView({block:'center', behavior:'smooth'}); play(it, el, function(){ if (my === token) setTimeout(next, 600); }); token = my; })(); };
+  var qi = 0, ok = 0;
+  function q(){
+    var box = $('#sq'); if (!box) return;
+    if (qi >= s.qs.length){
+      var pass = ok >= Math.ceil(s.qs.length * 2 / 3);
+      box.innerHTML = '<div class="result small"><div class="em">' + (pass ? '🎉' : '📖') + '</div><h2>' + ar(ok) + ' من ' + ar(s.qs.length) + '</h2><p>' + (pass ? 'ممتاز! فهمت القصة.' : 'استمع إلى القصة مرة أخرى وحاول من جديد.') + '</p><button class="btn" id="sqAgain">🔁 أعد الأسئلة</button></div>';
+      $('#sqAgain').onclick = function(){ qi = 0; ok = 0; q(); };
+      if (pass){ addXP(ok * 10); complete(uid); }
+      return;
+    }
+    var x = s.qs[qi];
+    box.innerHTML = '<div class="qcard"><div class="q">سؤال ' + ar(qi + 1) + ' من ' + ar(s.qs.length) + '</div><div class="bigar">' + esc(x.q) + '</div></div><div class="opts">' + x.o.map(function(o, k){ return '<button class="opt" data-k="' + k + '">' + esc(o) + '</button>'; }).join('') + '</div>';
+    $$('#sq .opt').forEach(function(b){ b.onclick = function(){ var good = +b.dataset.k === x.a; if (good) ok++; b.classList.add(good ? 'ok' : 'no'); if (!good) $$('#sq .opt')[x.a].classList.add('ok'); $$('#sq .opt').forEach(function(z){ z.disabled = true; }); setTimeout(function(){ qi++; q(); }, good ? 700 : 1500); }; });
+  }
+  q();
+}
+
+/* ---------------- LETTERS ---------------- */
+function viewLetters(){
+  var ls = SX.letters || [];
+  var html = '<div class="wrap"><div class="ph" style="--c:#3A86FF"><a class="back" href="#/learn">→ الدروس</a><span class="em">✉️</span><h1>رسائل جاهزة</h1><div class="g">Briefe und E-Mails</div><p>نماذج لرسائل قصيرة كما تُطلب في امتحان A1، بالصوت والترجمة.</p></div>' +
+    '<div class="tip tip"><b class="k">💡 القاعدة الذهبية</b>كل رسالة فيها: <b>تحية</b> ← <b>ثلاث نقاط</b> مطلوبة ← <b>خاتمة</b> ← <b>اسمك</b>. هذا كل ما يحتاجه الممتحن.</div><div class="list">' +
+    ls.map(function(w){ var uid = 'w:' + w.id; return '<a class="it lesson" href="#/letter/' + w.id + '" style="--c:' + w.color + '"><span class="em">' + w.e + '</span><div class="tx"><b>' + esc(w.title) + '</b><div class="m">' + esc(w.sit) + '</div><div class="prog thin"><i style="width:' + unitPct(uid) + '%"></i></div></div><span class="st">' + (S.done[uid] ? '✅' : '‹') + '</span></a>'; }).join('') + '</div>' + footer() + '</div>';
+  render(html, 'learn');
+}
+function viewLetter(id){
+  var w = (SX.letters || []).find(function(x){ return x.id === id; }); if (!w) return go('#/letters');
+  var uid = 'w:' + id; useAudio('letter');
+  var list = w.lines.map(function(l, k){ return {de:l.de, mn:l.mn, grp:'letter', u:uid, k:k}; });
+  var html = '<div class="wrap"><div class="ph" style="--c:' + w.color + '"><a class="back" href="#/letters">→ الرسائل</a><span class="em">' + w.e + '</span><h1>' + esc(w.title) + '</h1><p>' + esc(w.sit) + '</p></div>' + unitBar(uid) +
+    '<div class="panel task"><b>📋 المطلوب في الرسالة</b><ul>' + w.points.map(function(p){ return '<li>' + esc(p) + '</li>'; }).join('') + '</ul></div>' +
+    ctlBar('<button class="chip go2" id="playAll">▶ تشغيل الرسالة</button>') +
+    '<div class="letter">' + list.map(function(l, i){ return '<button class="it lline" data-i="' + i + '" style="--c:' + w.color + '"><span class="tx"><span class="d">' + esc(l.de) + '</span><span class="m">' + esc(l.mn) + '</span></span><span class="play sm">' + ICON_PLAY + '</span>' + (S.heard[uid] && S.heard[uid][i] ? '<span class="hd">✓</span>' : '') + '</button>'; }).join('') + '</div>' +
+    (w.phrases && w.phrases.length ? '<div class="sh"><h2>جمل مفيدة</h2></div><div class="list">' + w.phrases.map(function(p, i){ return '<button class="it" data-p="' + i + '" style="--c:' + w.color + '"><span class="tx"><span class="d">' + esc(p.de) + '</span><span class="m">' + esc(p.mn) + '</span></span><span class="play sm">' + ICON_PLAY + '</span></button>'; }).join('') + '</div>' : '') +
+    '<div class="sh"><h2>جرّب بنفسك</h2></div><div class="panel"><p class="sub">اكتب رسالتك هنا ثم قارنها بالنموذج. (لا يتم إرسال أي شيء)</p><textarea class="inp de" id="myL" rows="7" placeholder="Liebe …,"></textarea><button class="btn wide" id="chkL" style="margin-top:10px">✔ قيّم رسالتي</button><div id="lres"></div></div>' + footer() + '</div>';
+  render(html, 'learn'); bindCtl(); bindItems(list);
+  $$('[data-p]').forEach(function(b){ b.onclick = function(){ play({de:w.phrases[+b.dataset.p].de, grp:'letter'}, b); }; });
+  try{ var dr = localStorage.getItem('sr-letter-' + id); if (dr) $('#myL').value = dr; }catch(e){}
+  $('#myL').oninput = function(){ try{ localStorage.setItem('sr-letter-' + id, this.value); }catch(e){} };
+  $('#chkL').onclick = function(){
+    var t = $('#myL').value.trim(); if (t.split(/\s+/).length < 8) return toast('اكتب رسالة أطول قليلًا أولًا');
+    var checks = [
+      ['تحية في البداية', /^(liebe|lieber|hallo|sehr geehrte|guten tag|hi)\b/i.test(t)],
+      ['خاتمة', /(viele grüße|liebe grüße|mit freundlichen grüßen|bis bald|grüße|lg)\b/i.test(t)],
+      ['استخدمت أفعالًا مثل habe / möchte / kann / komme', /(^|\s)(habe|möchte|kann|kannst|komme|kommst|bin|bist|mache|muss|will|gehe|brauche|hast|ist)(\s|[.,!?]|$)/i.test(t)],
+      ['طول مناسب (25 كلمة أو أكثر)', t.split(/\s+/).length >= 25],
+      ['أسماء تبدأ بحرف كبير', /\b(Termin|Zeit|Hotel|Zimmer|Party|Kurs|Wochenende|Samstag|Sonntag|Montag|Freitag|Uhr|Haus|Arzt|Geburtstag|Information|E-Mail)\b/.test(t) || /\s[A-ZÄÖÜ][a-zäöüß]+/.test(t)]
+    ];
+    var n = checks.filter(function(c){ return c[1]; }).length;
+    $('#lres').innerHTML = '<div class="checks">' + checks.map(function(c){ return '<div class="' + (c[1] ? 'ok' : 'no') + '">' + (c[1] ? '✅ ' : '⬜ ') + c[0] + '</div>'; }).join('') + '</div><p class="sub">تحقّق بنفسك أيضًا: هل ذكرت النقاط الثلاث المطلوبة؟ قارن رسالتك بالنموذج بالأعلى.</p>';
+    if (n >= 4) addXP(10);
+  };
+}
+
+/* ---------------- EXAM ---------------- */
+var EXAM_PARTS = [{id:'listen',e:'🎧',c:'#FF6B2C',t:'الاستماع',d:'رسائل وإعلانات قصيرة'},{id:'read',e:'📰',c:'#3A86FF',t:'القراءة',d:'رسائل ولافتات وإعلانات'},
+  {id:'write',e:'✍️',c:'#19C79A',t:'الكتابة',d:'استمارة ورسالة قصيرة'},{id:'speak',e:'🗣️',c:'#FF3D7F',t:'المحادثة',d:'تعريف بالنفس وأسئلة وطلبات'}];
+function viewExam(){
+  if (!SX.exam) return go('#/');
+  var html = '<div class="wrap"><div class="ph" style="--c:#8338EC"><a class="back" href="#/play">→ الألعاب</a><span class="em">📝</span><h1>تدريب على امتحان A1</h1><div class="g">Prüfungstraining A1</div><p>تمارين بنفس فكرة أجزاء الامتحان الأربعة. أسئلة مستقلة كتبناها خصيصًا للتدريب.</p></div>' +
+    '<div class="tiles big">' + EXAM_PARTS.map(function(p){ var best = S.exam[p.id]; return '<a class="tile" href="#/exam/' + p.id + '" style="--c:' + p.c + '"><span class="em">' + p.e + '</span><b>' + p.t + '</b><span>' + (best != null ? 'أفضل نتيجة: ' + ar(best) + '٪' : p.d) + '</span></a>'; }).join('') + '</div>' +
+    '<div class="tip tip" style="margin-top:14px"><b class="k">💡 نصيحة</b>في الامتحان الحقيقي اقرأ السؤال <b>قبل</b> الاستماع، وابحث عن الكلمات المهمة: الأرقام، والأيام، والأماكن.</div>' + footer() + '</div>';
+  render(html, 'play');
+}
+function examDone(part, pct){
+  S.exam[part] = Math.max(S.exam[part] || 0, pct); save(); addXP(Math.round(pct / 5));
+  if (pct >= 60) complete('e:' + part);
+}
+function examResult(part, ok, total, extra){
+  var pct = Math.round(ok / Math.max(1, total) * 100); examDone(part, pct);
+  return '<div class="result"><div class="em">' + (pct >= 80 ? '🏆' : pct >= 60 ? '🚀' : '🌱') + '</div><h2>' + ar(pct) + '٪</h2><div>' + ar(ok) + ' من ' + ar(total) + '</div><p class="sub">' + (pct >= 60 ? 'نتيجة ناجحة! (النجاح يبدأ من 60٪)' : 'تحتاج إلى 60٪ للنجاح. راجع وحاول مرة أخرى.') + '</p>' + (extra || '') +
+    '<div class="row" style="justify-content:center;margin-top:8px"><button class="btn" data-retry="' + part + '">🔁 أعد المحاولة</button><a class="btn alt" href="#/exam" style="text-decoration:none">أجزاء أخرى</a></div></div>';
+}
+function viewExamPart(part){
+  var E = SX.exam; if (!E) return go('#/');
+  var P = EXAM_PARTS.find(function(p){ return p.id === part; }); if (!P) return go('#/exam');
+  useAudio('exam');
+  render('<div class="wrap"><div class="ph" style="--c:' + P.c + '"><a class="back" href="#/exam">→ التدريب</a><span class="em">' + P.e + '</span><h1>' + P.t + '</h1><p>' + P.d + '</p></div>' + ctlBar() + '<div id="stage"></div>' + footer() + '</div>', 'play'); bindCtl();
+  var stage = $('#stage');
+  if (part === 'listen'){
+    var L = E.listen, i = 0, ok = 0;
+    var nx = function(){
+      if (i >= L.length){ stage.innerHTML = examResult('listen', ok, L.length); return; }
+      var x = L[i], plays = 0; i++;
+      stage.innerHTML = '<div class="gamebar"><div class="prog"><i style="width:' + ((i - 1) / L.length * 100) + '%"></i></div><span class="hearts">' + ar(i) + '/' + ar(L.length) + '</span></div>' +
+        '<div class="qcard"><div class="em">' + (x.e || '🎧') + '</div><div class="q">' + esc(x.sit || '') + '</div><div class="bigar">' + esc(x.q) + '</div><button class="play" id="lp" style="width:76px;height:76px;margin:10px auto 4px">' + ICON_PLAY + '</button><div class="q" id="lpc">يمكنك الاستماع مرتين</div></div>' +
+        '<div class="opts">' + x.o.map(function(o, k){ return '<button class="opt" data-k="' + k + '">' + esc(o) + '</button>'; }).join('') + '</div><div id="tr"></div>';
+      var sayAll = function(){ stopAudio(); var my = token, j = 0; (function n2(){ if (my !== token || j >= x.say.length) return; speak(x.say[j++], function(){ if (my === token) setTimeout(n2, 350); }); token = my; })(); };
+      $('#lp').onclick = function(){ if (plays >= 2) return toast('في الامتحان تسمع مرتين فقط 🙂'); plays++; $('#lpc').textContent = plays >= 2 ? 'استمعت مرتين' : 'يمكنك الاستماع مرة أخرى'; sayAll(); };
+      $$('.opt').forEach(function(b){ b.onclick = function(){ var good = +b.dataset.k === x.a; if (good) ok++; b.classList.add(good ? 'ok' : 'no'); if (!good) $$('.opt')[x.a].classList.add('ok'); $$('.opt').forEach(function(z){ z.disabled = true; });
+        $('#tr').innerHTML = '<div class="panel trans"><b>النص المسموع:</b>' + x.say.map(function(s){ return '<div class="de">' + esc(s) + '</div>'; }).join('') + '<div class="m">' + esc(x.mn || '') + '</div><button class="btn wide" id="lnx" style="margin-top:10px">التالي</button></div>';
+        $('#lnx').onclick = nx; $('#lnx').scrollIntoView({block:'center', behavior:'smooth'}); }; });
+    };
+    nx(); return;
+  }
+  if (part === 'read'){
+    var R = E.read, ti = 0, ok2 = 0, tot = 0;
+    R.forEach(function(t){ tot += t.qs.length; });
+    var nt = function(){
+      if (ti >= R.length){ stage.innerHTML = examResult('read', ok2, tot); return; }
+      var t = R[ti]; ti++;
+      stage.innerHTML = '<div class="gamebar"><div class="prog"><i style="width:' + ((ti - 1) / R.length * 100) + '%"></i></div><span class="hearts">نص ' + ar(ti) + '/' + ar(R.length) + '</span></div>' +
+        '<div class="panel rtext"><div class="rt-h">' + (t.e || '📰') + ' ' + esc(t.kind || '') + '</div><div class="de rt">' + t.text.map(function(s){ return '<p>' + esc(s) + '</p>'; }).join('') + '</div><button class="chip" id="rtr">إظهار الترجمة</button><div class="rtar" hidden>' + t.textAr.map(function(s){ return '<p>' + esc(s) + '</p>'; }).join('') + '</div></div>' +
+        '<div class="q center" style="color:var(--mute);margin:6px 0 10px">صحيح أم خطأ؟</div><div id="rq">' + t.qs.map(function(q, k){ return '<div class="rq" data-q="' + k + '"><div class="de">' + esc(q.s) + '</div><div class="m">' + esc(q.mn) + '</div><div class="tf"><button class="opt" data-v="1">✔ صحيح <span class="de">richtig</span></button><button class="opt" data-v="0">✘ خطأ <span class="de">falsch</span></button></div></div>'; }).join('') + '</div>' +
+        '<button class="btn wide" id="rnx" disabled>التالي</button>';
+      $('#rtr').onclick = function(){ var a = $('.rtar'); a.hidden = !a.hidden; this.textContent = a.hidden ? 'إظهار الترجمة' : 'إخفاء الترجمة'; };
+      var answered = 0;
+      $$('.rq').forEach(function(row){ var q = t.qs[+row.dataset.q];
+        $$('.opt', row).forEach(function(b){ b.onclick = function(){ var good = (b.dataset.v === '1') === q.a; if (good) ok2++; b.classList.add(good ? 'ok' : 'no'); if (!good) $$('.opt', row).forEach(function(z){ if ((z.dataset.v === '1') === q.a) z.classList.add('ok'); }); $$('.opt', row).forEach(function(z){ z.disabled = true; }); answered++; if (answered >= t.qs.length) $('#rnx').disabled = false; }; }); });
+      $('#rnx').onclick = function(){ nt(); scrollTo(0, 0); };
+    };
+    nt(); return;
+  }
+  if (part === 'write'){
+    var W = E.write, f = W.form;
+    stage.innerHTML = '<div class="panel"><b>الجزء 1: املأ الاستمارة</b><p class="sub">' + esc(f.intro) + '</p><div class="de rt panel2">' + f.text.map(function(s){ return '<p>' + esc(s) + '</p>'; }).join('') + '</div>' +
+      '<div class="form">' + f.fields.map(function(x, k){ return '<label>' + esc(x.l) + ' <span class="de">' + esc(x.de) + '</span></label><input class="inp de" data-f="' + k + '" autocomplete="off" autocapitalize="off" spellcheck="false">'; }).join('') + '</div><button class="btn wide" id="fchk" style="margin-top:12px">تحقّق من الاستمارة</button><div id="fres"></div></div>' +
+      '<div class="panel"><b>الجزء 2: اكتب رسالة قصيرة</b><p class="sub">' + esc(W.task.sit) + '</p><ul>' + W.task.points.map(function(p){ return '<li>' + esc(p) + '</li>'; }).join('') + '</ul><textarea class="inp de" id="wt" rows="7" placeholder="Liebe …,"></textarea>' +
+      '<button class="btn wide" id="wchk" style="margin-top:10px">انتهيت، اعرض النموذج</button><div id="wres"></div></div><div id="wfin"></div>';
+    var formOk = null;
+    $('#fchk').onclick = function(){ var n = 0; $$('[data-f]').forEach(function(inp){ var x = f.fields[+inp.dataset.f], good = x.a.some(function(a){ return norm(a) === norm(inp.value); }); inp.classList.toggle('good', good); inp.classList.toggle('bad', !good); if (good) n++; });
+      formOk = n; $('#fres').innerHTML = '<p class="sub">' + ar(n) + ' من ' + ar(f.fields.length) + ' صحيحة. ' + (n < f.fields.length ? 'الإجابات الصحيحة: ' + f.fields.map(function(x){ return x.a[0]; }).join(' · ') : '🎉') + '</p>'; fin(); };
+    var selfOk = null;
+    $('#wchk').onclick = function(){ if ($('#wt').value.trim().split(/\s+/).length < 8) return toast('اكتب رسالتك أولًا (8 كلمات على الأقل)');
+      $('#wres').innerHTML = '<div class="panel2"><b>نموذج للإجابة:</b>' + W.task.model.map(function(s){ return '<div class="de">' + esc(s) + '</div>'; }).join('') + '</div><b>قيّم رسالتك بصدق:</b><div class="selfc">' + W.task.check.map(function(c, k){ return '<label><input type="checkbox" data-c="' + k + '"> ' + esc(c) + '</label>'; }).join('') + '</div><button class="btn wide" id="wsc">احسب نتيجتي</button>';
+      $('#wsc').onclick = function(){ selfOk = $$('[data-c]').filter(function(c){ return c.checked; }).length; fin(true); }; };
+    var fin = function(force){ if (formOk == null || selfOk == null) return; var tot2 = f.fields.length + W.task.check.length; $('#wfin').innerHTML = examResult('write', formOk + selfOk, tot2); if (force) $('#wfin').scrollIntoView({block:'center', behavior:'smooth'}); };
+    return;
+  }
+  if (part === 'speak'){
+    var SP = E.speak, cards = [];
+    SP.parts.forEach(function(p, pi){ p.cards.forEach(function(c){ cards.push(Object.assign({part:pi}, c)); }); });
+    var ci = 0, ok3 = 0;
+    var nc = function(){
+      if (ci >= cards.length){ stage.innerHTML = examResult('speak', ok3, cards.length); return; }
+      var c = cards[ci], p = SP.parts[c.part]; ci++;
+      stage.innerHTML = '<div class="gamebar"><div class="prog"><i style="width:' + ((ci - 1) / cards.length * 100) + '%"></i></div><span class="hearts">' + ar(ci) + '/' + ar(cards.length) + '</span></div>' +
+        '<div class="panel"><b>' + esc(p.t) + '</b><p class="sub">' + esc(p.d) + '</p></div>' +
+        '<div class="scard"><div class="em">' + (c.e || '💬') + '</div><div class="de big">' + esc(c.w) + '</div><div class="m">' + esc(c.mn || '') + '</div></div>' +
+        '<p class="center sub">قل جملتك بصوت عالٍ أولًا، ثم اضغط لترى النموذج.</p><button class="btn wide" id="rev">👀 اعرض النموذج</button><div id="model"></div>';
+      $('#rev').onclick = function(){ this.remove();
+        $('#model').innerHTML = '<div class="list">' + c.model.map(function(m, k){ return '<button class="it" data-m="' + k + '" style="--c:' + P.c + '"><span class="tx"><span class="d">' + esc(m.de) + '</span><span class="m">' + esc(m.mn) + '</span></span><span class="play sm">' + ICON_PLAY + '</span></button>'; }).join('') + '</div>' +
+          '<div class="row" style="margin-top:12px"><button class="btn alt" id="sNo" style="flex:1">🔁 لم أعرفها</button><button class="btn" id="sYes" style="flex:1">✅ قلتها صحيحة</button></div>';
+        $$('[data-m]').forEach(function(b){ b.onclick = function(){ play({de:c.model[+b.dataset.m].de, grp:'exam'}, b); }; });
+        play({de:c.model[0].de, grp:'exam'}, $('[data-m="0"]'));
+        $('#sYes').onclick = function(){ ok3++; nc(); }; $('#sNo').onclick = nc; };
+    };
+    nc(); return;
+  }
+}
+
+/* ---------------- SPEAK (pronunciation) ---------------- */
+function lev(a, b){ var m = [], i, j; for (i = 0; i <= b.length; i++) m[i] = [i]; for (j = 0; j <= a.length; j++) m[0][j] = j;
+  for (i = 1; i <= b.length; i++) for (j = 1; j <= a.length; j++) m[i][j] = Math.min(m[i-1][j-1] + (b[i-1] === a[j-1] ? 0 : 1), m[i][j-1] + 1, m[i-1][j] + 1); return m[b.length][a.length]; }
+function simil(a, b){ a = norm(a); b = norm(b); if (!a || !b) return 0; return 1 - lev(a, b) / Math.max(a.length, b.length); }
+function viewSpeak(tid){
+  tid = tid || 'greet';
+  var Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var pool = uniqBy(itemsOf(tid).filter(function(x){ return x.de.split(' ').length <= 4; }), function(x){ return x.de; });
+  if (pool.length < 3) pool = uniqBy(itemsOf('greet'), function(x){ return x.de; });
+  pool = shuffle(pool).slice(0, 10);
+  var opts = [{id:'greet', t:'التحيات'}, {id:'abc', t:'الحروف'}, {id:'num', t:'الأرقام'}, {id:'colors', t:'الألوان'}, {id:'family', t:'العائلة'}, {id:'food', t:'الطعام'}, {id:'animals', t:'الحيوانات'}, {id:'a1', t:'دروس A1'}];
+  var html = '<div class="wrap"><div class="ph" style="--c:#06A77D"><a class="back" href="#/play">→ الألعاب</a><span class="em">🎤</span><h1>اختبر نطقك</h1><div class="g">Aussprache</div><p>استمع إلى الكلمة، ثم اضغط على الميكروفون وانطقها.</p></div>' +
+    '<div class="pick">' + opts.map(function(o){ return '<a class="chip ' + (o.id === tid ? 'on' : '') + '" href="#/speak/' + o.id + '" style="text-decoration:none">' + o.t + '</a>'; }).join('') + '</div>' +
+    (Rec ? '' : '<div class="tip trap"><b class="k">⚠️ تنبيه</b>متصفحك لا يدعم التعرّف على الصوت. جرّب Google Chrome على أندرويد، أو Safari بعد تفعيل «الإملاء» في إعدادات الآيفون. يمكنك الاستماع والتدرّب على أي حال.</div>') +
+    ctlBar() + '<div id="stage"></div>' + footer() + '</div>';
+  render(html, 'play'); bindCtl();
+  pool.forEach(function(x){ useAudio(x.grp); });
+  var i = 0, ok = 0, rec = null; var stage = $('#stage');
+  leaveHook = function(){ if (rec){ try{ rec.abort(); }catch(e){} rec = null; } };
+  function nx(){
+    if (i >= pool.length){ stage.innerHTML = '<div class="result"><div class="em">' + (ok >= 7 ? '🏆' : ok >= 4 ? '🚀' : '🌱') + '</div><h2>' + ar(ok) + ' من ' + ar(pool.length) + '</h2><p class="sub">نطقت ' + plural(ok, 'كلمة واحدة', 'كلمتين', 'كلمات', 'كلمة') + ' بشكل صحيح.</p><button class="btn" id="again">🔁 كلمات جديدة</button></div>'; $('#again').onclick = function(){ viewSpeak(tid); }; return; }
+    var q = pool[i], tries = 0; i++;
+    stage.innerHTML = '<div class="gamebar"><div class="prog"><i style="width:' + ((i - 1) / pool.length * 100) + '%"></i></div><span class="hearts">' + ar(i) + '/' + ar(pool.length) + '</span></div>' +
+      '<div class="qcard"><div class="em">' + (q.e || '🗣️') + '</div><div class="big">' + deHTML(q) + '</div><div class="pr arp">' + pron(q.ar || '') + '</div><div class="q">' + esc(q.mn) + '</div><button class="play sm" id="qp" style="margin:8px auto 0">' + ICON_PLAY + '</button></div>' +
+      '<button class="mic" id="mic" ' + (Rec ? '' : 'disabled') + '>' + ICON_MIC + '<span>اضغط وانطق</span></button><div id="heard" class="center"></div>' +
+      '<div class="row" style="margin-top:10px"><button class="btn alt" id="skip" style="flex:1">تخطَّ ←</button></div>';
+    $('#qp').onclick = function(){ play(q); }; play(q);
+    $('#skip').onclick = nx;
+    if (!Rec) return;
+    $('#mic').onclick = function(){
+      var btn = this; if (rec){ try{ rec.stop(); }catch(e){} return; }
+      stopAudio(); rec = new Rec(); rec.lang = 'de-DE'; rec.interimResults = false; rec.maxAlternatives = 5;
+      btn.classList.add('live'); btn.querySelector('span').textContent = 'أستمع إليك…';
+      var gotRes = false;
+      rec.onresult = function(e){ gotRes = true; var alts = [], r = e.results[0]; for (var k = 0; k < r.length; k++) alts.push(r[k].transcript);
+        var target = sayOf(q), noun = q.n || '', best = 0, bestT = alts[0] || '';
+        alts.forEach(function(a){ var s = Math.max(simil(a, target), noun ? simil(a, noun) : 0); if (s > best){ best = s; bestT = a; } });
+        tries++;
+        if (best >= 0.75){ ok++; S.spoke = (S.spoke || 0) + 1; save(); addXP(5); $('#heard').innerHTML = '<div class="hres ok">✅ ممتاز! سمعت: <span class="de">' + esc(bestT) + '</span></div>'; setTimeout(nx, 1300); }
+        else $('#heard').innerHTML = '<div class="hres no">🤔 سمعت: <span class="de">' + esc(bestT || '…') + '</span><br>' + (tries >= 3 ? 'لا بأس، انتقل للكلمة التالية.' : 'استمع مرة أخرى وحاول.') + '</div>'; };
+      rec.onerror = function(e){ $('#heard').innerHTML = '<div class="hres no">' + (e.error === 'not-allowed' || e.error === 'service-not-allowed' ? 'اسمح للموقع باستخدام الميكروفون من إعدادات المتصفح.' : 'لم أسمع شيئًا، حاول مرة أخرى.') + '</div>'; };
+      rec.onend = function(){ rec = null; btn.classList.remove('live'); btn.querySelector('span').textContent = 'اضغط وانطق'; if (!gotRes && !$('#heard').textContent) $('#heard').innerHTML = '<div class="hres no">لم أسمع شيئًا، حاول مرة أخرى.</div>'; };
+      try{ rec.start(); }catch(err){ rec = null; btn.classList.remove('live'); }
+    };
+  }
+  nx();
+}
+
+/* ---------------- MISTAKES ---------------- */
+function addMistake(q){ if (!q || !q.de) return; var k = q.de, m = S.mist[k] || {n:0, it:{de:q.de, ar:q.ar, mn:q.mn, e:q.e, g:q.g, n:q.n, grp:q.grp, say:q.say}}; m.n = Math.min(3, m.n + 1); m.t = today(); S.mist[k] = m; save(); }
+function fixMistake(q){ var m = q && S.mist[q.de]; if (!m) return; m.n--; if (m.n <= 0){ delete S.mist[q.de]; S.fixed = (S.fixed || 0) + 1; } save(); }
+function viewMistakes(){
+  var keys = Object.keys(S.mist), list = keys.map(function(k){ return S.mist[k].it; });
+  var html = '<div class="wrap"><div class="ph" style="--c:#E63946"><a class="back" href="#/play">→ الألعاب</a><span class="em">🩹</span><h1>كرّاسة أخطائي</h1><div class="g">Meine Fehler</div><p>كل كلمة تخطئ فيها تُحفظ هنا، وتختفي عندما تجيبها صحيحة مرة أو اثنتين.</p></div>' +
+    (keys.length ? '<div class="tiles">' + ['meaning','listen','type','cards'].map(function(g){ return gameTile(GAMES.find(function(x){ return x.id === g; }), 'mist'); }).join('') + '</div>' +
+      '<div class="sh"><h2>' + plural(keys.length, 'كلمة واحدة', 'كلمتان', 'كلمات', 'كلمة') + '</h2><span class="cnt">صحّحت ' + ar(S.fixed || 0) + '</span></div><div class="list">' + list.map(function(it, i){ return itemRow(it, i, '#E63946'); }).join('') + '</div>'
+      : '<div class="empty"><i>🌟</i>لا توجد أخطاء الآن! العب أي لعبة، وأي كلمة تخطئ فيها ستظهر هنا للمراجعة.<br><br><a class="btn" href="#/play" style="text-decoration:none;display:inline-block">اذهب إلى الألعاب</a></div>') + footer() + '</div>';
+  render(html, 'play'); bindItems(list);
+  if (keys.length < 4 && keys.length) $$('.tiles .tile').forEach(function(t){ t.classList.add('dim'); t.onclick = function(e){ e.preventDefault(); toast('تحتاج 4 كلمات على الأقل للعب، والآن يمكنك الاستماع إليها'); }; });
+}
+
+/* ---------------- JOURNEY ---------------- */
+function viewJourney(){
+  var si = stationIdx(), n = doneCount(), T = UNITS.length, nx = STATIONS[si + 1];
+  var need = nx ? stNeed(si + 1) - n : 0, a = stNeed(si), b = nx ? stNeed(si + 1) : T, frac = nx ? (n - a) / Math.max(1, b - a) : 1;
+  var rows = STATIONS.map(function(s, i){ var reached = i <= si;
+    return '<div class="jst ' + (reached ? 'got' : '') + (i === si ? ' cur' : '') + '" style="--i:' + i + '"><div class="jp">' + s.e + '</div><div class="jt"><b>' + s.a + '</b><small>' + (i === 0 ? 'نقطة البداية' : ar(stNeed(i)) + ' وحدة') + '</small></div>' + (i === si ? '<div class="jr" style="--f:' + frac.toFixed(2) + '">🚀</div>' : '') + '</div>'; }).reverse().join('');
+  var o = pathOrder().filter(function(id){ return !S.done[id]; }).slice(0, 4).map(function(id){ return UMAP[id]; });
+  var html = '<div class="wrap"><div class="ph space" style="--c:#2B1F86"><a class="back" href="#/">→ الرئيسية</a><span class="em">🚀</span><h1>رحلتك الفضائية</h1><div class="g">Deine Weltraumreise</div><p>كل درس تكمله يقرّب صاروخك من المحطة التالية.</p></div>' +
+    '<div class="jsum"><div><b>' + ar(n) + '</b><span>وحدة مكتملة</span></div><div><b>' + ar(T) + '</b><span>وحدة في الرحلة</span></div><div><b>' + STATIONS[si].e + '</b><span>' + STATIONS[si].a + '</span></div></div>' +
+    (nx ? '<div class="panel center"><b>تبقّى ' + plural(need, 'وحدة واحدة', 'وحدتان', 'وحدات', 'وحدة') + ' للوصول إلى ' + nx.e + ' ' + nx.a + '</b><div class="prog" style="margin-top:10px"><i style="width:' + Math.round(frac * 100) + '%"></i></div></div>' : '<div class="panel center"><b>🎉 أكملت الرحلة كلها! أنت بطل المجرة.</b></div>') +
+    '<div class="journey">' + rows + '</div>' +
+    '<button class="btn wide flame" id="shareJ">📸 شارك إنجازك</button>' +
+    (o.length ? '<div class="sh"><h2>المحطات القادمة في طريقك</h2></div><div class="list">' + o.map(function(u){ return '<a class="it lesson" href="' + u.href + '" style="--c:' + u.color + '"><span class="em">' + u.e + '</span><div class="tx"><b>' + esc(u.title) + '</b><div class="prog thin"><i style="width:' + unitPct(u.id) + '%"></i></div></div><span class="st">‹</span></a>'; }).join('') + '</div>' : '') + footer() + '</div>';
+  render(html, 'me');
+  $('#shareJ').onclick = shareBadge;
+  checkStation();
+}
+function shareBadge(){
+  var name = S.name;
+  if (!name){
+    var m0 = modal('<div class="big">🧑‍🚀</div><h3>ما اسمك؟</h3><p>سيظهر على صورة إنجازك.</p><input class="inp de" id="bn" placeholder="Your name"><button class="btn wide" id="bgo" style="margin-top:10px">اصنع الصورة</button>');
+    $('#bgo', m0).onclick = function(){ var v = $('#bn', m0).value.trim(); if (!v) return toast('اكتب اسمك أولًا'); S.name = v; save(); m0.remove(); shareBadge(); }; return;
+  }
+  var st = station(), c = document.createElement('canvas'); c.width = 1080; c.height = 1350; var x = c.getContext('2d');
+  var g = x.createLinearGradient(0, 0, 0, 1350); g.addColorStop(0, '#2B1F86'); g.addColorStop(.55, '#14103A'); g.addColorStop(1, '#0B0820'); x.fillStyle = g; x.fillRect(0, 0, 1080, 1350);
+  for (var i = 0; i < 180; i++){ x.fillStyle = 'rgba(255,255,255,' + (Math.random() * .8 + .2) + ')'; x.beginPath(); x.arc(Math.random()*1080, Math.random()*1350, Math.random()*2 + .3, 0, 7); x.fill(); }
+  var pg = x.createRadialGradient(860, 1180, 20, 860, 1230, 360); pg.addColorStop(0, '#FFC53D'); pg.addColorStop(.6, '#FF6B2C'); pg.addColorStop(1, '#9A2E0A'); x.fillStyle = pg; x.beginPath(); x.arc(900, 1300, 330, 0, 7); x.fill();
+  x.textAlign = 'center'; x.fillStyle = '#FFC53D'; x.font = '700 54px Outfit, sans-serif'; x.fillText('Sprachrakete', 540, 130);
+  x.font = '230px system-ui'; x.fillText(st.e, 540, 450);
+  x.direction = 'rtl'; x.fillStyle = '#fff'; x.font = '800 76px system-ui, sans-serif'; x.fillText('وصلتُ إلى ' + st.a + '!', 540, 600);
+  x.fillStyle = '#D8D3FF'; x.font = '400 40px system-ui, sans-serif'; x.fillText('في رحلة تعلّم اللغة الألمانية', 540, 670);
+  x.direction = 'ltr'; x.fillStyle = '#fff'; x.font = '700 84px Outfit, sans-serif'; x.fillText(S.name, 540, 800);
+  x.fillStyle = '#FFC53D'; x.fillRect(340, 830, 400, 5);
+  x.direction = 'rtl'; x.fillStyle = '#fff'; x.font = '600 42px system-ui, sans-serif';
+  x.fillText('✅ ' + ar(doneCount()) + ' وحدة   ⚡ ' + ar(S.xp) + ' نقطة   🔥 ' + ar(streakNow()) + ' يوم', 540, 930);
+  x.font = '160px system-ui'; x.fillText('🚀', 250, 1180);
+  x.direction = 'ltr'; x.fillStyle = '#FFC53D'; x.font = '700 44px Outfit, sans-serif'; x.fillText('mohnned7.github.io', 540, 1290);
+  c.toBlob(function(blob){
+    var url = URL.createObjectURL(blob), file = null; try{ file = new File([blob], 'Sprachrakete.png', {type:'image/png'}); }catch(e){}
+    var m = modal('<h3>📸 صورة إنجازك</h3><img src="' + url + '" alt="صورة الإنجاز" style="width:100%;border-radius:16px;margin:6px 0 12px"><button class="btn wide flame" id="doShare">مشاركة</button><a class="btn alt wide" style="display:block;text-decoration:none;margin-top:8px" download="Sprachrakete.png" href="' + url + '">⬇️ حفظ الصورة</a><p style="margin-top:8px;font-size:12.5px">على الآيفون: اضغط على الصورة ضغطة طويلة ثم «حفظ الصورة».</p>');
+    var sb = $('#doShare', m);
+    if (file && navigator.canShare && navigator.canShare({files:[file]})) sb.onclick = function(){ navigator.share({files:[file], text:'وصلتُ إلى ' + st.a + ' في رحلة تعلّم الألمانية 🚀 جرّب أنت: https://mohnned7.github.io'}).catch(function(){}); };
+    else if (navigator.share) sb.onclick = function(){ navigator.share({title:'Sprachrakete', text:'وصلتُ إلى ' + st.a + ' في رحلة تعلّم الألمانية 🚀', url:'https://mohnned7.github.io'}).catch(function(){}); };
+    else sb.remove();
+  }, 'image/png');
+}
+
 /* ---------------- GAMES ---------------- */
 var GAMES = [
-  {id:'meaning',e:'🎯',c:'#5B3DF5',t:'المعنى الصح',d:'كلمة ألماني و٤ اختيارات'},
-  {id:'listen',e:'🎧',c:'#FF6B2C',t:'اسمع واختار',d:'تسمع الكلمة وتلاقيها'},
-  {id:'match',e:'🔗',c:'#19C79A',t:'وصّل',d:'وصّل الكلمة بمعناها'},
-  {id:'artikel',e:'🎨',c:'#FF3D7F',t:'der · die · das',d:'اختار الأداة بالألوان'},
-  {id:'type',e:'⌨️',c:'#3A86FF',t:'اكتبها',d:'اكتب الكلمة بالألماني'},
-  {id:'order',e:'🧩',c:'#C9971C',t:'رتّب الجملة',d:'رتّب الكلمات صح'},
-  {id:'memory',e:'🃏',c:'#8338EC',t:'لعبة الذاكرة',d:'اقلب ولاقي الأزواج'},
-  {id:'speed',e:'⏱️',c:'#E63946',t:'تحدّي السرعة',d:'أكبر عدد في ٦٠ ثانية'},
-  {id:'cards',e:'🧠',c:'#06A77D',t:'بطاقات الحفظ',d:'بتفتكر اللي نسيته'}
+  {id:'meaning',e:'🎯',c:'#5B3DF5',t:'المعنى الصحيح',d:'كلمة ألمانية و4 اختيارات'},
+  {id:'listen',e:'🎧',c:'#FF6B2C',t:'استمع واختر',d:'تسمع الكلمة وتختارها'},
+  {id:'match',e:'🔗',c:'#19C79A',t:'صِل',d:'صِل الكلمة بمعناها'},
+  {id:'artikel',e:'🎨',c:'#FF3D7F',t:'der · die · das',d:'اختر الأداة بالألوان'},
+  {id:'type',e:'⌨️',c:'#3A86FF',t:'اكتبها',d:'اكتب الكلمة بالألمانية'},
+  {id:'order',e:'🧩',c:'#C9971C',t:'رتّب الجملة',d:'رتّب الكلمات بشكل صحيح'},
+  {id:'memory',e:'🃏',c:'#8338EC',t:'لعبة الذاكرة',d:'اقلب البطاقات وجِد الأزواج'},
+  {id:'speed',e:'⏱️',c:'#E63946',t:'تحدّي السرعة',d:'أكبر عدد في 60 ثانية'},
+  {id:'cards',e:'🧠',c:'#06A77D',t:'بطاقات الحفظ',d:'تُعيد لك ما نسيته'}
 ];
 function gameTile(g, topic){ return '<a class="tile" href="#/g/' + g.id + '/' + (topic || 'all') + '" style="--c:' + g.c + '"><span class="em">' + g.e + '</span><b>' + g.t + '</b><span>' + g.d + '</span></a>'; }
 function viewPlay(){
-  var html = '<div class="wrap"><div class="ph" style="--c:#FF6B2C"><span class="em">🎮</span><h1>العب</h1><div class="g">Spielen</div><p>كل إجابة صح = ١٠ نقط. اختار لعبة، وبعدها اختار الموضوع.</p></div>' +
-    '<a class="mission ' + (S.daily[today()] ? 'done' : '') + '" href="#/daily" style="margin-top:0"><span class="em">🎯</span><div><b>مهمة النهارده</b><span>' + (S.daily[today()] ? 'خلّصتها ✅' : '١٠ أسئلة متنوعة + ٥٠ نقطة') + '</span></div><span class="arr">‹</span></a>' +
-    '<div class="sh"><h2>الألعاب</h2></div><div class="tiles">' + GAMES.map(function(g){ return gameTile(g); }).join('') + '</div></div>';
+  var mc = Object.keys(S.mist).length;
+  var html = '<div class="wrap"><div class="ph" style="--c:#FF6B2C"><span class="em">🎮</span><h1>الألعاب</h1><div class="g">Spielen</div><p>كل إجابة صحيحة = 10 نقاط. اختر لعبة ثم اختر الموضوع.</p></div>' +
+    '<a class="mission ' + (S.daily[today()] ? 'done' : '') + '" href="#/daily" style="margin-top:0"><span class="em">🎯</span><div><b>مهمة اليوم</b><span>' + (S.daily[today()] ? 'أنهيتها ✅' : '10 أسئلة متنوعة + 50 نقطة') + '</span></div><span class="arr">‹</span></a>' +
+    '<div class="tiles big" style="margin-top:12px">' + bigTile('#/exam', '📝', '#8338EC', 'تدريب على امتحان A1', 'الأجزاء الأربعة') + bigTile('#/mistakes', '🩹', '#E63946', 'كرّاسة أخطائي', mc ? plural(mc, 'كلمة واحدة', 'كلمتان', 'كلمات', 'كلمة') + ' للمراجعة' : 'لا أخطاء الآن') +
+      bigTile('#/speak/greet', '🎤', '#06A77D', 'اختبر نطقك', 'تكلّم وتحقّق') + bigTile('#/test', '🧭', '#2B1F86', 'اختبار المستوى', S.test == null ? '12 سؤالًا' : 'نتيجتك: ' + ar(S.test) + ' / 12') + '</div>' +
+    '<div class="sh"><h2>الألعاب</h2></div><div class="tiles">' + GAMES.map(function(g){ return gameTile(g); }).join('') + '</div>' + footer() + '</div>';
   render(html, 'play');
 }
 function pickBar(game, cur){
-  var opts = [{id:'all', e:'🌍', title:'كله'}].concat(topics()).concat([{id:'a1', e:'📘', title:'دروس A1'},{id:'a2', e:'📗', title:'دروس A2'}]);
+  var opts = [{id:'all', e:'🌍', title:'الكل'}].concat(topics()).concat([{id:'a1', e:'📘', title:'دروس A1'},{id:'a2', e:'📗', title:'دروس A2'}]);
+  if (Object.keys(S.mist).length >= 4) opts.splice(1, 0, {id:'mist', e:'🩹', title:'أخطائي'});
   return '<div class="pick">' + opts.map(function(t){ return '<a class="chip ' + (t.id === cur ? 'on' : '') + '" href="#/g/' + game + '/' + t.id + '" style="text-decoration:none">' + t.e + ' ' + esc(t.title) + '</a>'; }).join('') + '</div>';
 }
 function norm(s){ return String(s).toLowerCase().replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim(); }
@@ -525,81 +964,103 @@ function viewGame(gid, tid, opts){
   opts = opts || {};
   var g = GAMES.find(function(x){ return x.id === gid; }); if (!g) return go('#/play');
   var pool = uniqBy(itemsOf(tid).filter(function(x){ return x.mn; }), function(x){ return x.de; });
-  if (tid === 'all') ['abc','num','greet','intro','colors','family','food','home','body','animals','jobs','weather','travel','verbs','calendar'].forEach(loadAudio); else loadAudio(tid);
+  if (tid === 'all') ['abc','num','greet','intro','colors','family','food','home','body','animals','jobs','weather','travel','verbs','calendar'].forEach(useAudio);
+  else if (tid === 'mist') pool.forEach(function(x){ useAudio(x.grp); }); else useAudio(tid);
   var need = {order: function(x){ var n = x.de.split(' ').length; return n >= 3 && n <= 9 && !/[,·]/.test(x.de); }, artikel: function(x){ return !!x.g; }}[gid];
   if (need) pool = pool.filter(need);
   var pool2 = uniqBy(pool, function(x){ return x.mn; });
-  var head = opts.daily ? '<div class="ph" style="--c:#FF3D7F"><a class="back" href="#/">→ الرئيسية</a><span class="em">🎯</span><h1>مهمة النهارده</h1><div class="g">Tagesmission</div><p>١٠ أسئلة متنوعة. خلّصها وخد ٥٠ نقطة زيادة.</p></div>' :
-    '<div class="ph" style="--c:' + g.c + '"><a class="back" href="#/play">→ العب</a><span class="em">' + g.e + '</span><h1>' + g.t + '</h1><p>' + g.d + '</p></div>' + pickBar(gid, tid);
-  if (pool2.length < (gid === 'memory' ? 6 : 5)){
-    render('<div class="wrap">' + head + '<div class="empty"><i>🪐</i>الموضوع ده مفيهوش كلمات كفاية للعبة دي. اختار موضوع تاني من فوق.</div></div>', 'play'); return;
+  var distract = pool2.length >= 4 ? pool2 : uniqBy(pool2.concat(itemsOf('all').filter(function(x){ return x.mn; })), function(x){ return x.mn; });
+  var head = opts.daily ? '<div class="ph" style="--c:#FF3D7F"><a class="back" href="#/">→ الرئيسية</a><span class="em">🎯</span><h1>مهمة اليوم</h1><div class="g">Tagesmission</div><p>10 أسئلة متنوعة. أنهِها واحصل على 50 نقطة إضافية.</p></div>' :
+    '<div class="ph" style="--c:' + g.c + '"><a class="back" href="' + (tid === 'mist' ? '#/mistakes' : '#/play') + '">→ ' + (tid === 'mist' ? 'أخطائي' : 'الألعاب') + '</a><span class="em">' + g.e + '</span><h1>' + g.t + '</h1><p>' + g.d + '</p></div>' + pickBar(gid, tid);
+  var minN = gid === 'memory' ? 6 : (tid === 'mist' ? 4 : 5);
+  if (pool2.length < minN){
+    render('<div class="wrap">' + head + '<div class="empty"><i>🪐</i>' + (tid === 'mist' ? 'تحتاج 4 كلمات على الأقل في كرّاسة الأخطاء لهذه اللعبة.' : 'هذا الموضوع لا يحتوي كلمات كافية لهذه اللعبة. اختر موضوعًا آخر من الأعلى.') + '</div></div>', 'play'); return;
   }
+  var KEY = opts.daily ? 'daily:' + today() : gid + '/' + tid;
+  var saved = S.gs[KEY];
+  if (!opts.fresh && !opts.resume && saved && gid !== 'speed' && saved.i > 0){
+    render('<div class="wrap">' + head + '<div class="panel center resume"><div style="font-size:44px">⏸️</div><b>لديك جولة لم تكملها</b><p class="sub">توقفت عند ' + (saved.lbl || 'السؤال ' + ar(saved.i + 1)) + '</p><div class="row" style="justify-content:center"><button class="btn" id="resY">▶ تابع من حيث توقفت</button><button class="btn alt" id="resN">ابدأ من جديد</button></div></div></div>', 'play');
+    $('#resY').onclick = function(){ viewGame(gid, tid, Object.assign({}, opts, {resume:true})); };
+    $('#resN').onclick = function(){ delete S.gs[KEY]; save(); viewGame(gid, tid, Object.assign({}, opts, {fresh:true})); };
+    return;
+  }
+  if (!opts.resume){ delete S.gs[KEY]; }
   render('<div class="wrap">' + head + '<div id="stage"></div></div>', 'play');
   var stage = $('#stage');
   var rnd = opts.daily ? seeded('daily' + today()) : Math.random;
   var R = {ok:0, total:0, mistakes:0};
+  var byDe = {}; pool.concat(pool2).forEach(function(x){ byDe[x.de] = x; });
+  function st(o){ S.gs[KEY] = o; save(); }
   function finish(extra){
+    delete S.gs[KEY];
     var pct = R.total ? R.ok / R.total : 0, stars = pct >= .9 ? 3 : pct >= .6 ? 2 : 1, xp = R.ok * 10 + 20 + (extra || 0);
     if (R.total >= 5 && R.mistakes === 0){ S.perfect = true; }
     S.games[gid] = 1; if (opts.daily){ S.daily[today()] = R.ok; xp += 50; }
     save(); addXP(xp); confetti();
-    stage.innerHTML = '<div class="result"><div class="em">' + (stars === 3 ? '🏆' : stars === 2 ? '🚀' : '🌱') + '</div><h2>' + (stars === 3 ? 'إنت صاروخ!' : stars === 2 ? 'برافو عليك!' : 'بداية حلوة!') + '</h2>' +
-      '<div class="stars">' + '⭐'.repeat(stars) + '<span style="opacity:.25">' + '⭐'.repeat(3 - stars) + '</span></div><div>' + ar(R.ok) + ' من ' + ar(R.total) + ' صح</div><div class="xpgain">+' + ar(xp) + ' نقطة ⚡</div>' +
-      '<div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="again">🔁 العب تاني</button><a class="btn alt" href="' + (opts.daily ? '#/' : '#/play') + '" style="text-decoration:none">' + (opts.daily ? 'الرئيسية' : 'ألعاب تانية') + '</a></div></div>';
-    $('#again').onclick = function(){ viewGame(gid, tid, opts); };
+    var unitDone = '';
+    if (!opts.daily && UMAP['t:' + tid] && R.total >= 5 && pct >= .7 && !S.done['t:' + tid]){ complete('t:' + tid); unitDone = '<div class="badge-done">✅ أكملت موضوع «' + esc(UMAP['t:' + tid].title) + '»</div>'; }
+    stage.innerHTML = '<div class="result"><div class="em">' + (stars === 3 ? '🏆' : stars === 2 ? '🚀' : '🌱') + '</div><h2>' + (stars === 3 ? 'أنت صاروخ!' : stars === 2 ? 'أحسنت!' : 'بداية جيدة!') + '</h2>' +
+      '<div class="stars">' + '⭐'.repeat(stars) + '<span style="opacity:.25">' + '⭐'.repeat(3 - stars) + '</span></div><div>' + ar(R.ok) + ' من ' + ar(R.total) + ' صحيحة</div><div class="xpgain">+' + ar(xp) + ' نقطة ⚡</div>' + unitDone +
+      (R.mistakes && tid !== 'mist' ? '<div class="sub">الكلمات التي أخطأت فيها حُفظت في <a href="#/mistakes">كرّاسة أخطائي</a></div>' : '') +
+      '<div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="again">🔁 العب مرة أخرى</button><a class="btn alt" href="' + (opts.daily ? '#/' : '#/play') + '" style="text-decoration:none">' + (opts.daily ? 'الرئيسية' : 'ألعاب أخرى') + '</a></div></div>';
+    $('#again').onclick = function(){ viewGame(gid, tid, {daily:opts.daily, fresh:true}); };
     if (!S.popup){ setTimeout(function(){ if ($('.result') && !S.popup){ S.popup = true; save(); subPopup(); } }, 1500); }
   }
   function bar(i, n){ return '<div class="gamebar"><div class="prog"><i style="width:' + (i / n * 100) + '%"></i></div><span class="hearts">' + ar(i) + '/' + ar(n) + '</span></div>'; }
-  function others(item, n, key){ return shuffle(pool2.filter(function(x){ return x[key] !== item[key]; }), rnd).slice(0, n); }
+  function others(item, n, key){ return shuffle(distract.filter(function(x){ return x[key] !== item[key]; }), rnd).slice(0, n); }
+  function judge(ok, q){ if (ok) fixMistake(q); else if (tid !== 'mist' || S.mist[q.de]) addMistake(q); }
 
   if (gid === 'meaning' || gid === 'listen' || gid === 'artikel' || gid === 'type' || gid === 'order' || opts.daily){
-    var N = 10, qs = shuffle(pool2, rnd).slice(0, N), i = 0;
-    var types = opts.daily ? qs.map(function(q, k){ return q.g && k % 3 === 2 ? 'artikel' : (k % 2 ? 'listen' : 'meaning'); }) : null;
+    var N = 10, qs, types, i = 0;
+    if (opts.resume && saved && saved.qs){ qs = saved.qs.map(function(d){ return byDe[d]; }).filter(Boolean); types = saved.types; i = saved.i; R = saved.R || R; if (qs.length !== saved.qs.length){ qs = null; i = 0; R = {ok:0,total:0,mistakes:0}; } }
+    if (!qs){ qs = shuffle(pool2, rnd).slice(0, N); types = opts.daily ? qs.map(function(q, k){ return q.g && k % 3 === 2 ? 'artikel' : (k % 2 ? 'listen' : 'meaning'); }) : null; }
+    var save1 = function(){ st({qs:qs.map(function(q){ return q.de; }), types:types, i:i, R:R, lbl:'السؤال ' + ar(i + 1) + ' من ' + ar(qs.length)}); };
     var next = function(){
       if (i >= qs.length) return finish();
-      var q = qs[i], t = types ? types[i] : gid; i++;
-      var h = bar(i - 1, qs.length);
+      var q = qs[i], t = types ? types[i] : gid;
+      var h = bar(i, qs.length);
       if (t === 'meaning'){
         var ch = shuffle([q].concat(others(q, 3, 'mn')), rnd);
-        h += '<div class="qcard"><div class="em">' + (q.e || '💬') + '</div><div class="q">يعني إيه؟</div><div class="big">' + deHTML(q) + '</div><div class="pr arp">' + pron(q.ar) + '</div><button class="play sm" id="qp" style="margin:8px auto 0">' + ICON_PLAY + '</button></div>' +
+        h += '<div class="qcard"><div class="em">' + (q.e || '💬') + '</div><div class="q">ما معناها؟</div><div class="big">' + deHTML(q) + '</div><div class="pr arp">' + pron(q.ar || '') + '</div><button class="play sm" id="qp" style="margin:8px auto 0">' + ICON_PLAY + '</button></div>' +
           '<div class="opts">' + ch.map(function(c, k){ return '<button class="opt" data-k="' + k + '">' + esc(c.mn) + '</button>'; }).join('') + '</div>';
         stage.innerHTML = h; $('#qp').onclick = function(){ play(q); }; play(q);
         $$('.opt').forEach(function(b){ b.onclick = function(){ answer(ch[+b.dataset.k] === q, b, q); }; });
       } else if (t === 'listen'){
         var ch2 = shuffle([q].concat(others(q, 3, 'de')), rnd);
-        h += '<div class="qcard"><div class="q">اسمع واختار اللي سمعته</div><button class="play" id="qp" style="width:84px;height:84px;margin:8px auto">' + ICON_PLAY + '</button><div class="q">🐢 دوس تاني لو عايز تسمع أبطأ</div></div>' +
+        h += '<div class="qcard"><div class="q">استمع واختر ما سمعته</div><button class="play" id="qp" style="width:84px;height:84px;margin:8px auto">' + ICON_PLAY + '</button><div class="q">🐢 اضغط مرة أخرى للاستماع ببطء</div></div>' +
           '<div class="opts">' + ch2.map(function(c, k){ return '<button class="opt de" data-k="' + k + '">' + deHTML(c) + '</button>'; }).join('') + '</div>';
         stage.innerHTML = h; var slowNext = false;
         $('#qp').onclick = function(){ var sp = S.set.speed; if (slowNext) S.set.speed = 'slow'; play(q, null, function(){ S.set.speed = sp; }); slowNext = true; }; play(q);
         $$('.opt').forEach(function(b){ b.onclick = function(){ answer(ch2[+b.dataset.k] === q, b, q); }; });
       } else if (t === 'artikel'){
-        h += '<div class="qcard"><div class="em">' + (q.e || '📦') + '</div><div class="q">der ولا die ولا das؟</div><div class="big">… ' + esc(q.n) + '</div><div class="m" style="color:var(--mute)">' + esc(q.mn) + '</div></div>' +
+        h += '<div class="qcard"><div class="em">' + (q.e || '📦') + '</div><div class="q">der أم die أم das؟</div><div class="big">… ' + esc(q.n) + '</div><div class="m" style="color:var(--mute)">' + esc(q.mn) + '</div></div>' +
           '<div class="arts"><button class="artb m" data-a="m">der</button><button class="artb f" data-a="f">die</button><button class="artb n" data-a="n">das</button></div>' +
-          '<div class="tip memo" style="margin-top:12px"><b class="k">🧠</b><span style="color:#2F6BFF;font-weight:800">der</span> مذكر · <span style="color:#FF3D7F;font-weight:800">die</span> مؤنث · <span style="color:#12A877;font-weight:800">das</span> محايد. احفظ كل اسم بأداته ولونه.</div>';
+          '<div class="tip memo" style="margin-top:12px"><b class="k">🧠</b><span class="art m">der</span> مذكّر · <span class="art f">die</span> مؤنّث · <span class="art n">das</span> محايد. احفظ كل اسم مع أداته ولونه.</div>';
         stage.innerHTML = h;
         $$('.artb').forEach(function(b){ b.onclick = function(){ answer(b.dataset.a === q.g, b, q); }; });
       } else if (t === 'type'){
-        h += '<div class="qcard"><div class="em">' + (q.e || '✍️') + '</div><div class="q">اكتبها بالألماني</div><div class="bigar">' + esc(q.mn) + '</div><button class="play sm" id="qp" style="margin:8px auto 0">' + ICON_PLAY + '</button></div>' +
+        h += '<div class="qcard"><div class="em">' + (q.e || '✍️') + '</div><div class="q">اكتبها بالألمانية</div><div class="bigar">' + esc(q.mn) + '</div><button class="play sm" id="qp" style="margin:8px auto 0">' + ICON_PLAY + '</button></div>' +
           '<input class="inp de" id="tin" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="اكتب هنا…" aria-label="إجابتك"><div class="row" style="margin-top:10px"><button class="btn wide" id="tchk">تأكيد</button></div>' +
-          '<div class="center" style="font-size:12.5px;color:var(--mute);margin-top:6px">مش لاقي ä ö ü؟ اكتب ae oe ue عادي</div>';
+          '<div class="center sub" style="margin-top:6px">لا تجد ä ö ü؟ اكتب ae oe ue وتُقبل الإجابة</div>';
         stage.innerHTML = h; $('#qp').onclick = function(){ play(q); }; var inp = $('#tin'); setTimeout(function(){ inp.focus(); }, 50);
-        var chk = function(){ var v = norm(inp.value), full = norm(q.de), noun = q.n ? norm(q.n) : null; var ok = v === full || (noun && v === noun); answer(ok, null, q, ok && noun && v === noun ? 'صح! بس متنساش الأداة: ' + ART[q.g] : null); };
+        var chk = function(){ var v = norm(inp.value), full = norm(q.de), noun = q.n ? norm(q.n) : null; var ok = v === full || (noun && v === noun); answer(ok, null, q, ok && noun && v === noun && v !== full ? 'صحيح! لكن لا تنسَ الأداة: ' + ART[q.g] : null); };
         $('#tchk').onclick = chk; inp.onkeydown = function(e){ if (e.key === 'Enter') chk(); };
       } else if (t === 'order'){
         var words = q.de.split(' '), pool3 = shuffle(words.map(function(w, k){ return {w:w, k:k}; }), rnd), built = [];
         if (pool3.map(function(x){ return x.w; }).join(' ') === q.de) pool3.reverse();
-        h += '<div class="qcard"><div class="q">رتّب الكلمات عشان تبقى:</div><div class="bigar" style="font-size:19px">' + esc(q.mn) + '</div></div><div class="slots" id="sl"></div><div class="pool" id="po"></div><div class="row"><button class="btn alt" id="oclr">↺ امسح</button><button class="btn" id="ochk" style="flex:1">تأكيد</button></div>';
+        h += '<div class="qcard"><div class="q">رتّب الكلمات لتصبح:</div><div class="bigar" style="font-size:19px">' + esc(q.mn) + '</div></div><div class="slots" id="sl"></div><div class="pool" id="po"></div><div class="row"><button class="btn alt" id="oclr">↺ مسح</button><button class="btn" id="ochk" style="flex:1">تأكيد</button></div>';
         stage.innerHTML = h;
         var draw = function(){ $('#sl').innerHTML = built.map(function(x, k){ return '<button class="wchip" data-s="' + k + '">' + esc(x.w) + '</button>'; }).join('');
           $('#po').innerHTML = pool3.map(function(x, k){ return built.indexOf(x) >= 0 ? '' : '<button class="wchip" data-p="' + k + '">' + esc(x.w) + '</button>'; }).join('');
           $$('[data-p]').forEach(function(b){ b.onclick = function(){ built.push(pool3[+b.dataset.p]); draw(); }; });
           $$('[data-s]').forEach(function(b){ b.onclick = function(){ built.splice(+b.dataset.s, 1); draw(); }; }); };
         draw(); $('#oclr').onclick = function(){ built = []; draw(); };
-        $('#ochk').onclick = function(){ if (built.length < words.length) return toast('كمّل الكلمات الأول'); answer(built.map(function(x){ return x.w; }).join(' ') === q.de, null, q); };
+        $('#ochk').onclick = function(){ if (built.length < words.length) return toast('أكمل الكلمات أولًا'); answer(built.map(function(x){ return x.w; }).join(' ') === q.de, null, q); };
       }
     };
     var answer = function(ok, btn, q, note){
       R.total++; if (ok) R.ok++; else R.mistakes++;
+      judge(ok, q); i++; save1();
       if (btn) btn.classList.add(ok ? 'ok' : 'no');
       if (!ok){ $$('.opt').forEach(function(b){ if (b.textContent.trim() === q.mn || b.textContent.trim() === (q.g ? ART[q.g] + ' ' + q.n : q.de)) b.classList.add('ok'); }); }
       $$('.opt,.artb').forEach(function(b){ b.disabled = true; });
@@ -609,69 +1070,79 @@ function viewGame(gid, tid, opts){
     next(); return;
   }
   if (gid === 'match'){
-    var rounds = 3, r = 0;
+    var rounds = 3, r = (opts.resume && saved) ? saved.r : 0; if (opts.resume && saved && saved.R) R = saved.R;
     var mround = function(){
       if (r >= rounds) return finish();
-      r++; var set = shuffle(pool2, rnd).slice(0, 5), L = shuffle(set, rnd), Rr = shuffle(set, rnd), sel = null, left = 5;
-      stage.innerHTML = bar(r - 1, rounds) + '<div class="q center" style="color:var(--mute);margin-bottom:10px">دوس على الكلمة وبعدين على معناها</div><div class="match"><div class="col">' + L.map(function(x, k){ return '<button class="mb de" data-l="' + k + '">' + deHTML(x) + '</button>'; }).join('') + '</div><div class="col">' + Rr.map(function(x, k){ return '<button class="mb" data-r="' + k + '">' + esc(x.mn) + '</button>'; }).join('') + '</div></div>';
+      st({r:r, R:R, i:r, lbl:'الجولة ' + ar(r + 1) + ' من ' + ar(rounds)});
+      r++; var set = shuffle(pool2, rnd).slice(0, 5), L = shuffle(set, rnd), Rr = shuffle(set, rnd), sel = null, left = 5, wrongOn = {};
+      stage.innerHTML = bar(r - 1, rounds) + '<div class="q center sub" style="margin-bottom:10px">اضغط على الكلمة ثم على معناها</div><div class="match"><div class="col">' + L.map(function(x, k){ return '<button class="mb de" data-l="' + k + '">' + deHTML(x) + '</button>'; }).join('') + '</div><div class="col">' + Rr.map(function(x, k){ return '<button class="mb" data-r="' + k + '">' + esc(x.mn) + '</button>'; }).join('') + '</div></div>';
       $$('[data-l]').forEach(function(b){ b.onclick = function(){ $$('[data-l]').forEach(function(x){ x.classList.remove('sel'); }); b.classList.add('sel'); sel = L[+b.dataset.l]; play(sel); }; });
-      $$('[data-r]').forEach(function(b){ b.onclick = function(){ if (!sel) return toast('اختار الكلمة الألماني الأول');
+      $$('[data-r]').forEach(function(b){ b.onclick = function(){ if (!sel) return toast('اختر الكلمة الألمانية أولًا');
         var it = Rr[+b.dataset.r]; R.total++;
-        if (it === sel){ R.ok++; b.classList.add('done'); $('[data-l].sel').classList.add('done'); sel = null; left--; if (!left) setTimeout(mround, 500); }
-        else { R.mistakes++; b.classList.add('no'); setTimeout(function(){ b.classList.remove('no'); }, 400); } }; });
+        if (it === sel){ R.ok++; if (!wrongOn[sel.de]) fixMistake(sel); b.classList.add('done'); $('[data-l].sel').classList.add('done'); sel = null; left--; if (!left){ r < rounds ? st({r:r, R:R, i:r, lbl:'الجولة ' + ar(r + 1) + ' من ' + ar(rounds)}) : 0; setTimeout(mround, 500); } }
+        else { R.mistakes++; if (!wrongOn[sel.de]){ wrongOn[sel.de] = 1; addMistake(sel); } b.classList.add('no'); setTimeout(function(){ b.classList.remove('no'); }, 400); } }; });
     };
     mround(); return;
   }
   if (gid === 'memory'){
-    var set6 = shuffle(pool2, rnd).slice(0, 6), cards = [];
-    set6.forEach(function(x, k){ cards.push({k:k, t:'de', it:x}); cards.push({k:k, t:'mn', it:x}); }); cards = shuffle(cards, rnd);
-    var open = [], found = 0, moves = 0;
-    stage.innerHTML = '<div class="q center" style="color:var(--mute);margin-bottom:10px">اقلب كارتين: الكلمة الألماني ومعناها</div><div class="mem">' + cards.map(function(c, k){ return '<button class="mc" data-c="' + k + '" aria-label="كارت">🚀</button>'; }).join('') + '</div><div class="center" id="mv" style="margin-top:10px;color:var(--mute)"></div>';
+    var cards, gotK = {}, moves = 0, found = 0;
+    if (opts.resume && saved && saved.cards){ cards = saved.cards.map(function(c){ return {k:c.k, t:c.t, it:byDe[c.de]}; }); if (cards.some(function(c){ return !c.it; })) cards = null; else { (saved.got || []).forEach(function(k){ gotK[k] = 1; }); moves = saved.moves || 0; found = Object.keys(gotK).length; } }
+    if (!cards){ var set6 = shuffle(pool2, rnd).slice(0, 6); cards = []; set6.forEach(function(x, k){ cards.push({k:k, t:'de', it:x}); cards.push({k:k, t:'mn', it:x}); }); cards = shuffle(cards, rnd); }
+    var saveM = function(){ st({cards:cards.map(function(c){ return {k:c.k, t:c.t, de:c.it.de}; }), got:Object.keys(gotK).map(Number), moves:moves, i:found || (moves ? 1 : 0), lbl:'وجدت ' + ar(found) + ' من 6 أزواج'}); };
+    var open = [];
+    var left = function(){ return 6 - found; };
+    stage.innerHTML = '<div class="memhead"><span id="ml">🃏 تبقّى ' + plural(left(), 'زوج واحد', 'زوجان', 'أزواج', 'زوجًا') + '</span><span id="mv">محاولات: ' + ar(moves) + '</span></div><div class="mem">' + cards.map(function(c, k){ return '<button class="mc' + (gotK[c.k] ? ' gone' : '') + '" data-c="' + k + '" aria-label="بطاقة"><span>🚀</span></button>'; }).join('') + '</div>';
     $$('[data-c]').forEach(function(b){ b.onclick = function(){
-      var c = cards[+b.dataset.c]; if (b.classList.contains('up') || open.length === 2) return;
-      b.classList.add('up'); if (c.t === 'de'){ b.classList.add('de'); b.innerHTML = deHTML(c.it); play(c.it); } else b.textContent = (c.it.e ? c.it.e + ' ' : '') + c.it.mn;
+      var c = cards[+b.dataset.c]; if (b.classList.contains('up') || b.classList.contains('gone') || open.length === 2) return;
+      b.classList.add('up'); if (c.t === 'de'){ b.classList.add('de'); b.innerHTML = '<span>' + deHTML(c.it) + '</span>'; play(c.it); } else b.innerHTML = '<span>' + (c.it.e ? c.it.e + ' ' : '') + esc(c.it.mn) + '</span>';
       open.push({b:b, c:c});
       if (open.length === 2){ moves++; $('#mv').textContent = 'محاولات: ' + ar(moves);
-        if (open[0].c.k === open[1].c.k){ open.forEach(function(o){ o.b.classList.add('got'); }); open = []; found++; if (found === 6){ R.total = 6; R.ok = Math.max(1, 6 - Math.max(0, moves - 6) / 2 | 0); R.mistakes = moves - 6; setTimeout(finish, 600); } }
-        else setTimeout(function(){ open.forEach(function(o){ o.b.classList.remove('up','de'); o.b.textContent = '🚀'; }); open = []; }, 900); } }; });
+        if (open[0].c.k === open[1].c.k){ var pair = open; open = []; found++; gotK[pair[0].c.k] = 1; pair.forEach(function(o){ o.b.classList.add('got'); });
+          setTimeout(function(){ pair.forEach(function(o){ o.b.classList.add('gone'); }); }, 650);
+          $('#ml').textContent = found === 6 ? '🎉 وجدت كل الأزواج!' : '🃏 تبقّى ' + plural(left(), 'زوج واحد', 'زوجان', 'أزواج', 'زوجًا'); saveM();
+          if (found === 6){ R.total = 6; R.ok = Math.max(1, 6 - Math.max(0, Math.floor((moves - 6) / 2))); R.mistakes = moves - 6; setTimeout(finish, 900); } }
+        else { saveM(); setTimeout(function(){ open.forEach(function(o){ o.b.classList.remove('up','de'); o.b.innerHTML = '<span>🚀</span>'; }); open = []; }, 900); } } }; });
     return;
   }
   if (gid === 'speed'){
     var end = Date.now() + 60000, timer;
-    stage.innerHTML = '<div class="qcard"><div class="em">⏱️</div><b>معاك ٦٠ ثانية</b><p style="color:var(--mute)">جاوب أكبر عدد من الأسئلة. كل إجابة صح = ١٠ نقط.</p><button class="btn flame" id="sgo">🚀 ابدأ</button></div>';
+    stage.innerHTML = '<div class="qcard"><div class="em">⏱️</div><b>معك 60 ثانية</b><p class="sub">أجب عن أكبر عدد من الأسئلة. كل إجابة صحيحة = 10 نقاط.</p><button class="btn flame" id="sgo">🚀 ابدأ</button></div>';
     $('#sgo').onclick = function(){
       var q1 = function(){
-        var left = Math.max(0, Math.ceil((end - Date.now()) / 1000)); if (!left){ clearInterval(timer); return finish(); }
+        var lft = Math.max(0, Math.ceil((end - Date.now()) / 1000)); if (!lft){ clearInterval(timer); return finish(); }
         var q = pool2[Math.floor(rnd() * pool2.length)], ch = shuffle([q].concat(others(q, 3, 'mn')), rnd);
-        stage.innerHTML = '<div class="gamebar"><span class="timer" id="tm">' + left + '</span><div class="prog"><i style="width:' + (left / 60 * 100) + '%;background:linear-gradient(90deg,#FF6B2C,#FFC53D)"></i></div><span class="hearts">✅ ' + ar(R.ok) + '</span></div>' +
+        stage.innerHTML = '<div class="gamebar"><span class="timer" id="tm">' + lft + '</span><div class="prog"><i style="width:' + (lft / 60 * 100) + '%;background:linear-gradient(90deg,#FF6B2C,#FFC53D)"></i></div><span class="hearts">✅ ' + ar(R.ok) + '</span></div>' +
           '<div class="qcard"><div class="em">' + (q.e || '💬') + '</div><div class="big">' + deHTML(q) + '</div></div><div class="opts">' + ch.map(function(c, k){ return '<button class="opt" data-k="' + k + '">' + esc(c.mn) + '</button>'; }).join('') + '</div>';
-        $$('.opt').forEach(function(b){ b.onclick = function(){ var ok = ch[+b.dataset.k] === q; R.total++; if (ok) R.ok++; else R.mistakes++; b.classList.add(ok ? 'ok' : 'no'); setTimeout(q1, ok ? 250 : 650); }; });
+        $$('.opt').forEach(function(b){ b.onclick = function(){ var ok = ch[+b.dataset.k] === q; R.total++; if (ok) R.ok++; else R.mistakes++; judge(ok, q); b.classList.add(ok ? 'ok' : 'no'); setTimeout(q1, ok ? 250 : 650); }; });
       };
-      end = Date.now() + 60000; timer = setInterval(function(){ var t = $('#tm'); if (!t){ clearInterval(timer); return; } var left = Math.max(0, Math.ceil((end - Date.now()) / 1000)); t.textContent = left; if (!left){ clearInterval(timer); finish(); } }, 250);
+      end = Date.now() + 60000; timer = setInterval(function(){ var t = $('#tm'); if (!t){ clearInterval(timer); return; } var lft = Math.max(0, Math.ceil((end - Date.now()) / 1000)); t.textContent = lft; if (!lft){ clearInterval(timer); finish(); } }, 250);
       q1();
     };
     return;
   }
   if (gid === 'cards'){
-    var deck = pool2.slice().sort(function(a, b){ return (S.cards[a.de] || 0) - (S.cards[b.de] || 0) || (rnd() - .5); }).slice(0, 20), ci = 0;
+    var deck, ci = 0;
+    if (opts.resume && saved && saved.deck){ deck = saved.deck.map(function(d){ return byDe[d]; }).filter(Boolean); ci = saved.ci || 0; R = saved.R || R; if (!deck.length){ deck = null; ci = 0; } }
+    if (!deck) deck = pool2.slice().sort(function(a, b){ return (S.cards[a.de] || 0) - (S.cards[b.de] || 0) || (rnd() - .5); }).slice(0, 20);
+    var saveC = function(){ st({deck:deck.map(function(q){ return q.de; }), ci:ci, R:R, i:ci, lbl:'البطاقة ' + ar(ci + 1) + ' من ' + ar(deck.length)}); };
     var card = function(){
-      if (ci >= deck.length){ R.total = deck.length; return finish(); }
+      if (ci >= deck.length){ R.total = Math.max(R.total, deck.length); return finish(); }
       var q = deck[ci], box = S.cards[q.de] || 0;
-      stage.innerHTML = bar(ci, deck.length) + '<div class="flash"><div class="fc" id="fc"><div class="side"><div class="em">' + (q.e || '🃏') + '</div><div class="big">' + deHTML(q) + '</div><div style="color:var(--mute);font-size:13px">دوس عشان تقلب</div></div>' +
-        '<div class="side back"><div class="em">' + (q.e || '🃏') + '</div><div style="font-size:24px;font-weight:800">' + esc(q.mn) + '</div><div class="pr">' + pron(q.ar) + '</div></div></div></div>' +
-        '<div class="row"><button class="btn alt" id="no" style="flex:1">🔁 لسه</button><button class="btn" id="yes" style="flex:1">✅ عرفتها</button></div><div class="center" style="color:var(--mute);font-size:12.5px;margin-top:8px">صندوق ' + ar(box) + ' من ٥</div>';
+      stage.innerHTML = bar(ci, deck.length) + '<div class="flash"><div class="fc" id="fc"><div class="side"><div class="em">' + (q.e || '🃏') + '</div><div class="big">' + deHTML(q) + '</div><div class="sub">اضغط لقلب البطاقة</div></div>' +
+        '<div class="side back"><div class="em">' + (q.e || '🃏') + '</div><div style="font-size:24px;font-weight:800">' + esc(q.mn) + '</div><div class="pr arp">' + pron(q.ar || '') + '</div></div></div></div>' +
+        '<div class="row"><button class="btn alt" id="no" style="flex:1">🔁 لم أحفظها بعد</button><button class="btn" id="yes" style="flex:1">✅ عرفتها</button></div><div class="center sub" style="margin-top:8px">الصندوق ' + ar(box) + ' من 5</div>';
       var fc = $('#fc'); fc.onclick = function(){ fc.classList.toggle('flip'); play(q); };
       play(q);
-      $('#yes').onclick = function(){ S.cards[q.de] = Math.min(5, box + 1); R.ok++; save(); ci++; card(); };
-      $('#no').onclick = function(){ S.cards[q.de] = 0; save(); deck.push(q); ci++; if (deck.length > 40) deck.length = 40; card(); };
+      $('#yes').onclick = function(){ S.cards[q.de] = Math.min(5, box + 1); R.ok++; R.total++; fixMistake(q); ci++; saveC(); card(); };
+      $('#no').onclick = function(){ S.cards[q.de] = 0; R.total++; R.mistakes++; addMistake(q); deck.push(q); ci++; if (deck.length > 40) deck.length = 40; saveC(); card(); };
     };
     card(); return;
   }
 }
 function showFb(ok, q, note, next){
   var fb = $('#fb'); fb.className = 'feedback ' + (ok ? 'ok' : 'no');
-  fb.innerHTML = '<b>' + (ok ? (note ? '✅ ' + esc(note) : ['✅ برافو!','✅ صح كده!','✅ عاش!','✅ ممتاز!'][Math.floor(Math.random()*4)]) : '❌ الإجابة الصح:') + '</b>' +
-    '<div class="ans">' + deHTML(q) + '</div><div>' + esc(q.mn) + '</div><button class="btn" id="fbn">' + (ok ? 'كمّل' : 'فهمت، كمّل') + '</button>';
+  fb.innerHTML = '<b>' + (ok ? (note ? '✅ ' + esc(note) : ['✅ أحسنت!','✅ إجابة صحيحة!','✅ رائع!','✅ ممتاز!'][Math.floor(Math.random()*4)]) : '❌ الإجابة الصحيحة:') + '</b>' +
+    '<div class="ans">' + deHTML(q) + '</div><div>' + esc(q.mn) + '</div><button class="btn" id="fbn">' + (ok ? 'متابعة' : 'فهمت، تابع') + '</button>';
   requestAnimationFrame(function(){ fb.classList.add('show'); });
   $('#fbn').onclick = function(){ hideFb(); next(); };
 }
@@ -680,7 +1151,7 @@ function hideFb(){ var fb = $('#fb'); if (fb) fb.classList.remove('show'); }
 /* ---------------- placement test ---------------- */
 function viewTest(){
   var qs = SR.placement, i = 0, score = 0;
-  render('<div class="wrap"><div class="ph" style="--c:#5B3DF5"><a class="back" href="#/">→ الرئيسية</a><span class="em">🧭</span><h1>اختبار المستوى</h1><div class="g">Einstufungstest</div><p>١٢ سؤال من السهل للصعب. لو مش عارف، خمّن عادي.</p></div><div id="stage"></div></div>', 'home');
+  render('<div class="wrap"><div class="ph" style="--c:#5B3DF5"><a class="back" href="#/">→ الرئيسية</a><span class="em">🧭</span><h1>اختبار المستوى</h1><div class="g">Einstufungstest</div><p>12 سؤالًا من السهل إلى الصعب. إن لم تعرف الإجابة فخمّن.</p></div><div id="stage"></div></div>', 'play');
   var st = $('#stage');
   function q(){
     if (i >= qs.length) return done();
@@ -692,10 +1163,10 @@ function viewTest(){
   }
   function done(){
     S.test = score; save(); addXP(20);
-    var rec = score <= 4 ? {e:'🌱', t:'ابدأ من الأساسيات', d:'الحروف والتحيات والأرقام هيبنولك أساس قوي.', h:'#/t/abc', b:'ابدأ بالحروف'} :
-              score <= 8 ? {e:'🚀', t:'إنت جاهز لـ A1', d:'ادخل دروس A1 بالترتيب، وراجع الكلمات بالألعاب.', h:'#/l/a1-1', b:'أول درس A1'} :
-                           {e:'🌙', t:'مستواك عالي!', d:'راجع A1 بسرعة، وابدأ دروس A2.', h:'#/l/a2-perfekt', b:'دروس A2'};
-    st.innerHTML = '<div class="result"><div class="em">' + rec.e + '</div><h2>' + rec.t + '</h2><div>جبت ' + ar(score) + ' من ' + ar(qs.length) + '</div><p style="color:var(--mute)">' + rec.d + '</p><a class="btn" href="' + rec.h + '" style="text-decoration:none;display:inline-block">' + rec.b + '</a></div>';
+    var rec = score <= 4 ? {e:'🌱', t:'ابدأ من الأساسيات', d:'الحروف والتحيات والأرقام ستبني لك أساسًا قويًا.', h:'#/t/abc', b:'ابدأ بالحروف'} :
+              score <= 8 ? {e:'🚀', t:'أنت جاهز لمستوى A1', d:'ادخل دروس A1 بالترتيب، وراجع الكلمات بالألعاب.', h:'#/l/a1-1', b:'أول درس A1'} :
+                           {e:'🌙', t:'مستواك ممتاز!', d:'راجع A1 بسرعة، ثم ابدأ دروس A2.', h:'#/l/a2-perfekt', b:'دروس A2'};
+    st.innerHTML = '<div class="result"><div class="em">' + rec.e + '</div><h2>' + rec.t + '</h2><div>نتيجتك ' + ar(score) + ' من ' + ar(qs.length) + '</div><p class="sub">' + rec.d + '</p><a class="btn" href="' + rec.h + '" style="text-decoration:none;display:inline-block">' + rec.b + '</a></div>';
     confetti();
   }
   q();
@@ -703,75 +1174,72 @@ function viewTest(){
 
 /* ---------------- ME ---------------- */
 function viewMe(){
-  var rk = rankOf(S.xp), top = 3000, pct = Math.min(100, S.xp / top * 100);
-  var html = '<div class="wrap"><div class="ph" style="--c:#14103A"><span class="em">🧑‍🚀</span><h1>' + (S.name ? esc(S.name) : 'رحلتي') + '</h1><div class="g">' + rk.de + '</div><p>' + rk.e + ' إنت دلوقتي ' + rk.a + '</p></div>' +
+  var si = stationIdx(), stn = STATIONS[si];
+  var html = '<div class="wrap"><div class="ph" style="--c:#14103A"><span class="em">🧑‍🚀</span><h1>' + (S.name ? esc(S.name) : 'حسابي') + '</h1><div class="g">' + stn.e + ' ' + stn.a + '</div><p>أكملت ' + ar(doneCount()) + ' من ' + ar(UNITS.length) + ' وحدة في رحلتك.</p></div>' +
     '<div class="ribbon" id="ribbon" style="margin-top:0">' + ribbonHTML() + '</div>' +
-    '<div class="sh"><h2>الارتفاع</h2></div><div class="panel alt"><div class="altimeter"><i style="height:' + pct + '%"></i></div><div class="ranks">' +
-    RANKS.map(function(r){ return '<div class="rk ' + (S.xp >= r.x ? 'got' : '') + (r === rk ? ' cur' : '') + '"><i>' + r.e + '</i><div><b>' + r.de + '</b><div style="font-size:12px">' + r.a + '</div></div><span>' + ar(r.x) + ' نقطة</span></div>'; }).join('') + '</div></div>' +
-    '<div class="sh"><h2>أوسمتي</h2><span style="color:var(--mute);font-size:13px">' + ar(Object.keys(S.badges).length) + ' من ' + ar(BADGES.length) + '</span></div><div class="badges">' +
+    '<a class="jmini" href="#/journey" style="margin-top:12px"><div class="jm-l"><span>🚀</span><b>رحلتك الفضائية</b><small>شاهد أين وصل صاروخك</small></div><div class="prog"><i style="width:' + Math.round(doneCount() / Math.max(1, UNITS.length) * 100) + '%"></i></div></a>' +
+    '<div class="sh"><h2>أوسمتي</h2><span class="cnt">' + ar(Object.keys(S.badges).length) + ' من ' + ar(BADGES.length) + '</span></div><div class="badges">' +
     BADGES.map(function(b){ return '<div class="bd ' + (S.badges[b.id] ? 'got' : '') + '"><i>' + b.e + '</i><b>' + b.t + '</b><span>' + b.d + '</span></div>'; }).join('') + '</div>' +
-    '<div class="sh"><h2>شهادتي</h2></div><div class="panel"><p style="margin:0 0 10px;color:var(--mute);font-size:14px">اكتب اسمك وخد شهادة بمستواك ونقطك، تنزل صورة تشاركها.</p><input class="inp de" id="cName" placeholder="Your name" value="' + esc(S.name) + '" aria-label="اسمك"><button class="btn wide flame" id="cert" style="margin-top:10px">🏅 اعمل شهادتي</button></div>' +
+    '<div class="sh"><h2>شهادتي</h2></div><div class="panel"><p class="sub" style="margin:0 0 10px">اكتب اسمك واحصل على شهادة بمحطتك ونقاطك، تحفظها كصورة وتشاركها.</p><input class="inp de" id="cName" placeholder="Your name" value="' + esc(S.name) + '" aria-label="اسمك"><button class="btn wide flame" id="cert" style="margin-top:10px">🏅 اصنع شهادتي</button></div>' +
     '<div class="sh"><h2>الإعدادات</h2></div><div class="panel">' +
-    setRow('dark', '🌙 الوضع الليلي', document.documentElement.getAttribute('data-theme') === 'dark') + setRow('sp', '🔤 النطق العربي', S.set.sp) + setRow('kids', '🧸 وضع الصغار', S.set.kids) +
+    setRow('dark', '🌙 الوضع الليلي', isDark()) + setRow('sp', '🔤 النطق بالحروف العربية', S.set.sp) + setRow('kids', '🧸 وضع الصغار', S.set.kids) +
     '<div class="set"><span>🐢 سرعة الصوت</span><div class="seg"><button data-sp="slow" class="' + (S.set.speed === 'slow' ? 'on' : '') + '">بطيء</button><button data-sp="normal" class="' + (S.set.speed !== 'slow' ? 'on' : '') + '">عادي</button></div></div>' +
-    '<div class="set"><span>📲 حط الموقع على شاشتك</span><button class="btn" id="installBtn">تثبيت</button></div>' +
-    '<div class="set"><span>🗑️ ابدأ من الأول</span><button class="btn alt" id="reset">امسح تقدّمي</button></div></div>' + contactHTML().split('<div class="panel" id="installCard"')[0] +
-    '<div class="foot">Sprachrakete · MOHANNAD 🚀</div></div>';
-  render(html, 'me'); bindCtl(); bindInstall();
+    '<div class="set"><span>📲 ثبّت الموقع على شاشتك</span><button class="btn" id="installBtn">تثبيت</button></div>' +
+    '<div class="set"><span>🗑️ ابدأ من جديد</span><button class="btn alt" id="reset">امسح تقدّمي</button></div></div>' +
+    '<div class="sh"><h2>تواصل معي</h2></div>' + contactHTML(false) + footer() + '</div>';
+  render(html, 'me'); bindCtl(); bindInstall(); bindRibbon();
   $$('[data-set]').forEach(function(b){ b.onclick = function(){ var k = b.dataset.set;
-    if (k === 'dark'){ S.set.theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; }
+    if (k === 'dark'){ S.set.theme = isDark() ? 'light' : 'dark'; }
     else S.set[k] = !S.set[k];
     save(); applySettings(); b.classList.toggle('on'); }; });
-  $('#reset').onclick = function(){ if (confirm('متأكد؟ كل النقط والأوسمة هتتمسح.')){ var keep = S.set; S = {xp:0, streak:0, last:'', days:{}, badges:{}, seen:{}, cards:{}, games:{}, daily:{}, tools:{}, name:'', set:keep, perfect:false, test:null, popup:true}; save(); viewMe(); } };
-  $('#cert').onclick = function(){ var n = $('#cName').value.trim(); if (!n) return toast('اكتب اسمك الأول'); S.name = n; save(); certificate(n); };
+  $('#reset').onclick = function(){ if (confirm('هل أنت متأكد؟ ستُمسح كل النقاط والأوسمة والتقدّم.')){ var keep = S.set, nm = S.name; S = blank(); S.set = keep; S.name = nm; S.popup = true; save(); viewMe(); } };
+  $('#cert').onclick = function(){ var n = $('#cName').value.trim(); if (!n) return toast('اكتب اسمك أولًا'); S.name = n; save(); certificate(n); };
 }
 function setRow(k, label, on){ return '<div class="set"><span>' + label + '</span><button class="switch ' + (on ? 'on' : '') + '" data-set="' + k + '" aria-label="' + label + '"></button></div>'; }
 function certificate(name){
-  var rk = rankOf(S.xp), c = document.createElement('canvas'); c.width = 1400; c.height = 990; var x = c.getContext('2d');
+  var stn = station(), c = document.createElement('canvas'); c.width = 1400; c.height = 990; var x = c.getContext('2d');
   var g = x.createRadialGradient(1100, 0, 50, 700, 500, 1100); g.addColorStop(0, '#4B33D6'); g.addColorStop(.45, '#2B1F86'); g.addColorStop(1, '#14103A'); x.fillStyle = g; x.fillRect(0, 0, 1400, 990);
   for (var i = 0; i < 140; i++){ x.fillStyle = 'rgba(255,255,255,' + (Math.random() * .8 + .2) + ')'; x.beginPath(); x.arc(Math.random()*1400, Math.random()*990, Math.random()*1.8 + .3, 0, 7); x.fill(); }
   x.strokeStyle = '#FFC53D'; x.lineWidth = 6; x.strokeRect(40, 40, 1320, 910); x.lineWidth = 2; x.strokeRect(58, 58, 1284, 874);
   var pg = x.createRadialGradient(170, 860, 10, 170, 860, 200); pg.addColorStop(0, '#FFC53D'); pg.addColorStop(.6, '#FF6B2C'); pg.addColorStop(1, '#C2410C'); x.fillStyle = pg; x.beginPath(); x.arc(170, 880, 170, 0, 7); x.fill();
   x.textAlign = 'center'; x.fillStyle = '#FFC53D'; x.font = '700 46px Outfit, sans-serif'; x.fillText('Sprachrakete', 700, 150);
   x.fillStyle = '#fff'; x.font = '800 64px system-ui, sans-serif'; x.direction = 'rtl'; x.fillText('شهادة إنجاز', 700, 250);
-  x.font = '400 32px system-ui, sans-serif'; x.fillStyle = '#D8D3FF'; x.fillText('بنشهد إن رائد الفضاء', 700, 330);
+  x.font = '400 32px system-ui, sans-serif'; x.fillStyle = '#D8D3FF'; x.fillText('نشهد بأن رائد الفضاء', 700, 330);
   x.direction = 'ltr'; x.fillStyle = '#fff'; x.font = '700 92px Outfit, sans-serif'; x.fillText(name, 700, 450);
   x.fillStyle = '#FFC53D'; x.fillRect(450, 480, 500, 4);
-  x.direction = 'rtl'; x.fillStyle = '#fff'; x.font = '500 34px system-ui, sans-serif'; x.fillText('وصل في رحلة تعلّم الألماني لـ ' + rk.a + ' ' + rk.e, 700, 560);
-  x.fillStyle = '#D8D3FF'; x.font = '400 30px system-ui, sans-serif'; x.fillText(ar(S.xp) + ' نقطة · ' + ar(Object.keys(S.badges).length) + ' وسام · سلسلة ' + ar(S.streak) + ' يوم', 700, 625);
+  x.direction = 'rtl'; x.fillStyle = '#fff'; x.font = '500 34px system-ui, sans-serif'; x.fillText('وصل في رحلة تعلّم اللغة الألمانية إلى ' + stn.a + ' ' + stn.e, 700, 560);
+  x.fillStyle = '#D8D3FF'; x.font = '400 30px system-ui, sans-serif'; x.fillText(ar(doneCount()) + ' وحدة مكتملة · ' + ar(S.xp) + ' نقطة · ' + ar(Object.keys(S.badges).length) + ' وسام', 700, 625);
   x.fillText(new Date().toLocaleDateString('ar-EG', {year:'numeric', month:'long', day:'numeric'}), 700, 690);
-  x.direction = 'ltr'; x.fillStyle = '#FFC53D'; x.font = '700 30px Outfit, sans-serif'; x.fillText('MOHANNAD · YouTube @u0_0z', 900, 860);
+  x.direction = 'ltr'; x.fillStyle = '#FFC53D'; x.font = '700 30px Outfit, sans-serif'; x.fillText('MOHANNAD · mohnned7.github.io', 900, 860);
   x.direction = 'rtl'; x.fillStyle = 'rgba(255,255,255,.6)'; x.font = '400 20px system-ui, sans-serif'; x.fillText('شهادة تشجيعية من الموقع، وليست شهادة رسمية من جهة امتحانات.', 900, 905);
   x.font = '120px system-ui'; x.fillText('🚀', 1220, 300);
   var url = c.toDataURL('image/png');
-  var m = document.createElement('div'); m.className = 'modal';
-  m.innerHTML = '<div class="mcard"><button class="x" aria-label="قفل">✕</button><h3>🏅 شهادتك جاهزة</h3><img src="' + url + '" alt="الشهادة" style="width:100%;border-radius:14px;margin:6px 0 12px"><a class="btn wide" style="display:block;text-decoration:none" download="Sprachrakete-' + name.replace(/[^\w-]/g, '') + '.png" href="' + url + '">⬇️ نزّل الشهادة</a><p style="margin-top:8px;font-size:12.5px">على الآيفون: دوس على الصورة دوسة طويلة واختار «حفظ الصورة».</p></div>';
-  document.body.appendChild(m); m.querySelector('.x').onclick = function(){ m.remove(); }; m.onclick = function(e){ if (e.target === m) m.remove(); };
+  modal('<h3>🏅 شهادتك جاهزة</h3><img src="' + url + '" alt="الشهادة" style="width:100%;border-radius:14px;margin:6px 0 12px"><a class="btn wide" style="display:block;text-decoration:none" download="Sprachrakete-' + name.replace(/[^\w-]/g, '') + '.png" href="' + url + '">⬇️ حفظ الشهادة</a><p style="margin-top:8px;font-size:12.5px">على الآيفون: اضغط على الصورة ضغطة طويلة ثم «حفظ الصورة».</p>');
 }
 
 /* ---------------- search ---------------- */
 var INDEX = null;
 function buildIndex(){
-  INDEX = []; topics().forEach(function(t){ itemsOf(t.id).forEach(function(it){ INDEX.push(Object.assign({tid:t.id, tt:t.title, te:t.e}, it)); }); });
+  INDEX = []; topics().forEach(function(t){ itemsOf(t.id).forEach(function(it){ INDEX.push(Object.assign({tid:'t/' + t.id, tt:t.title, te:t.e}, it)); }); });
   SR.a1.concat(SR.a2).forEach(function(l){ var grp = l.id.indexOf('a1') === 0 ? 'a1' : 'a2'; l.items.forEach(function(it){ INDEX.push(Object.assign({tid:'l/' + l.id, tt:l.title, te:'📘', grp:grp}, it)); }); });
 }
+function stripAr(s){ return String(s).replace(/[ً-ْـ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه'); }
 function viewSearch(q){
   if (!INDEX) buildIndex();
-  var html = '<div class="wrap"><div class="ph" style="--c:#3A86FF"><span class="em">🔍</span><h1>دوّر</h1><div class="g">Suchen</div><p>اكتب كلمة بالعربي أو بالألماني.</p></div>' +
+  var html = '<div class="wrap"><div class="ph" style="--c:#3A86FF"><span class="em">🔍</span><h1>بحث</h1><div class="g">Suchen</div><p>اكتب كلمة بالعربية أو بالألمانية.</p></div>' +
     '<input class="inp" id="sq" placeholder="مثلًا: قطة أو Katze" value="' + esc(q || '') + '" autocomplete="off" aria-label="بحث"><div class="res" id="sr"></div></div>';
   render(html, 'search'); var inp = $('#sq'), res = [];
-  function run(){ var v = inp.value.trim(); if (!v){ $('#sr').innerHTML = '<div class="empty"><i>🛰️</i>ابدأ اكتب وهتظهر النتايج هنا</div>'; return; }
-    var nv = norm(v); res = INDEX.filter(function(it){ return it.mn.indexOf(v) >= 0 || (nv && norm(it.de).indexOf(nv) >= 0); }).slice(0, 40);
-    $('#sr').innerHTML = res.length ? res.map(function(it, i){ return '<div><div style="font-size:12px;color:var(--mute);margin:0 4px 3px"><a href="#/' + (it.tid.indexOf('l/') === 0 ? it.tid : 't/' + it.tid) + '" style="text-decoration:none">' + it.te + ' ' + esc(it.tt) + ' ‹</a></div>' + itemRow(it, i) + '</div>'; }).join('') : '<div class="empty"><i>🪐</i>ملقيناش «' + esc(v) + '». جرّب كلمة تانية.</div>';
+  function run(){ var v = inp.value.trim(); if (!v){ $('#sr').innerHTML = '<div class="empty"><i>🛰️</i>ابدأ الكتابة وستظهر النتائج هنا</div>'; return; }
+    var nv = norm(v), av = stripAr(v); res = INDEX.filter(function(it){ return stripAr(it.mn).indexOf(av) >= 0 || (nv && norm(it.de).indexOf(nv) >= 0); }).slice(0, 40);
+    $('#sr').innerHTML = res.length ? res.map(function(it, i){ return '<div><div class="srcl"><a href="#/' + it.tid + '">' + it.te + ' ' + esc(it.tt) + ' ‹</a></div>' + itemRow(it, i) + '</div>'; }).join('') : '<div class="empty"><i>🪐</i>لم نجد «' + esc(v) + '». جرّب كلمة أخرى.</div>';
     $$('.it[data-i]').forEach(function(el){ el.onclick = function(){ play(res[+el.dataset.i], el); }; }); }
   inp.oninput = run; run(); setTimeout(function(){ inp.focus(); }, 60);
 }
 
 /* ---------------- popups / install ---------------- */
 function subPopup(){
-  var m = document.createElement('div'); m.className = 'modal';
-  m.innerHTML = '<div class="mcard"><button class="x" aria-label="قفل">✕</button><div class="big">🚀</div><h3>عجبتك الرحلة؟</h3><p>اشترك في قناة اليوتيوب عشان يوصلك كل درس وكل لعبة جديدة.</p><a class="cbtn yt" style="justify-content:center" href="https://www.youtube.com/@u0_0z?sub_confirmation=1" target="_blank" rel="noopener"><i>▶</i>اشترك في القناة</a><button class="btn alt wide" style="margin-top:10px" id="later">بعدين</button></div>';
-  document.body.appendChild(m); function close(){ m.remove(); } m.querySelector('.x').onclick = close; $('#later').onclick = close; m.querySelector('.cbtn').addEventListener('click', function(){ setTimeout(close, 300); });
+  var m = modal('<div class="big">🚀</div><h3>هل أعجبتك الرحلة؟</h3><p>اشترك في قناة اليوتيوب ليصلك كل درس وكل لعبة جديدة.</p><a class="cbtn yt" style="justify-content:center" href="https://www.youtube.com/@u0_0z?sub_confirmation=1" target="_blank" rel="noopener"><i>▶</i>اشترك في القناة</a><button class="btn alt wide" style="margin-top:10px" id="later">لاحقًا</button>');
+  $('#later', m).onclick = function(){ m.remove(); }; m.querySelector('.cbtn').addEventListener('click', function(){ setTimeout(function(){ m.remove(); }, 300); });
 }
 var deferred = null;
 addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); deferred = e; });
@@ -781,20 +1249,19 @@ function bindInstall(){
   $$('#installBtn').forEach(function(b){ b.onclick = function(){
     if (deferred){ deferred.prompt(); deferred.userChoice.then(function(){ deferred = null; }); return; }
     var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    var m = document.createElement('div'); m.className = 'modal';
-    m.innerHTML = '<div class="mcard"><button class="x" aria-label="قفل">✕</button><div class="big">📲</div><h3>حط Sprachrakete على شاشتك</h3>' + (ios ?
-      '<ol><li>افتح الموقع من <b>Safari</b>.</li><li>دوس زرار المشاركة <b>⬆️</b> اللي تحت.</li><li>اختار <b>«إضافة إلى الشاشة الرئيسية»</b>.</li><li>دوس <b>«إضافة»</b>، وهتلاقي أيقونة الصاروخ 🚀</li></ol>' :
-      '<ol><li>دوس على <b>⋮</b> فوق في Chrome.</li><li>اختار <b>«تثبيت التطبيق»</b> أو <b>«إضافة إلى الشاشة الرئيسية»</b>.</li><li>وافق، وهتلاقي أيقونة الصاروخ 🚀</li></ol>') + '<button class="btn wide" id="ok">تمام</button></div>';
-    document.body.appendChild(m); function close(){ m.remove(); } m.querySelector('.x').onclick = close; $('#ok').onclick = close; }; });
+    var m = modal('<div class="big">📲</div><h3>ثبّت Sprachrakete على شاشتك</h3>' + (ios ?
+      '<ol><li>افتح الموقع من <b>Safari</b>.</li><li>اضغط زر المشاركة <b>⬆️</b>.</li><li>اختر <b>«إضافة إلى الشاشة الرئيسية»</b>.</li><li>اضغط <b>«إضافة»</b>، وستجد أيقونة الصاروخ 🚀</li></ol>' :
+      '<ol><li>اضغط على <b>⋮</b> في أعلى Chrome.</li><li>اختر <b>«تثبيت التطبيق»</b> أو <b>«إضافة إلى الشاشة الرئيسية»</b>.</li><li>وافق، وستجد أيقونة الصاروخ 🚀</li></ol>') + '<button class="btn wide" id="ok">حسنًا</button>');
+    $('#ok', m).onclick = function(){ m.remove(); }; }; });
 }
 
 /* ---------------- router ---------------- */
 function go(h){ location.hash = h; }
 function route(){
-  var h = (location.hash || '#/').slice(1), p = h.split('/').filter(Boolean);
+  var h = (location.hash || '#/').slice(1), parts = h.split('#'), p = parts[0].split('/').filter(Boolean), anchor = parts[1];
   if (!p.length) return viewHome();
   switch (p[0]){
-    case 'learn': return viewLearn();
+    case 'learn': return viewLearn(anchor);
     case 't': return viewTopic(p[1]);
     case 'l': return viewLesson(p[1]);
     case 'levels': return viewLevels();
@@ -804,10 +1271,20 @@ function route(){
     case 'daily': return viewGame('meaning', 'all', {daily:true});
     case 'test': return viewTest();
     case 'me': return viewMe();
+    case 'journey': return viewJourney();
+    case 'stories': return viewStories();
+    case 'story': return viewStory(p[1]);
+    case 'letters': return viewLetters();
+    case 'letter': return viewLetter(p[1]);
+    case 'exam': return p[1] ? viewExamPart(p[1]) : viewExam();
+    case 'speak': return viewSpeak(p[1]);
+    case 'mistakes': return viewMistakes();
     case 'search': return viewSearch(decodeURIComponent(p[1] || ''));
     default: return viewHome();
   }
 }
+buildUnits();
+if (!S.station) S.station = stationIdx();
 shell(); applySettings(); addEventListener('hashchange', route); route();
 if (S.last && S.last !== today() && S.last !== yesterday() && S.streak){ S.streak = 0; save(); updateRibbon(); }
 if ('serviceWorker' in navigator && location.protocol === 'https:'){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
