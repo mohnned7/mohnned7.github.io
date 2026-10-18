@@ -867,3 +867,53 @@ body.kids .pcard .pe{font-size:76px}
 /* softer depth */
 .panel,.it,.pl,.stc,.tile,.mini,.cont,.dash{box-shadow:0 1px 2px rgba(20,16,58,.06),0 8px 24px rgba(20,16,58,.07)}
 :root[data-theme="dark"] .panel,:root[data-theme="dark"] .it,:root[data-theme="dark"] .pl,:root[data-theme="dark"] .stc,:root[data-theme="dark"] .tile,:root[data-theme="dark"] .mini,:root[data-theme="dark"] .cont,:root[data-theme="dark"] .dash{box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 10px 26px rgba(0,0,0,.28)}
+
+/* ===== v9 ===== */
+/* header: theme toggle beside logo, settings on the far side */
+.top .wrap{gap:8px}
+.tsp{flex:1}
+.logo{flex:0 1 auto}
+.ibtn.tmini{width:38px;height:38px;border-radius:12px}
+.ibtn.tmini .ic{width:19px;height:19px}
+.ibtn.spin .ic{animation:tspin .5s cubic-bezier(.3,1.4,.5,1)}
+@keyframes tspin{from{transform:rotate(-120deg) scale(.6);opacity:.3}to{transform:none;opacity:1}}
+html.tswitch body,html.tswitch .panel,html.tswitch .it,html.tswitch .tile,html.tswitch .top,html.tswitch .nav{transition:background-color .45s ease,color .45s ease,border-color .45s ease}
+@media (max-width:380px){.top .ibtn{width:38px;height:38px}.top .ibtn.me{min-width:40px;padding:0 6px}.ibtn.tmini{width:34px;height:34px}.top.hasback .logo b{font-size:16px}}
+/* settings sheet */
+.modal.msheet{align-items:flex-end;padding:0}
+.mcard.sheet{width:100%;max-width:520px;border-radius:26px 26px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px));animation:sheetUp .3s cubic-bezier(.2,.8,.2,1)}
+@keyframes sheetUp{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+.setlist .set{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line)}
+.setlist .set:last-child{border-bottom:0}
+/* quick tools strip */
+.qtools{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.qt{display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none;color:var(--ink);background:var(--surface);border:1.5px solid color-mix(in srgb,var(--c) 25%,var(--line));border-radius:18px;padding:12px 6px;text-align:center}
+.qt span{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:24px;background:color-mix(in srgb,var(--c) 18%,transparent)}
+.qt b{font-size:12.5px;line-height:1.3}
+.qt:active{transform:scale(.96)}
+:root[data-theme="dark"] .qt{background:rgba(255,255,255,.04);border-color:color-mix(in srgb,var(--c) 30%,rgba(255,255,255,.08))}
+/* coming soon tile */
+.tile.soon{opacity:.6;filter:saturate(.5)}
+.tile .soonb{position:absolute;top:12px;inset-inline-end:12px;font-style:normal;font-size:11px;font-weight:800;background:var(--gold);color:#1A1446;border-radius:999px;padding:2px 9px}
+.tile.soon:after{display:none}
+/* translation peek per line */
+.story.notr .sline.peek .m{display:block}
+.letter.notr .lline .m{display:none}
+.letter.notr .lline.peek .m{display:block}
+/* continue card photo */
+.cont.hero2 .em.cov{width:58px;height:58px;border-radius:18px;overflow:hidden;padding:0}
+.cont.hero2 .em.cov .pic{display:block;width:100%;height:100%}
+.cont.hero2 .em.cov img{width:100%;height:100%;object-fit:cover;display:block}
+.cont.hero2 .em.cov .pe{display:grid;place-items:center;height:100%;font-size:30px}
+.mission.intro{background:linear-gradient(115deg,#FF3D7F,#B4236A)}
+@media (max-width:360px){.top .wrap{gap:6px}.logo{gap:5px}.logo svg{width:28px;height:28px}.logo b{font-size:16.5px}.top .ibtn{width:36px;height:36px}.top .ibtn.me{min-width:38px;padding:0 5px}.ibtn.tmini{width:32px;height:32px}.top.hasback .logo svg{display:none}}
+/* calendar: number stays visible with a small flame */
+.cal span{position:relative}
+.cal .f{font-size:14px;font-weight:700;color:var(--flame)}
+.cal .fl{position:absolute;top:-7px;inset-inline-end:2px;font-style:normal;font-size:12px;line-height:1}
+.cal .t{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px var(--flame)}
+.cal .t.f{background:color-mix(in srgb,var(--flame) 18%,transparent);color:var(--flame)}
+/* journey rocket sits on the path between stations */
+.jr{left:auto;inset-inline-start:26px;top:calc(-4% - var(--f,0) * 46%);transform:translateY(-50%);z-index:3;font-size:26px;animation:jrBob 2.4s ease-in-out infinite}
+@keyframes jrBob{50%{margin-top:-6px}}
+.badge-done.half{display:block;border-radius:16px;line-height:1.6;background:color-mix(in srgb,var(--gold) 18%,transparent);color:var(--ink);font-weight:700}
