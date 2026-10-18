@@ -29,7 +29,8 @@ var ICONS = {
   a2:'<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 12.5 9 5 9-5"/><path d="m3 17 9 5 9-5"/>',
   read:'<path d="M14 3H6.5A2.5 2.5 0 0 0 4 5.5v13A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
   tools:'<rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><path d="M17.25 14v7M13.75 17.5h7"/>',
-  warn:'<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/>'
+  warn:'<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/>',
+  back:'<path d="M5 12h14M13 6l6 6-6 6"/>'
 };
 function ic(n, cls){ return '<svg class="ic' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONS[n] || '') + '</svg>'; }
 var ICON_PLAY = '<svg viewBox="0 0 24 24"><path d="M3 10v4h4l5 4V6L7 10H3zm13.5 2a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>';
@@ -53,7 +54,7 @@ var S = (function(){
 function save(){ try{ localStorage.setItem('sprachrakete', JSON.stringify(S)); }catch(e){} }
 
 /* ---------------- owner config (config.json) ---------------- */
-var CFG = {announcement:{text:'', link:'', color:'gold'}, whatsapp:'201080845228', youtube:'u0_0z', hide:[], goatcounter:'', repo:'mohnned7/mohnned7.github.io'};
+var CFG = {announcement:{text:'', link:'', color:'gold'}, whatsapp:'201080845228', youtube:'u0_0z', suggest:'', hide:[], goatcounter:'', repo:'mohnned7/mohnned7.github.io'};
 var HIDE_KEYS = {exam:'تدريب الامتحان', test:'اختبار المستوى', speak:'اختبر نطقك', mistakes:'كرّاسة أخطائي', stories:'القصص', letters:'الرسائل', a2:'دروس A2', tools:'الأدوات', games:'الألعاب', journey:'رحلتي'};
 function hidden(k){ return (CFG.hide || []).indexOf(k) >= 0; }
 function waNum(){ return String(CFG.whatsapp || '').replace(/[^\d]/g, ''); }
@@ -366,7 +367,7 @@ var ROCKET = '<svg viewBox="0 0 120 230" class="rocket" aria-hidden="true"><defs
 
 function shell(){
   document.body.insertAdjacentHTML('afterbegin',
-   '<header class="top" id="top"><div class="wrap"><a class="logo" href="#/"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="#14103A"/><circle cx="31" cy="10" r="1.3" fill="#fff"/><circle cx="9" cy="14" r="1" fill="#fff"/>'+
+   '<header class="top" id="top"><div class="wrap"><a class="ibtn me tback" id="topBack" href="#/" hidden aria-label="رجوع">' + ic('back') + '<small>رجوع</small></a><a class="logo" href="#/"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="#14103A"/><circle cx="31" cy="10" r="1.3" fill="#fff"/><circle cx="9" cy="14" r="1" fill="#fff"/>'+
    '<path d="M20 7c6 5 7 13 5 21h-10c-2-8-1-16 5-21z" fill="#FFF7E8"/><path d="M20 7c3 2 5 5 5.6 9h-11.2C15 12 17 9 20 7z" fill="#FF6B2C"/><circle cx="20" cy="19" r="3" fill="#5B3DF5"/><path d="M17 28q3 8 6 0z" fill="#FFC53D"/></svg>'+
    '<b>Sprach<span>rakete</span></b></a><a class="ibtn me" id="meBtn" href="#/me" title="حسابي" aria-label="حسابي">' + ic('me') + '<small>أنا</small></a><button class="ibtn" id="themeBtn" aria-label="الوضع الليلي أو النهاري">' + ic('sun') + '</button></div></header>'+
    '<main id="app"></main>'+
@@ -384,6 +385,8 @@ function render(html, nav){
   stopAudio(); hideFb(); $$('.modal').forEach(function(m){ m.remove(); }); if (tipEl){ tipEl.remove(); tipEl = null; }
   var app = $('#app'); app.innerHTML = html; app.classList.remove('enter'); void app.offsetWidth; app.classList.add('enter');
   setNav(nav); window.scrollTo(0, 0);
+  var bk = $('#app .ph .back'), tb = $('#topBack');
+  if (tb){ if (bk){ tb.setAttribute('href', bk.getAttribute('href')); tb.title = bk.textContent.replace('→', '').trim(); tb.hidden = false; } else tb.hidden = true; $('#top').classList.toggle('hasback', !!bk); }
   if (pendingSt && !$('#stage')) setTimeout(checkStation, 700);
 }
 function ctlBar(extra, noPr){
@@ -462,6 +465,7 @@ function onboarding(){
   draw();
 }
 
+function greet(){ var h = new Date().getHours(); return h < 5 ? 'ليلة سعيدة 🌙' : h < 12 ? 'صباح الخير ☀️' : h < 18 ? 'نهارك سعيد' : 'مساء الخير 🌙'; }
 /* ---------------- HOME ---------------- */
 function wordOfDay(){
   var pool = []; SR.modules.forEach(function(m){ (m.items || []).forEach(function(it){ if (it.e && it.de.split(' ').length <= 2 && !/[?!.]/.test(it.de)) pool.push(Object.assign({grp:m.id}, it)); }); });
@@ -473,29 +477,32 @@ function nextUnit(){
 }
 function viewHome(){
   var w = wordOfDay(), done = !!S.daily[today()], nu = nextUnit(), mc = Object.keys(S.mist).length, si = stationIdx(), st = STATIONS[si], nx = STATIONS[si + 1];
-  var html = '<section class="hero" id="hero"><div class="stars s1"></div><div class="stars s2"></div><div class="planet p1"><i></i></div><div class="planet p2"></div><div class="comet"></div>' +
+  var html = '<section class="hero photo" id="hero"><div class="stars s1"></div><div class="stars s2"></div><div class="planet p1"><i></i></div><div class="planet p2"></div><div class="comet"></div>' +
    '<div class="txt"><h1><span class="de">Sprachrakete</span>تعلّم الألمانية بالعربية من أول حرف حتى تتكلم</h1><p>دروس بالصوت، وألعاب، ونقاط تأخذك من الأرض إلى المجرة.</p></div>' +
    '<div class="count" id="count" aria-live="polite"></div>' +
    '<div class="launch"><button class="go" id="launch">🚀 عُدّ معي بالألمانية</button><div class="rkwrap">' + ROCKET + '</div></div></section>' +
-   '<div class="wrap"><div class="ribbon" id="ribbon">' + ribbonHTML() + '</div>' + goalHTML() +
-   (nu ? '<a class="cont" href="' + nu.href + '" style="--c:' + nu.color + '"><span class="em">' + nu.e + '</span><div class="tx"><small>' + (heardCount(nu.id) ? 'تابع من حيث توقفت' : 'ابدأ من هنا') + '</small><b>' + esc(nu.title) + '</b><div class="prog"><i style="width:' + unitPct(nu.id) + '%"></i></div></div><span class="arr">‹</span></a>' : '') +
-   '<a class="mission ' + (done ? 'done' : '') + '" href="#/daily"><span class="em">' + (done ? '✅' : '🎯') + '</span><div><b>' + (done ? 'أنهيت مهمة اليوم!' : 'مهمة اليوم') + '</b><span>' + (done ? 'عُد غدًا حتى لا تنقطع السلسلة 🔥' : '10 أسئلة سريعة و50 نقطة إضافية') + '</span></div><span class="arr">‹</span></a>' +
-   (S.test == null ? '<a class="mission test" href="#/test"><span class="em">🧭</span><div><b>لا تعرف من أين تبدأ؟</b><span>اختبار من 12 سؤالًا يحدد مستواك</span></div><span class="arr">‹</span></a>' : '') +
-   '<a class="jmini" href="#/journey"><div class="jm-l"><span>' + st.e + '</span><b>رحلتك الفضائية</b><small>' + (nx ? 'أنت في ' + st.a + ' · المحطة التالية ' + nx.e + ' ' + nx.a : 'وصلت إلى المجرة! 🎉') + '</small></div><div class="prog"><i style="width:' + Math.round(doneCount() / Math.max(1, UNITS.length) * 100) + '%"></i></div></a>' +
+   '<div class="wrap"><section class="dash"><div class="dash-h"><div><small>' + greet() + '</small><b>' + (S.name ? esc(S.name) : 'رائد الفضاء') + ' 👋</b></div><a class="dash-j" href="#/journey"><span>' + st.e + '</span>' + esc(st.a) + '</a></div>' +
+     '<div class="ribbon" id="ribbon">' + ribbonHTML() + '</div>' + goalHTML() +
+     '<a class="dash-trip" href="#/journey"><span>' + (nx ? 'المحطة التالية: ' + nx.e + ' ' + nx.a : 'وصلت إلى المجرة! 🎉') + '</span><div class="prog"><i style="width:' + Math.round(doneCount() / Math.max(1, UNITS.length) * 100) + '%"></i></div></a></section>' +
+   (nu ? '<a class="cont hero2" href="' + nu.href + '" style="--c:' + nu.color + '"><span class="em">' + nu.e + '</span><div class="tx"><small>' + (heardCount(nu.id) ? 'تابع من حيث توقفت' : 'ابدأ من هنا') + '</small><b>' + esc(nu.title) + '</b><div class="prog"><i style="width:' + unitPct(nu.id) + '%"></i></div></div><span class="gobtn">' + (heardCount(nu.id) ? 'تابع' : 'ابدأ') + ' ‹</span></a>' : '') +
+   '<div class="duo"><a class="mini ' + (done ? 'ok' : 'hot') + '" href="#/daily"><span class="em">' + (done ? '✅' : '🎯') + '</span><b>' + (done ? 'أنهيت مهمة اليوم' : 'مهمة اليوم') + '</b><small>' + (done ? 'عُد غدًا 🔥' : '10 أسئلة · +50 نقطة') + '</small></a>' +
+     (S.test == null && !hidden('test') ? '<a class="mini" href="#/test" style="--c:#5B3DF5"><span class="em">🧭</span><b>حدّد مستواك</b><small>12 سؤالًا فقط</small></a>'
+       : (mc && !hidden('mistakes') ? '<a class="mini" href="#/mistakes" style="--c:#E63946"><span class="em">🩹</span><b>راجع أخطاءك</b><small>' + plural(mc, 'كلمة واحدة', 'كلمتان', 'كلمات', 'كلمة') + '</small></a>'
+       : (hidden('games') ? '<a class="mini" href="#/learn" style="--c:#5B3DF5"><span class="em">📚</span><b>الدروس</b><small>كلمات وقواعد</small></a>' : '<a class="mini" href="#/play" style="--c:#FF6B2C"><span class="em">🎮</span><b>العب وتعلّم</b><small>9 ألعاب</small></a>'))) + '</div>' +
    '<div class="sh"><h2>كلمة اليوم</h2></div>' +
-   '<div class="wod"><div class="em">' + (w.e || '⭐') + '</div><div style="flex:1;min-width:0"><div class="w">' + deHTML(w) + '</div><div class="pr arp">' + pron(w.ar) + '</div><div class="m">' + esc(w.mn) + '</div></div><button class="play" id="wodPlay" aria-label="استمع">' + ICON_PLAY + '</button></div>' +
+   '<div class="wod">' + qEm(w, '⭐') + '<div style="flex:1;min-width:0"><div class="w">' + deHTML(w) + '</div><div class="pr arp">' + pron(w.ar) + '</div><div class="m">' + esc(w.mn) + '</div></div><button class="play" id="wodPlay" aria-label="استمع">' + ICON_PLAY + '</button></div>' +
    '<div class="sh"><h2>إلى أين اليوم؟</h2></div><div class="tiles big">' +
-     bigTile('#/learn', '📚', '#5B3DF5', 'الدروس', 'الكلمات ودروس A1 وA2') + bigTile('#/train', '🎯', '#8338EC', 'التدريب', 'الامتحان والنطق والأخطاء') +
-     (hidden('games') ? '' : bigTile('#/play', '🎮', '#FF6B2C', 'الألعاب', '9 ألعاب ومهمة اليوم')) + (hidden('journey') ? '' : bigTile('#/journey', '🚀', '#19C79A', 'رحلتي', st.e + ' ' + st.a)) + '</div>' +
+     bigTile('#/learn', '📚', '#5B3DF5', 'الدروس', 'الكلمات ودروس A1 وA2', 'tile_learn') + bigTile('#/train', '🎯', '#8338EC', 'التدريب', 'الامتحان والنطق والأخطاء', 'tile_train') +
+     (hidden('games') ? '' : bigTile('#/play', '🎮', '#FF6B2C', 'الألعاب', '9 ألعاب ومهمة اليوم', 'tile_play')) + (hidden('journey') ? '' : bigTile('#/journey', '🚀', '#19C79A', 'رحلتي', st.e + ' ' + st.a, 'tile_journey')) + '</div>' +
    '<div class="sh"><h2>تواصل معي</h2></div>' + contactHTML(true) +
    footer() + '</div>';
-  render(html, 'home'); bindRibbon();
+  render(html, 'home'); bindRibbon(); loadPics(w.grp);
   if (!S.onb) setTimeout(onboarding, 400);
   $('#wodPlay').onclick = function(){ play(w); };
   $('#launch').onclick = countdown;
   bindInstall();
 }
-function footer(){ return '<div class="foot"><div class="foot-l"><a href="#/about">عن الموقع</a><span>·</span><a href="#/me">الإعدادات</a></div>Sprachrakete 🚀 © ' + new Date().getFullYear() + ' مهند · جميع الحقوق محفوظة<br>النطق بالحروف العربية للمساعدة فقط، والأفضل الاعتماد على الصوت.</div>'; }
+function footer(){ return '<div class="foot"><div class="foot-l"><a href="#/about">عن الموقع</a><span>·</span><a href="#/suggest">💡 اقترح علينا</a><span>·</span><a href="#/me">الإعدادات</a></div>Sprachrakete 🚀 © ' + new Date().getFullYear() + ' مهند · جميع الحقوق محفوظة<br>النطق بالحروف العربية للمساعدة فقط، والأفضل الاعتماد على الصوت.</div>'; }
 function viewAbout(){
   var html = '<div class="wrap"><div class="ph sm" style="--c:#5B3DF5"><a class="back" href="#/">→ الرئيسية</a><span class="em">🚀</span><h1>عن Sprachrakete</h1><div class="g">Über uns</div><p>موقع مجاني لتعلّم الألمانية بالعربية، من أول حرف حتى تتكلم.</p></div>' +
     '<div class="panel about"><h3>👋 من أنا؟</h3><p>أنا مهند، وصنعت هذا الموقع لأساعد الناطقين بالعربية على تعلّم الألمانية بطريقة سهلة وممتعة، وليكون رفيقك اليومي: تتعلم الكلمة، وتسمعها، وتلعب بها، ثم تختبر نفسك.</p></div>' +
@@ -506,15 +513,33 @@ function viewAbout(){
     '<p class="sub center" style="margin-top:16px">الخط العربي: Readex Pro (رخصة SIL OFL). جميع المحتويات والتصميم © مهند.</p>' + footer() + '</div>';
   render(html, 'home');
 }
+function viewSuggest(){
+  var form = String(CFG.suggest || '').trim(), okForm = /^https:\/\//.test(form), wa = waNum();
+  var kinds = [['💡','فكرة جديدة','عندي فكرة لميزة أو لعبة'],['📚','درس أو كلمات','أريد درسًا أو كلمات عن موضوع معيّن'],['🐞','مشكلة','شيء لا يعمل جيدًا'],['💬','رأيي في الموقع','أريد أن أقول رأيي']];
+  var html = '<div class="wrap"><div class="ph sm" style="--c:#FF6B2C"><a class="back" href="#/">→ الرئيسية</a><span class="em">💡</span><h1>اقترح علينا</h1><div class="g">Deine Ideen</div><p>رأيك يصنع الموقع. اكتب لنا فكرتك أو أي مشكلة واجهتك.</p></div>' +
+    '<div class="sug">' + kinds.map(function(k, i){ return '<button class="sugk' + (i === 0 ? ' on' : '') + '" data-k="' + i + '"><span>' + k[0] + '</span><b>' + k[1] + '</b><small>' + k[2] + '</small></button>'; }).join('') + '</div>' +
+    '<div class="panel"><label class="sub" for="sugT">اكتب اقتراحك هنا</label><textarea class="inp" id="sugT" rows="5" placeholder="مثلًا: أتمنى إضافة دروس عن المطعم…"></textarea>' +
+    (okForm ? '<a class="btn wide flame" id="sugGo" href="' + esc(form) + '" target="_blank" rel="noopener" style="text-decoration:none;margin-top:10px;display:block;text-align:center">✉️ أرسل الاقتراح</a><p class="sub center" style="margin:8px 0 0">يُفتح نموذج قصير. لا نطلب اسمك أو رقمك.</p>' : '') +
+    (wa ? '<a class="btn wide' + (okForm ? ' alt' : ' flame') + '" id="sugWa" href="#" target="_blank" rel="noopener" style="text-decoration:none;margin-top:10px;display:block;text-align:center">💬 أرسل عبر واتساب</a>' : '') + '</div>' +
+    '<div class="tip tip" style="margin-top:12px"><b class="k">🙏 شكرًا لك</b>نقرأ كل اقتراح، وأفضل الأفكار تظهر في الموقع قريبًا.</div>' + footer() + '</div>';
+  render(html, 'home');
+  var cur = 0;
+  function txt(){ var k = kinds[cur], t = ($('#sugT').value || '').trim(); return k[0] + ' ' + k[1] + (t ? ':\n' + t : '') + '\n\n— من موقع Sprachrakete'; }
+  function upd(){ var w = $('#sugWa'); if (w) w.href = 'https://wa.me/' + wa + '?text=' + encodeURIComponent(txt()); }
+  $$('.sugk').forEach(function(b){ b.onclick = function(){ cur = +b.dataset.k; $$('.sugk').forEach(function(x){ x.classList.toggle('on', x === b); }); upd(); }; });
+  $('#sugT').oninput = upd; upd();
+  var g = $('#sugGo'); if (g) g.onclick = function(){ try{ navigator.clipboard && navigator.clipboard.writeText(($('#sugT').value || '').trim()); }catch(e){} };
+}
 function viewNotFound(){
   render('<div class="wrap"><div class="nf"><div class="nf-n de">404</div><div class="nf-e">🛰️</div><h1>يبدو أن صاروخك ضلّ الطريق!</h1><p class="sub">هذه الصفحة غير موجودة. لا تقلق، يمكنك العودة إلى الرئيسية ومواصلة رحلتك.</p><a class="btn" href="#/" style="text-decoration:none;display:inline-block;margin-top:8px">🏠 العودة إلى الرئيسية</a>' +
     '<div class="nf-try"><span>أو جرّب:</span><a class="chip" href="#/learn">📚 الدروس</a>' + (hidden('games') ? '' : '<a class="chip" href="#/play">🎮 الألعاب</a>') + (hidden('exam') ? '' : '<a class="chip" href="#/exam">📝 الامتحان</a>') + '</div></div>' +
     '<p class="sub center" style="margin:18px 0 8px">تحتاج إلى مساعدة؟ تواصل معي</p>' + contactHTML(false) + footer() + '</div>', 'home');
 }
-function bigTile(h, e, c, t, d){ return '<a class="tile" href="' + h + '" style="--c:' + c + '"><span class="em">' + e + '</span><b>' + t + '</b><span>' + d + '</span></a>'; }
+function bigTile(h, e, c, t, d, img){ if (img) return '<a class="tile ptile" href="' + h + '" style="--c:' + c + '"><span class="tph">' + uiPic(img, e) + '</span><span class="tbody"><b>' + t + '</b><span>' + d + '</span></span></a>';
+  return '<a class="tile" href="' + h + '" style="--c:' + c + '"><span class="em">' + e + '</span><b>' + t + '</b><span>' + d + '</span></a>'; }
 function planet(t){
   var uid = 't:' + t.id, its = itemsOf(t.id).length, pct = unitPct(uid), dn = S.done[uid];
-  return '<a class="pl" href="#/t/' + t.id + '" style="--c:' + t.color + '">' + (dn ? '<span class="done">✅</span>' : '') + '<div class="orb">' + t.e + '</div><b>' + esc(t.title) + '</b><div class="g">' + esc(t.de) + '</div>' +
+  return '<a class="pl" href="#/t/' + t.id + '" style="--c:' + t.color + '">' + (dn ? '<span class="done">✅</span>' : '') + '<div class="orb porb">' + uiPic('head_' + t.id, t.e) + '</div><b>' + esc(t.title) + '</b><div class="g">' + esc(t.de) + '</div>' +
     '<div class="m">' + ar(its) + ' كلمة وجملة</div><div class="bar"><i style="width:' + pct + '%"></i></div></a>';
 }
 var TOOLS = [{h:'#/tool/numbers',e:'🔢',c:'#FF6B2C',t:'مصنع الأرقام',d:'اكتب أي رقم واستمع إليه'},{h:'#/tool/clock',e:'🕐',c:'#5B3DF5',t:'الساعة الناطقة',d:'حرّك العقارب واستمع للوقت'},
@@ -525,8 +550,8 @@ function ladderHTML(){
     return '<a class="rung ' + (open ? 'open' : '') + (i === 0 ? ' here' : '') + '" href="#/levels"><span class="lv de">' + l[0] + '</span><div><b>' + esc(l[1]) + '</b><span>' + esc(l[2]) + '</span></div><em>' + (open ? (i === 0 ? '📍 ابدأ هنا' : 'متاح') : 'قريبًا') + '</em></a>'; }).join('') + '</div>';
 }
 function contactHTML(withInstall){
-  return '<div class="contact">' + (waNum() ? '<a class="cbtn wa" href="https://wa.me/' + waNum() + '?text=' + encodeURIComponent('مرحبًا! وصلت إليك من موقع Sprachrakete 🚀') + '" target="_blank" rel="noopener"><i>💬</i><div>راسلني على واتساب<small>+' + waNum() + '</small></div></a>' : '') +
-    (ytName() ? '<a class="cbtn yt" href="https://www.youtube.com/@' + encodeURIComponent(ytName()) + '?sub_confirmation=1" target="_blank" rel="noopener"><i>▶</i><div>اشترك في القناة<small>@' + esc(ytName()) + '</small></div></a>' : '') + '</div>' +
+  return '<div class="contact">' + (waNum() ? '<a class="cbtn wa" href="https://wa.me/' + waNum() + '?text=' + encodeURIComponent('مرحبًا! وصلت إليك من موقع Sprachrakete 🚀') + '" target="_blank" rel="noopener"><i>💬</i><div>راسلني على واتساب<small>رد سريع</small></div></a>' : '') +
+    (ytName() ? '<a class="cbtn yt" href="https://www.youtube.com/@' + encodeURIComponent(ytName()) + '?sub_confirmation=1" target="_blank" rel="noopener"><i>▶</i><div>اشترك في القناة<small>دروس بالفيديو</small></div></a>' : '') + '</div>' +
     (withInstall ? '<div class="panel install" id="installCard"><span class="em">📲</span><div style="flex:1"><b>ثبّت Sprachrakete على شاشتك</b><div class="sub">يفتح مثل التطبيق بضغطة واحدة</div></div><button class="btn" id="installBtn">تثبيت</button></div>' : '');
 }
 var running = false;
@@ -562,7 +587,7 @@ function viewLearn(tab){
   if (tab === 'words'){
     body = '<p class="lead">ابدأ من هنا: الحروف والأرقام أولًا، ثم كلمات كل موضوع بالصوت والمعنى.</p>' +
       '<div class="starter">' + TOPIC_EXTRA.map(function(t){ var uid = 't:' + t.id, pct = unitPct(uid);
-        return '<a class="stc" href="#/t/' + t.id + '" style="--c:' + t.color + '"><span class="badge">' + (S.done[uid] ? '✅ أكملته' : pct ? pct + '٪' : 'ابدأ هنا') + '</span><div class="orb">' + t.e + '</div><b>' + esc(t.title) + '</b><div class="g">' + esc(t.de) + '</div><div class="m">' + esc(t.desc) + '</div><div class="bar"><i style="width:' + pct + '%"></i></div></a>'; }).join('') + '</div>' +
+        return '<a class="stc" href="#/t/' + t.id + '" style="--c:' + t.color + '"><span class="badge">' + (S.done[uid] ? '✅ أكملته' : pct ? pct + '٪' : 'ابدأ هنا') + '</span><div class="orb porb">' + uiPic('head_' + t.id, t.e) + '</div><b>' + esc(t.title) + '</b><div class="g">' + esc(t.de) + '</div><div class="m">' + esc(t.desc) + '</div><div class="bar"><i style="width:' + pct + '%"></i></div></a>'; }).join('') + '</div>' +
       '<div class="sh"><h2>مواضيع الكلمات</h2><span class="cnt">' + SR.modules.length + ' موضوعًا</span></div><div class="planets">' + SR.modules.map(planet).join('') + '</div>';
   } else if (tab === 'a1'){
     var a1d = SR.a1.filter(function(l){ return S.done['l:' + l.id]; }).length;
@@ -606,12 +631,22 @@ function itemRow(it, i, c){
     (it.conj ? '<span class="cj">' + esc(it.conj) + '</span>' : '') + '</span><span class="play sm" aria-hidden="true">' + ICON_PLAY + '</span>' + (it.u != null && S.heard[it.u] && S.heard[it.u][it.k] ? '<span class="hd">✓</span>' : '') + '</button>';
 }
 /* picture cards: real photos load per topic from pics_<topic>.js (window.SRPIC), emoji is the fallback */
-var PIC_TOPICS = [];
-window.SRP = window.SRP || {};
-window.SRPIC = function(o){ for (var k in o) SRP[k] = o[k]; $$('.pic[data-n]').forEach(function(el){ var u = SRP[el.dataset.n]; if (u && !el.querySelector('img')) el.innerHTML = '<img src="' + u + '" alt="" loading="lazy" decoding="async">'; }); };
+var PIC_TOPICS = ['ui', 'abc', 'body', 'animals', 'food', 'home', 'travel', 'weather', 'family', 'jobs'];
+var PIC_HEAD = {body:'Hand', animals:'Hund', food:'Brot', home:'Haus', travel:'Flugzeug', weather:'Sonne', family:'Familie', jobs:'Arzt'};
+window.SRP = window.SRP || {}; var SRPN = {};
+function picKey(it){ return it && it.n ? ((it.grp && PIC_TOPICS.indexOf(it.grp) >= 0 ? it.grp : '') + '/' + it.n) : ''; }
+function picUrl(key){ if (!key) return ''; if (SRP[key]) return SRP[key]; var n = key.split('/').pop(); return SRPN[n] || ''; }
+window.SRPIC = function(o){ for (var k in o){ SRP[k] = o[k]; var n = k.split('/').pop(); if (!SRPN[n]) SRPN[n] = o[k]; }
+  $$('.pic[data-n]').forEach(function(el){ var u = picUrl(el.dataset.n); if (u && !el.querySelector('img')) el.innerHTML = '<img src="' + u + '" alt="" decoding="async">'; }); };
 var picLoaded = {};
-function loadPics(id){ if (PIC_TOPICS.indexOf(id) < 0 || picLoaded[id]) return; picLoaded[id] = 1; var sc = document.createElement('script'); sc.src = 'pics_' + id + '.js'; sc.async = true; document.head.appendChild(sc); }
-function picHTML(it){ var u = SRP[it.n]; return '<span class="pic" data-n="' + esc(it.n) + '">' + (u ? '<img src="' + u + '" alt="" loading="lazy" decoding="async">' : '<span class="pe">' + (it.e || '🔹') + '</span>') + '</span>'; }
+function loadPics(id){ (id === 'all' ? PIC_TOPICS : [id]).forEach(function(t){ if (PIC_TOPICS.indexOf(t) < 0 || picLoaded[t]) return; picLoaded[t] = 1; var sc = document.createElement('script'); sc.src = 'pics_' + t + '.js'; sc.async = true; document.head.appendChild(sc); }); }
+function uiPic(name, e, cls){ var k = 'ui/' + name, u = picUrl(k); return '<span class="pic' + (cls ? ' ' + cls : '') + '" data-n="' + k + '">' + (u ? '<img src="' + u + '" alt="" decoding="async">' : '<span class="pe">' + (e || '') + '</span>') + '</span>'; }
+setTimeout(function(){ loadPics('ui'); }, 0);
+function picHTML(it){ var k = picKey(it), u = picUrl(k); return '<span class="pic" data-n="' + esc(k) + '">' + (u ? '<img src="' + u + '" alt="" decoding="async">' : '<span class="pe">' + (it.e || '🔹') + '</span>') + '</span>'; }
+function qEm(it, fb){ var k = picKey(it), u = picUrl(k);
+  if (!k) return '<div class="em">' + (it.e || fb) + '</div>';
+  return '<div class="em qpic"><span class="pic" data-n="' + esc(k) + '">' + (u ? '<img src="' + u + '" alt="" decoding="async">' : '<span class="pe">' + (it.e || fb) + '</span>') + '</span></div>'; }
+function headPic(m){ return '<span class="em phpic">' + uiPic('head_' + m.id, m.e) + '</span>'; }
 function picCard(it, i, c){
   return '<button class="it pcard" data-i="' + i + '" style="--c:' + (c || 'var(--violet)') + '">' + picHTML(it) +
     '<span class="tx"><span class="d">' + deHTML(it) + '</span><span class="pr arp">' + pron(it.ar || '') + '</span><span class="m">' + esc(it.mn) + '</span></span>' +
@@ -635,7 +670,7 @@ function viewTopic(id){
   if (id === 'abc') return viewABC(); if (id === 'num') return viewNumbers();
   var m = modById(id); if (!m) return go('#/learn');
   var uid = 't:' + id; useAudio(m.id);
-  var html = '<div class="wrap"><div class="ph" style="--c:' + m.color + '"><a class="back" href="#/learn/words">→ الكلمات</a><span class="em">' + m.e + '</span><h1>' + esc(m.title) + '</h1><div class="g">' + esc(m.de) + '</div><p>' + esc(m.desc) + '</p></div>' +
+  var html = '<div class="wrap"><div class="ph" style="--c:' + m.color + '"><a class="back" href="#/learn/words">→ الكلمات</a>' + headPic(m) + '<h1>' + esc(m.title) + '</h1><div class="g">' + esc(m.de) + '</div><p>' + esc(m.desc) + '</p></div>' +
     unitBar(uid) + ctlBar(m.items ? '<button class="chip go2" id="playAll">▶ تشغيل الكل</button>' : '');
   var list = [];
   if (m.dialogs){
@@ -661,10 +696,10 @@ function viewTopic(id){
 }
 function viewABC(){
   useAudio('abc'); var uid = 't:abc';
-  var html = '<div class="wrap"><div class="ph" style="--c:#5B3DF5"><a class="back" href="#/learn/words">→ الكلمات</a><span class="em">🔤</span><h1>الحروف</h1><div class="g">Das Alphabet</div><p>اضغط على الحرف لتسمع نطقه، واضغط على الكلمة لتسمعها.</p></div>' + unitBar(uid) + ctlBar() + artLegend() +
-    '<div class="abc">' + SR.letters.map(function(l, i){ var hd = S.heard[uid] && S.heard[uid][i]; return '<button class="lt" data-l="' + i + '">' + (hd ? '<span class="hd">✓</span>' : '') + '<div class="L">' + esc(l.L) + '</div><div class="nm arpw">اسمه: <span class="pr">' + pron(l.lp) + '</span></div><span class="em">' + l.e + '</span><div class="w"><span class="art ' + l.g + '">' + ART[l.g] + '</span> ' + esc(l.de) + '</div><div class="nm">' + esc(l.mn) + '</div></button>'; }).join('') + '</div>' +
+  var html = '<div class="wrap"><div class="ph" style="--c:#5B3DF5"><a class="back" href="#/learn/words">→ الكلمات</a>' + headPic({id:'abc', e:'🔤'}) + '<h1>الحروف</h1><div class="g">Das Alphabet</div><p>اضغط على الحرف لتسمع نطقه، واضغط على الكلمة لتسمعها.</p></div>' + unitBar(uid) + ctlBar() + artLegend() +
+    '<div class="abc">' + SR.letters.map(function(l, i){ var hd = S.heard[uid] && S.heard[uid][i]; return '<button class="lt" data-l="' + i + '">' + (hd ? '<span class="hd">✓</span>' : '') + '<div class="L">' + esc(l.L) + '</div><div class="nm arpw">اسمه: <span class="pr">' + pron(l.lp) + '</span></div>' + picHTML({grp:'abc', n:l.de, e:l.e}) + '<div class="w"><span class="art ' + l.g + '">' + ART[l.g] + '</span> ' + esc(l.de) + '</div><div class="nm">' + esc(l.mn) + '</div></button>'; }).join('') + '</div>' +
     '<div class="sh"><h2>العب بالحروف</h2></div><div class="tiles">' + GAMES.slice(0, 4).map(function(g){ return gameTile(g, 'abc'); }).join('') + '</div>' + footer() + '</div>';
-  render(html, 'learn'); bindCtl();
+  render(html, 'learn'); bindCtl(); loadPics('abc');
   $$('[data-l]').forEach(function(b){ b.onclick = function(ev){ var i = +b.dataset.l, l = SR.letters[i]; $$('.lt.on').forEach(function(x){ x.classList.remove('on'); }); b.classList.add('on');
     var word = ev && ev.target && ev.target.closest && ev.target.closest('.w');
     markHeard(uid, i); if (!b.querySelector('.hd')) b.insertAdjacentHTML('afterbegin', '<span class="hd">✓</span>');
@@ -673,7 +708,7 @@ function viewABC(){
 function viewNumbers(){
   useAudio('num'); var uid = 't:num';
   var list = itemsOf('num').map(function(it, k){ return Object.assign({u:uid, k:k}, it); });
-  var html = '<div class="wrap"><div class="ph" style="--c:#FF6B2C"><a class="back" href="#/learn/words">→ الكلمات</a><span class="em">🔢</span><h1>الأرقام</h1><div class="g">Die Zahlen</div><p>احفظ هذه الأرقام، والباقي يُركَّب منها. جرّب مصنع الأرقام بالأسفل.</p></div>' + unitBar(uid) +
+  var html = '<div class="wrap"><div class="ph" style="--c:#FF6B2C"><a class="back" href="#/learn/words">→ الكلمات</a>' + headPic({id:'num', e:'🔢'}) + '<h1>الأرقام</h1><div class="g">Die Zahlen</div><p>احفظ هذه الأرقام، والباقي يُركَّب منها. جرّب مصنع الأرقام بالأسفل.</p></div>' + unitBar(uid) +
     ctlBar('<button class="chip go2" id="playAll">▶ تشغيل الكل</button>') +
     '<a class="mission" href="#/tool/numbers" style="background:linear-gradient(115deg,#FF6B2C,#FFC53D);color:#1A1446;margin:0 0 12px"><span class="em">🏭</span><div><b>مصنع الأرقام</b><span>اكتب أي رقم من 0 إلى مليون واستمع إليه</span></div><span class="arr">‹</span></a>' +
     '<div class="tip memo"><b class="k">🧠 السر</b>من 21 إلى 99 يقول الألمان الآحاد أولًا: <span class="de">einundzwanzig</span> = واحد و<b>عشرون</b>، تمامًا كما نقول بالعربية!</div>' +
@@ -811,14 +846,14 @@ function viewIntro(){
 function viewStories(){
   var st = SX.stories || [];
   var html = '<div class="wrap"><div class="ph" style="--c:#FF3D7F"><a class="back" href="#/learn/read">→ اقرأ واكتب</a><span class="em">📖</span><h1>قصص قصيرة</h1><div class="g">Kurze Geschichten</div><p>استمع إلى القصة جملة جملة، ثم أجب عن الأسئلة.</p></div><div class="list">' +
-    st.map(function(s, i){ var uid = 's:' + s.id; return '<a class="it lesson" href="#/story/' + s.id + '" style="--c:' + s.color + '"><span class="em">' + s.e + '</span><div class="tx"><b>' + esc(s.title) + '</b><div class="cj">' + esc(s.de) + '</div><div class="m">' + esc(s.lvl || 'A1') + ' · ' + plural(s.lines.length, 'جملة', 'جملتان', 'جمل', 'جملة') + '</div></div><span class="st">' + (S.done[uid] ? '✅' : '‹') + '</span></a>'; }).join('') + '</div>' + footer() + '</div>';
+    st.map(function(s, i){ var uid = 's:' + s.id; return '<a class="it lesson" href="#/story/' + s.id + '" style="--c:' + s.color + '"><span class="em cov">' + uiPic('story_' + s.id, s.e) + '</span><div class="tx"><b>' + esc(s.title) + '</b><div class="cj">' + esc(s.de) + '</div><div class="m">' + esc(s.lvl || 'A1') + ' · ' + plural(s.lines.length, 'جملة', 'جملتان', 'جمل', 'جملة') + '</div></div><span class="st">' + (S.done[uid] ? '✅' : '‹') + '</span></a>'; }).join('') + '</div>' + footer() + '</div>';
   render(html, 'learn');
 }
 function viewStory(id){
   var s = (SX.stories || []).find(function(x){ return x.id === id; }); if (!s) return go('#/stories');
   var uid = 's:' + id; useAudio('story');
   var list = s.lines.map(function(l){ return {de:l.de, mn:l.mn, grp:'story'}; });
-  var html = '<div class="wrap"><div class="ph" style="--c:' + s.color + '"><a class="back" href="#/stories">→ القصص</a><span class="em">' + s.e + '</span><h1>' + esc(s.title) + '</h1><div class="g">' + esc(s.de) + '</div><p>' + esc(s.intro || '') + '</p></div>' +
+  var html = '<div class="wrap"><div class="ph" style="--c:' + s.color + '"><a class="back" href="#/stories">→ القصص</a><span class="em phpic">' + uiPic('story_' + s.id, s.e) + '</span><h1>' + esc(s.title) + '</h1><div class="g">' + esc(s.de) + '</div><p>' + esc(s.intro || '') + '</p></div>' +
     ctlBar('<button class="chip go2" id="playAll">▶ تشغيل القصة</button>') +
     '<div class="seg2"><button class="chip on" id="trOn">إخفاء الترجمة</button></div><div class="story" id="story">' + s.lines.map(function(l, i){ return '<button class="sline" data-s="' + i + '"><span class="d de">' + esc(l.de) + '</span><span class="m">' + esc(l.mn) + '</span></button>'; }).join('') + '</div>' +
     '<div class="sh"><h2>هل فهمت القصة؟</h2></div><div id="sq"></div>' + footer() + '</div>';
@@ -849,14 +884,14 @@ function viewLetters(){
   var ls = SX.letters || [];
   var html = '<div class="wrap"><div class="ph" style="--c:#3A86FF"><a class="back" href="#/learn/read">→ اقرأ واكتب</a><span class="em">✉️</span><h1>رسائل جاهزة</h1><div class="g">Briefe und E-Mails</div><p>نماذج لرسائل قصيرة كما تُطلب في امتحان A1، بالصوت والترجمة.</p></div>' +
     '<div class="tip tip"><b class="k">💡 القاعدة الذهبية</b>كل رسالة فيها: <b>تحية</b> ← <b>ثلاث نقاط</b> مطلوبة ← <b>خاتمة</b> ← <b>اسمك</b>. هذا كل ما يحتاجه الممتحن.</div><div class="list">' +
-    ls.map(function(w){ var uid = 'w:' + w.id; return '<a class="it lesson" href="#/letter/' + w.id + '" style="--c:' + w.color + '"><span class="em">' + w.e + '</span><div class="tx"><b>' + esc(w.title) + '</b><div class="m">' + esc(w.sit) + '</div><div class="prog thin"><i style="width:' + unitPct(uid) + '%"></i></div></div><span class="st">' + (S.done[uid] ? '✅' : '‹') + '</span></a>'; }).join('') + '</div>' + footer() + '</div>';
+    ls.map(function(w){ var uid = 'w:' + w.id; return '<a class="it lesson" href="#/letter/' + w.id + '" style="--c:' + w.color + '"><span class="em cov">' + uiPic('letter_' + w.id, w.e) + '</span><div class="tx"><b>' + esc(w.title) + '</b><div class="m">' + esc(w.sit) + '</div><div class="prog thin"><i style="width:' + unitPct(uid) + '%"></i></div></div><span class="st">' + (S.done[uid] ? '✅' : '‹') + '</span></a>'; }).join('') + '</div>' + footer() + '</div>';
   render(html, 'learn');
 }
 function viewLetter(id){
   var w = (SX.letters || []).find(function(x){ return x.id === id; }); if (!w) return go('#/letters');
   var uid = 'w:' + id; useAudio('letter');
   var list = w.lines.map(function(l, k){ return {de:l.de, mn:l.mn, grp:'letter', u:uid, k:k}; });
-  var html = '<div class="wrap"><div class="ph" style="--c:' + w.color + '"><a class="back" href="#/letters">→ الرسائل</a><span class="em">' + w.e + '</span><h1>' + esc(w.title) + '</h1><p>' + esc(w.sit) + '</p></div>' + unitBar(uid) +
+  var html = '<div class="wrap"><div class="ph" style="--c:' + w.color + '"><a class="back" href="#/letters">→ الرسائل</a><span class="em phpic">' + uiPic('letter_' + w.id, w.e) + '</span><h1>' + esc(w.title) + '</h1><p>' + esc(w.sit) + '</p></div>' + unitBar(uid) +
     '<div class="panel task"><b>📋 المطلوب في الرسالة</b><ul>' + w.points.map(function(p){ return '<li>' + esc(p) + '</li>'; }).join('') + '</ul></div>' +
     ctlBar('<button class="chip go2" id="playAll">▶ تشغيل الرسالة</button>') +
     '<div class="letter">' + list.map(function(l, i){ return '<button class="it lline" data-i="' + i + '" style="--c:' + w.color + '"><span class="tx"><span class="d">' + esc(l.de) + '</span><span class="m">' + esc(l.mn) + '</span></span><span class="play sm">' + ICON_PLAY + '</span>' + (S.heard[uid] && S.heard[uid][i] ? '<span class="hd">✓</span>' : '') + '</button>'; }).join('') + '</div>' +
@@ -1113,7 +1148,7 @@ function viewJourney(){
   var si = stationIdx(), n = doneCount(), T = UNITS.length, nx = STATIONS[si + 1];
   var need = nx ? stNeed(si + 1) - n : 0, a = stNeed(si), b = nx ? stNeed(si + 1) : T, frac = nx ? (n - a) / Math.max(1, b - a) : 1;
   var rows = STATIONS.map(function(s, i){ var reached = i <= si;
-    return '<div class="jst ' + (reached ? 'got' : '') + (i === si ? ' cur' : '') + '" style="--i:' + i + '"><div class="jp">' + s.e + '</div><div class="jt"><b>' + s.a + '</b><small>' + (i === 0 ? 'نقطة البداية' : ar(stNeed(i)) + ' وحدة') + '</small></div>' + (i === si ? '<div class="jr" style="--f:' + frac.toFixed(2) + '">🚀</div>' : '') + '</div>'; }).reverse().join('');
+    return '<div class="jst ' + (reached ? 'got' : '') + (i === si ? ' cur' : '') + '" style="--i:' + i + '"><div class="jp jpic">' + uiPic('st' + i, s.e) + '</div><div class="jt"><b>' + s.a + '</b><small>' + (i === 0 ? 'نقطة البداية' : ar(stNeed(i)) + ' وحدة') + '</small></div>' + (i === si ? '<div class="jr" style="--f:' + frac.toFixed(2) + '">🚀</div>' : '') + '</div>'; }).reverse().join('');
   var o = pathOrder().filter(function(id){ return !S.done[id]; }).slice(0, 4).map(function(id){ return UMAP[id]; });
   var html = '<div class="wrap"><div class="ph space" style="--c:#2B1F86"><a class="back" href="#/">→ الرئيسية</a><span class="em">🚀</span><h1>رحلتك الفضائية</h1><div class="g">Deine Weltraumreise</div><p>كل درس تكمله يقرّب صاروخك من المحطة التالية.</p></div>' +
     '<div class="jsum"><div><b>' + ar(n) + '</b><span>وحدة مكتملة</span></div><div><b>' + ar(T) + '</b><span>وحدة في الرحلة</span></div><div><b>' + STATIONS[si].e + '</b><span>' + STATIONS[si].a + '</span></div></div>' +
@@ -1188,6 +1223,7 @@ function viewGame(gid, tid, opts){
   var pool = uniqBy(itemsOf(tid).filter(function(x){ return x.mn; }), function(x){ return x.de; });
   if (tid === 'all') ['abc','num','greet','intro','colors','family','food','home','body','animals','jobs','weather','travel','verbs','calendar'].forEach(useAudio);
   else if (tid === 'mist') pool.forEach(function(x){ useAudio(x.grp); }); else useAudio(tid);
+  loadPics(tid === 'mist' || opts.daily ? 'all' : tid);
   var need = {order: function(x){ var n = x.de.split(' ').length; return n >= 3 && n <= 9 && !/[,·]/.test(x.de); }, artikel: function(x){ return !!x.g; }}[gid];
   if (need) pool = pool.filter(need);
   var pool2 = uniqBy(pool, function(x){ return x.mn; });
@@ -1243,7 +1279,7 @@ function viewGame(gid, tid, opts){
       var h = bar(i, qs.length);
       if (t === 'meaning'){
         var ch = shuffle([q].concat(others(q, 3, 'mn')), rnd);
-        h += '<div class="qcard"><div class="em">' + (q.e || '💬') + '</div><div class="q">ما معناها؟</div><div class="big">' + deHTML(q) + '</div><div class="pr arp">' + pron(q.ar || '') + '</div><button class="play sm" id="qp" style="margin:8px auto 0">' + ICON_PLAY + '</button></div>' +
+        h += '<div class="qcard">' + qEm(q, '💬') + '<div class="q">ما معناها؟</div><div class="big">' + deHTML(q) + '</div><div class="pr arp">' + pron(q.ar || '') + '</div><button class="play sm" id="qp" style="margin:8px auto 0">' + ICON_PLAY + '</button></div>' +
           '<div class="opts">' + ch.map(function(c, k){ return '<button class="opt" data-k="' + k + '">' + esc(c.mn) + '</button>'; }).join('') + '</div>';
         stage.innerHTML = h; $('#qp').onclick = function(){ play(q); }; play(q);
         $$('.opt').forEach(function(b){ b.onclick = function(){ answer(ch[+b.dataset.k] === q, b, q); }; });
@@ -1255,13 +1291,13 @@ function viewGame(gid, tid, opts){
         $('#qp').onclick = function(){ var sp = S.set.speed; if (slowNext) S.set.speed = 'slow'; play(q, null, function(){ S.set.speed = sp; }); slowNext = true; }; play(q);
         $$('.opt').forEach(function(b){ b.onclick = function(){ answer(ch2[+b.dataset.k] === q, b, q); }; });
       } else if (t === 'artikel'){
-        h += '<div class="qcard"><div class="em">' + (q.e || '📦') + '</div><div class="q">der أم die أم das؟</div><div class="big">… ' + esc(q.n) + '</div><div class="m" style="color:var(--mute)">' + esc(q.mn) + '</div></div>' +
+        h += '<div class="qcard">' + qEm(q, '📦') + '<div class="q">der أم die أم das؟</div><div class="big">… ' + esc(q.n) + '</div><div class="m" style="color:var(--mute)">' + esc(q.mn) + '</div></div>' +
           '<div class="arts"><button class="artb m" data-a="m">der</button><button class="artb f" data-a="f">die</button><button class="artb n" data-a="n">das</button></div>' +
           '<div class="tip memo" style="margin-top:12px"><b class="k">🧠</b><span class="art m">der</span> مذكّر · <span class="art f">die</span> مؤنّث · <span class="art n">das</span> محايد. احفظ كل اسم مع أداته ولونه.</div>';
         stage.innerHTML = h;
         $$('.artb').forEach(function(b){ b.onclick = function(){ answer(b.dataset.a === q.g, b, q); }; });
       } else if (t === 'type'){
-        h += '<div class="qcard"><div class="em">' + (q.e || '✍️') + '</div><div class="q">اكتبها بالألمانية</div><div class="bigar">' + esc(q.mn) + '</div><button class="play sm" id="qp" style="margin:8px auto 0">' + ICON_PLAY + '</button></div>' +
+        h += '<div class="qcard">' + qEm(q, '✍️') + '<div class="q">اكتبها بالألمانية</div><div class="bigar">' + esc(q.mn) + '</div><button class="play sm" id="qp" style="margin:8px auto 0">' + ICON_PLAY + '</button></div>' +
           '<input class="inp de" id="tin" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="اكتب هنا…" aria-label="إجابتك"><div class="row" style="margin-top:10px"><button class="btn wide" id="tchk">تأكيد</button></div>' +
           '<div class="center sub" style="margin-top:6px">لا تجد ä ö ü؟ اكتب ae oe ue وتُقبل الإجابة</div>';
         stage.innerHTML = h; $('#qp').onclick = function(){ play(q); }; var inp = $('#tin'); setTimeout(function(){ inp.focus(); }, 50);
@@ -1334,7 +1370,7 @@ function viewGame(gid, tid, opts){
         var lft = Math.max(0, Math.ceil((end - Date.now()) / 1000)); if (!lft){ clearInterval(timer); return finish(); }
         var q = pool2[Math.floor(rnd() * pool2.length)], ch = shuffle([q].concat(others(q, 3, 'mn')), rnd);
         stage.innerHTML = '<div class="gamebar"><span class="timer" id="tm">' + lft + '</span><div class="prog"><i style="width:' + (lft / 60 * 100) + '%;background:linear-gradient(90deg,#FF6B2C,#FFC53D)"></i></div><span class="hearts">✅ ' + ar(R.ok) + '</span></div>' +
-          '<div class="qcard"><div class="em">' + (q.e || '💬') + '</div><div class="big">' + deHTML(q) + '</div></div><div class="opts">' + ch.map(function(c, k){ return '<button class="opt" data-k="' + k + '">' + esc(c.mn) + '</button>'; }).join('') + '</div>';
+          '<div class="qcard">' + qEm(q, '💬') + '<div class="big">' + deHTML(q) + '</div></div><div class="opts">' + ch.map(function(c, k){ return '<button class="opt" data-k="' + k + '">' + esc(c.mn) + '</button>'; }).join('') + '</div>';
         $$('.opt').forEach(function(b){ b.onclick = function(){ var ok = ch[+b.dataset.k] === q; R.total++; if (ok) R.ok++; else R.mistakes++; judge(ok, q); b.classList.add(ok ? 'ok' : 'no'); setTimeout(q1, ok ? 250 : 650); }; });
       };
       end = Date.now() + 60000; timer = setInterval(function(){ var t = $('#tm'); if (!t){ clearInterval(timer); return; } var lft = Math.max(0, Math.ceil((end - Date.now()) / 1000)); t.textContent = lft; if (!lft){ clearInterval(timer); finish(); } }, 250);
@@ -1350,8 +1386,8 @@ function viewGame(gid, tid, opts){
     var card = function(){
       if (ci >= deck.length){ R.total = Math.max(R.total, deck.length); return finish(); }
       var q = deck[ci], box = S.cards[q.de] || 0;
-      stage.innerHTML = bar(ci, deck.length) + '<div class="flash"><div class="fc" id="fc"><div class="side"><div class="em">' + (q.e || '🃏') + '</div><div class="big">' + deHTML(q) + '</div><div class="sub">اضغط لقلب البطاقة</div></div>' +
-        '<div class="side back"><div class="em">' + (q.e || '🃏') + '</div><div style="font-size:24px;font-weight:800">' + esc(q.mn) + '</div><div class="pr arp">' + pron(q.ar || '') + '</div></div></div></div>' +
+      stage.innerHTML = bar(ci, deck.length) + '<div class="flash"><div class="fc" id="fc"><div class="side">' + qEm(q, '🃏') + '<div class="big">' + deHTML(q) + '</div><div class="sub">اضغط لقلب البطاقة</div></div>' +
+        '<div class="side back">' + qEm(q, '🃏') + '<div style="font-size:24px;font-weight:800">' + esc(q.mn) + '</div><div class="pr arp">' + pron(q.ar || '') + '</div></div></div></div>' +
         '<div class="row"><button class="btn alt" id="no" style="flex:1">🔁 لم أحفظها بعد</button><button class="btn" id="yes" style="flex:1">✅ عرفتها</button></div><div class="center sub" style="margin-top:8px">الصندوق ' + ar(box) + ' من 5</div>';
       var fc = $('#fc'); fc.onclick = function(){ fc.classList.toggle('flip'); play(q); };
       play(q);
@@ -1466,7 +1502,7 @@ function viewAdmin(){
   var words = 0; topics().forEach(function(t){ words += itemsOf(t.id).length; });
   var lessonItems = 0; SR.a1.concat(SR.a2).forEach(function(l){ lessonItems += l.items.length; });
   function row(h, e, t, d){ return '<a class="it lesson" href="' + h + '" target="_blank" rel="noopener" style="--c:#5B3DF5"><span class="em">' + e + '</span><div class="tx"><b>' + t + '</b><div class="m">' + d + '</div></div><span class="st">↗</span></a>'; }
-  var cfgView = JSON.stringify({announcement:CFG.announcement, whatsapp:CFG.whatsapp, youtube:CFG.youtube, hide:CFG.hide, goatcounter:CFG.goatcounter, repo:CFG.repo}, null, 2);
+  var cfgView = JSON.stringify({announcement:CFG.announcement, whatsapp:CFG.whatsapp, youtube:CFG.youtube, suggest:CFG.suggest, hide:CFG.hide, goatcounter:CFG.goatcounter, repo:CFG.repo}, null, 2);
   var html = '<div class="wrap"><div class="ph sm" style="--c:#14103A"><span class="em">🔐</span><h1>لوحة المالك</h1><div class="g">MOHANNAD</div><p>صفحة خاصة بك. لا تشارك رابطها.</p></div>' +
     '<div class="jsum"><div><b>' + UNITS.length + '</b><span>وحدة في الموقع</span></div><div><b>' + words + '</b><span>كلمة وجملة</span></div><div><b>' + lessonItems + '</b><span>مثال في الدروس</span></div></div>' +
     '<div class="sh"><h2>📊 الإحصائيات</h2></div>' +
@@ -1536,6 +1572,7 @@ function route(){
     case 'search': return viewSearch(decodeURIComponent(p[1] || ''));
     case 'admin-mohannad': return viewAdmin();
     case 'about': return viewAbout();
+    case 'suggest': return viewSuggest();
     default: return viewNotFound();
   }
 }
