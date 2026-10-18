@@ -864,7 +864,7 @@ function viewStory(id){
     '<div class="sh"><h2>هل فهمت القصة؟</h2></div><div id="sq"></div>' + footer() + '</div>';
   render(html, 'learn'); bindCtl();
   var showTr = false; $('#trOn').onclick = function(){ showTr = !showTr; $('#story').classList.toggle('notr', !showTr); $$('#story .sline.peek').forEach(function(x){ x.classList.remove('peek'); }); this.classList.toggle('on', showTr); this.textContent = showTr ? '🙈 إخفاء الترجمة' : '👁️ إظهار الترجمة'; };
-  $$('[data-s]').forEach(function(b){ b.onclick = function(){ b.classList.add('peek'); play(list[+b.dataset.s], b); }; });
+  $$('[data-s]').forEach(function(b){ b.onclick = function(){ play(list[+b.dataset.s], b); }; });
   $('#playAll').onclick = function(){ stopAudio(); var my = token, i = 0, els = $$('.sline');
     (function next(){ if (my !== token || i >= els.length) return; var el = els[i], it = list[i]; i++; el.scrollIntoView({block:'center', behavior:'smooth'}); play(it, el, function(){ if (my === token) setTimeout(next, 600); }); token = my; })(); };
   var qi = 0, ok = 0;
@@ -905,7 +905,6 @@ function viewLetter(id){
   render(html, 'learn'); bindCtl(); bindItems(list);
   $$('[data-p]').forEach(function(b){ b.onclick = function(){ play({de:w.phrases[+b.dataset.p].de, grp:'letter'}, b); }; });
   var showL = false; $('#trL').onclick = function(){ showL = !showL; $('#letterBox').classList.toggle('notr', !showL); $$('#letterBox .peek').forEach(function(x){ x.classList.remove('peek'); }); this.classList.toggle('on', showL); this.textContent = showL ? '🙈 إخفاء الترجمة' : '👁️ إظهار الترجمة'; };
-  $$('#letterBox .lline').forEach(function(b){ b.addEventListener('click', function(){ b.classList.add('peek'); }); });
   try{ var dr = localStorage.getItem('sr-letter-' + id); if (dr) $('#myL').value = dr; }catch(e){}
   $('#myL').oninput = function(){ try{ localStorage.setItem('sr-letter-' + id, this.value); }catch(e){} };
   $('#chkL').onclick = function(){
