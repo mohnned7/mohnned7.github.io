@@ -516,7 +516,7 @@ function viewHome(){
    '<div class="wod">' + qEm(w, '⭐') + '<div style="flex:1;min-width:0"><div class="w">' + deHTML(w) + '</div><div class="pr arp">' + pron(w.ar) + '</div><div class="m">' + esc(w.mn) + '</div></div><button class="play" id="wodPlay" aria-label="استمع">' + ICON_PLAY + '</button></div>' +
    '<div class="sh"><h2>إلى أين اليوم؟</h2></div><div class="tiles big">' +
      bigTile('#/learn', '📚', '#5B3DF5', 'الدروس', 'الكلمات ودروس A1 وA2', 'tile_learn') + bigTile('#/train', '🎯', '#8338EC', 'التدريب', 'الامتحان والنطق والأخطاء', 'tile_train') +
-     (hidden('games') ? '' : bigTile('#/play', '🎮', '#FF6B2C', 'الألعاب', '9 ألعاب ومهمة اليوم', 'tile_play')) + (hidden('journey') ? '' : bigTile('#/journey', '🚀', '#19C79A', 'رحلتي', st.e + ' ' + st.a, 'tile_journey')) + '</div>' +
+     (hidden('games') ? '' : bigTile('#/play', '🎮', '#FF6B2C', 'الألعاب', GAMES.length + ' ألعاب ومغامرة', 'tile_play')) + (hidden('journey') ? '' : bigTile('#/journey', '🚀', '#19C79A', 'رحلتي', st.e + ' ' + st.a, 'tile_journey')) + '</div>' +
    
    '<div class="sh"><h2>تواصل معي</h2></div>' + contactHTML(true) +
    footerFull() + '</div>';
@@ -1239,12 +1239,41 @@ var GAMES = [
   {id:'order',e:'🧩',c:'#C9971C',t:'رتّب الجملة',d:'رتّب الكلمات بشكل صحيح'},
   {id:'memory',e:'🃏',c:'#8338EC',t:'لعبة الذاكرة',d:'اقلب البطاقات وجِد الأزواج'},
   {id:'speed',e:'⏱️',c:'#E63946',t:'تحدّي السرعة',d:'أكبر عدد في 60 ثانية'},
-  {id:'cards',e:'🧠',c:'#06A77D',t:'بطاقات الحفظ',d:'تُعيد لك ما نسيته'}
+  {id:'cards',e:'🧠',c:'#06A77D',t:'بطاقات الحفظ',d:'تُعيد لك ما نسيته'},
+  {id:'rain',e:'☄️',c:'#2B1F86',t:'مطر الكلمات',d:'التقط الكلمة الصحيحة قبل أن تسقط'}
 ];
+/* ---------------- adventure map ---------------- */
+var ADV_T = ['greet','colors','num','family','food','home','body','animals','jobs','weather','travel','calendar','verbs','intro'];
+var ADV_M = [{m:'meaning', t:'المعنى', e:'🎯'}, {m:'listen', t:'الاستماع', e:'🎧'}, {m:'mix', t:'التحدّي', e:'👑'}];
+function advLevels(){ var L = []; ADV_T.forEach(function(tid){ var tp = topics().find(function(t){ return t.id === tid; }); if (!tp) return; ADV_M.forEach(function(md, k){ L.push({n:L.length + 1, tid:tid, mode:md.m, mt:md.t, me:md.e, boss:k === 2, topic:tp}); }); }); return L; }
+function advStars(n){ return (S.adv && S.adv[n]) || 0; }
+function advOpen(n){ return n === 1 || advStars(n - 1) > 0; }
+function advTotal(){ var t = 0; for (var k in (S.adv || {})) t += S.adv[k]; return t; }
+function viewAdventure(){
+  var L = advLevels(), cur = 1; L.forEach(function(l){ if (advOpen(l.n)) cur = l.n; });
+  var html = '<div class="wrap"><div class="ph sm" style="--c:#2B1F86"><a class="back" href="#/play">→ الألعاب</a><span class="em phpic">' + uiPic('tile_journey', '🗺️') + '</span><h1>مغامرة الكلمات</h1><div class="g">Wort-Abenteuer</div><p>' + ar(L.length) + ' مرحلة. لكل مرحلة 3 قلوب، واجمع حتى 3 نجوم لتفتح التالية.</p></div>' +
+    '<div class="advsum"><span>⭐ ' + ar(advTotal()) + ' من ' + ar(L.length * 3) + '</span><span>🏁 المرحلة ' + ar(cur) + '</span></div><div class="advmap">';
+  var last = null;
+  L.forEach(function(l, k){
+    if (l.tid !== last){ last = l.tid; html += '<div class="advgrp" style="--c:' + l.topic.color + '"><span class="ap">' + uiPic('head_' + l.tid, l.topic.e) + '</span><b>' + esc(l.topic.title) + '</b></div>'; }
+    var st = advStars(l.n), open = advOpen(l.n), side = ['c', 'r', 'c', 'l'][k % 4];
+    html += '<div class="advrow ' + side + '"><a class="lvl' + (open ? '' : ' lock') + (l.n === cur ? ' cur' : '') + (l.boss ? ' boss' : '') + (st ? ' won' : '') + '" ' + (open ? 'href="#/adv/' + l.n + '"' : 'aria-disabled="true"') + ' style="--c:' + l.topic.color + '">' +
+      '<span class="ln">' + (open ? (l.boss ? '👑' : ar(l.n)) : '🔒') + '</span>' + (st || open ? '<span class="ls">' + '★'.repeat(st) + '<i>' + '★'.repeat(3 - st) + '</i></span>' : '') + '</a><span class="lvt">' + l.me + ' ' + l.mt + '</span></div>';
+  });
+  html += '<div class="advend">🏆 أكمل كل المراحل لتصبح بطل الكلمات!</div></div>' + footer() + '</div>';
+  render(html, 'play');
+  $$('.lvl.lock').forEach(function(a){ a.onclick = function(e){ e.preventDefault(); toast('🔒 أكمل المرحلة السابقة أولًا'); }; });
+  var c = $('.lvl.cur'); if (c) setTimeout(function(){ c.scrollIntoView({block:'center'}); }, 60);
+}
+function viewAdvLevel(n){
+  var l = advLevels()[n - 1]; if (!l) return go('#/adv'); if (!advOpen(n)){ toast('🔒 أكمل المرحلة السابقة أولًا'); return go('#/adv'); }
+  viewGame(l.mode === 'listen' ? 'listen' : 'meaning', l.tid, {lv:l, fresh:true});
+}
 function gameTile(g, topic){ return '<a class="tile" href="#/g/' + g.id + '/' + (topic || 'all') + '" style="--c:' + g.c + '"><span class="em">' + g.e + '</span><b>' + g.t + '</b><span>' + g.d + '</span></a>'; }
 function viewPlay(){
   var html = '<div class="wrap"><div class="ph sm" style="--c:#FF6B2C"><span class="em phpic">' + uiPic('tile_play', '🎮') + '</span><h1>الألعاب</h1><div class="g">Spielen</div><p>كل إجابة صحيحة = 10 نقاط. اختر لعبة ثم اختر الموضوع.</p></div>' +
-    '<a class="mission ' + (S.daily[today()] ? 'done' : '') + '" href="#/daily" style="margin-top:0"><span class="em">🎯</span><div><b>مهمة اليوم</b><span>' + (S.daily[today()] ? 'أنهيتها ✅ عُد غدًا' : '10 أسئلة متنوعة + 50 نقطة') + '</span></div><span class="arr">‹</span></a>' +
+    '<a class="advbanner" href="#/adv"><span class="ab-p">' + uiPic('tile_journey', '🗺️') + '</span><div><b>🗺️ مغامرة الكلمات</b><span>' + ar(advLevels().length) + ' مرحلة · قلوب ونجوم · ⭐ ' + ar(advTotal()) + '</span></div><span class="arr">‹</span></a>' +
+    '<a class="mission ' + (S.daily[today()] ? 'done' : '') + '" href="#/daily" style="margin-top:12px"><span class="em">🎯</span><div><b>مهمة اليوم</b><span>' + (S.daily[today()] ? 'أنهيتها ✅ عُد غدًا' : '10 أسئلة متنوعة + 50 نقطة') + '</span></div><span class="arr">‹</span></a>' +
     '<div class="sh"><h2>اختر لعبة</h2><span class="cnt">' + GAMES.length + ' ألعاب</span></div><div class="tiles">' + GAMES.map(function(g){ return gameTile(g); }).join('') + '</div>' + footer() + '</div>';
   render(html, 'play');
 }
@@ -1267,15 +1296,17 @@ function viewGame(gid, tid, opts){
   if (need) pool = pool.filter(need);
   var pool2 = uniqBy(pool, function(x){ return x.mn; });
   var distract = pool2.length >= 4 ? pool2 : uniqBy(pool2.concat(itemsOf('all').filter(function(x){ return x.mn; })), function(x){ return x.mn; });
-  var head = opts.daily ? '<div class="ph" style="--c:#FF3D7F"><a class="back" href="#/">→ الرئيسية</a><span class="em">🎯</span><h1>مهمة اليوم</h1><div class="g">Tagesmission</div><p>10 أسئلة متنوعة. أنهِها واحصل على 50 نقطة إضافية.</p></div>' :
+  var LV = opts.lv || null;
+  var head = LV ? '<div class="ph sm" style="--c:' + LV.topic.color + '"><a class="back" href="#/adv">→ الخريطة</a><span class="em phpic">' + uiPic('head_' + LV.tid, LV.topic.e) + '</span><h1>المرحلة ' + ar(LV.n) + (LV.boss ? ' 👑' : '') + '</h1><div class="g">' + esc(LV.topic.title) + ' · ' + LV.mt + '</div></div>' :
+    opts.daily ? '<div class="ph" style="--c:#FF3D7F"><a class="back" href="#/">→ الرئيسية</a><span class="em">🎯</span><h1>مهمة اليوم</h1><div class="g">Tagesmission</div><p>10 أسئلة متنوعة. أنهِها واحصل على 50 نقطة إضافية.</p></div>' :
     '<div class="ph" style="--c:' + g.c + '"><a class="back" href="' + (tid === 'mist' ? '#/mistakes' : '#/play') + '">→ ' + (tid === 'mist' ? 'أخطائي' : 'الألعاب') + '</a><span class="em">' + g.e + '</span><h1>' + g.t + '</h1><p>' + g.d + '</p></div>' + pickBar(gid, tid);
   var minN = gid === 'memory' ? 6 : (tid === 'mist' ? 4 : 5);
   if (pool2.length < minN){
     render('<div class="wrap">' + head + '<div class="empty"><i>🪐</i>' + (tid === 'mist' ? 'تحتاج 4 كلمات على الأقل في كرّاسة الأخطاء لهذه اللعبة.' : 'هذا الموضوع لا يحتوي كلمات كافية لهذه اللعبة. اختر موضوعًا آخر من الأعلى.') + '</div></div>', 'play'); return;
   }
-  var KEY = opts.daily ? 'daily:' + today() : gid + '/' + tid;
+  var KEY = LV ? 'adv:' + LV.n : opts.daily ? 'daily:' + today() : gid + '/' + tid;
   var saved = S.gs[KEY];
-  if (!opts.fresh && !opts.resume && saved && gid !== 'speed' && saved.i > 0){
+  if (!opts.fresh && !opts.resume && saved && gid !== 'speed' && gid !== 'rain' && saved.i > 0){
     render('<div class="wrap">' + head + '<div class="panel center resume"><div style="font-size:44px">⏸️</div><b>لديك جولة لم تكملها</b><p class="sub">توقفت عند ' + (saved.lbl || 'السؤال ' + ar(saved.i + 1)) + '</p><div class="row" style="justify-content:center"><button class="btn" id="resY">▶ تابع من حيث توقفت</button><button class="btn alt" id="resN">ابدأ من جديد</button></div></div></div>', 'play');
     $('#resY').onclick = function(){ viewGame(gid, tid, Object.assign({}, opts, {resume:true})); };
     $('#resN').onclick = function(){ delete S.gs[KEY]; save(); viewGame(gid, tid, Object.assign({}, opts, {fresh:true})); };
@@ -1285,12 +1316,17 @@ function viewGame(gid, tid, opts){
   render('<div class="wrap">' + head + (gid === 'speed' || gid === 'match' || gid === 'memory' || gid === 'order' || gid === 'type' || gid === 'artikel' ? '' : '<div class="ctl slim">' + prChip() + '</div>') + '<div id="stage"></div></div>', 'play'); bindCtl();
   var stage = $('#stage');
   var rnd = opts.daily ? seeded('daily' + today()) : Math.random;
-  var R = {ok:0, total:0, mistakes:0};
+  var R = {ok:0, total:0, mistakes:0, bonus:0}, hearts = LV ? 3 : 0, combo = 0;
+  function heartsH(){ return hearts || LV ? '<span class="hrt">' + '❤️'.repeat(hearts) + '<i>' + '🤍'.repeat(Math.max(0, 3 - hearts)) + '</i></span>' : ''; }
+  function comboH(){ return combo >= 3 ? '<span class="combo">🔥 ×2</span>' : ''; }
+  function mascot(mood){ var m = $('#mascot'); if (!m) return; m.className = 'mascot ' + mood; var t = m.querySelector('.say');
+    if (t) t.textContent = mood === 'ok' ? (combo >= 3 ? 'نار! 🔥' : ['رائع!','ممتاز!','أحسنت!','صاروخ! 🚀'][Math.floor(Math.random() * 4)]) : mood === 'no' ? ['لا بأس!','حاول مرة أخرى','ركّز 💪'][Math.floor(Math.random() * 3)] : 'هيا بنا!'; }
   var byDe = {}; pool.concat(pool2).forEach(function(x){ byDe[x.de] = x; });
   function st(o){ S.gs[KEY] = o; save(); }
   function finish(extra){
     delete S.gs[KEY];
-    var pct = R.total ? R.ok / R.total : 0, stars = pct >= .9 ? 3 : pct >= .6 ? 2 : 1, xp = R.ok * 10 + 20 + (extra || 0);
+    if (LV) return finishLevel();
+    var pct = R.total ? R.ok / R.total : 0, stars = pct >= .9 ? 3 : pct >= .6 ? 2 : 1, xp = R.ok * 10 + 20 + (extra || 0) + (R.bonus || 0);
     if (R.total >= 5 && R.mistakes === 0){ S.perfect = true; }
     S.games[gid] = 1; if (opts.daily){ S.daily[today()] = R.ok; xp += 50; }
     save(); addXP(xp); confetti();
@@ -1305,13 +1341,31 @@ function viewGame(gid, tid, opts){
     $('#again').onclick = function(){ viewGame(gid, tid, {daily:opts.daily, fresh:true}); };
     if (!S.popup && ytName()){ setTimeout(function(){ if ($('.result') && !S.popup){ S.popup = true; save(); subPopup(); } }, 1500); }
   }
-  function bar(i, n){ return '<div class="gamebar"><div class="prog"><i style="width:' + (i / n * 100) + '%"></i></div><span class="hearts">' + ar(i) + '/' + ar(n) + '</span></div>'; }
+  function bar(i, n){ return '<div class="gamebar"><span class="mascot" id="mascot"><span class="mp">' + uiPic('tile_journey', '🧑‍🚀') + '</span><span class="say">هيا بنا!</span></span><div class="prog"><i style="width:' + (i / n * 100) + '%"></i></div>' + comboH() + (LV ? heartsH() : '<span class="hearts">' + ar(i) + '/' + ar(n) + '</span>') + '</div>'; }
+  function failLevel(){
+    delete S.gs[KEY]; save(); fx(false);
+    stage.innerHTML = '<div class="result lvres"><div class="em">💔</div><h2>انتهت القلوب</h2><p class="sub">أجبت ' + ar(R.ok) + ' إجابات صحيحة. حاول مرة أخرى، أنت قريب!</p>' +
+      '<div class="row" style="justify-content:center;margin-top:10px"><button class="btn" id="again">🔁 حاول مرة أخرى</button><a class="btn alt" href="#/adv" style="text-decoration:none">🗺️ الخريطة</a></div></div>';
+    $('#again').onclick = function(){ viewAdvLevel(LV.n); };
+  }
+  function finishLevel(){
+    var stars = R.mistakes === 0 ? 3 : R.mistakes === 1 ? 2 : 1, xp = R.ok * 10 + R.bonus + stars * 10 + (LV.boss ? 30 : 0), prev = advStars(LV.n), first = !prev;
+    S.adv = S.adv || {}; S.adv[LV.n] = Math.max(prev, stars); S.games.adv = 1; save(); addXP(xp); confetti();
+    var nx = advLevels()[LV.n];
+    stage.innerHTML = '<div class="result lvres"><div class="em">' + (stars === 3 ? '🏆' : stars === 2 ? '🚀' : '🌟') + '</div><h2>' + (stars === 3 ? 'مرحلة مثالية!' : 'نجحت في المرحلة ' + ar(LV.n) + '!') + '</h2>' +
+      '<div class="bigstars">' + [1, 2, 3].map(function(k){ return '<span class="' + (k <= stars ? 'on' : '') + '" style="animation-delay:' + (k * .25) + 's">★</span>'; }).join('') + '</div>' +
+      '<div>' + ar(R.ok) + ' من ' + ar(R.total) + ' صحيحة' + (R.bonus ? ' · 🔥 كومبو +' + ar(R.bonus) : '') + '</div><div class="xpgain">+' + ar(xp) + ' نقطة ⚡</div>' +
+      (first && nx ? '<div class="badge-done">🔓 فتحت المرحلة ' + ar(nx.n) + '</div>' : '') +
+      '<div class="row" style="justify-content:center;margin-top:10px">' + (nx ? '<a class="btn flame" href="#/adv/' + nx.n + '" style="text-decoration:none">▶ المرحلة التالية</a>' : '') + '<button class="btn alt" id="again">🔁 أعد</button><a class="btn alt" href="#/adv" style="text-decoration:none">🗺️ الخريطة</a></div></div>';
+    $('#again').onclick = function(){ viewAdvLevel(LV.n); };
+  }
   function others(item, n, key){ return shuffle(distract.filter(function(x){ return x[key] !== item[key]; }), rnd).slice(0, n); }
-  function judge(ok, q){ fx(ok); if (ok){ xpFloat(10); fixMistake(q); } else if (tid !== 'mist' || S.mist[q.de]) addMistake(q); }
+  function judge(ok, q){ fx(ok); if (ok){ combo++; var amt = combo >= 3 ? 20 : 10; if (combo >= 3) R.bonus += 10; xpFloat(amt); fixMistake(q); } else { combo = 0; if (tid !== 'mist' || S.mist[q.de]) addMistake(q); } mascot(ok ? 'ok' : 'no'); }
 
   if (gid === 'meaning' || gid === 'listen' || gid === 'artikel' || gid === 'type' || gid === 'order' || opts.daily){
-    var N = 10, qs, types, i = 0;
+    var N = LV ? 8 : 10, qs, types, i = 0;
     if (opts.resume && saved && saved.qs){ qs = saved.qs.map(function(d){ return byDe[d]; }).filter(Boolean); types = saved.types; i = saved.i; R = saved.R || R; if (qs.length !== saved.qs.length){ qs = null; i = 0; R = {ok:0,total:0,mistakes:0}; } }
+    if (!qs && LV){ qs = shuffle(pool2, rnd).slice(0, N); types = qs.map(function(q, k){ if (LV.mode !== 'mix') return LV.mode; var o = ['meaning', 'listen', q.g ? 'artikel' : 'meaning', 'type']; return o[k % 4]; }); }
     if (!qs){ qs = shuffle(pool2, rnd).slice(0, N); types = opts.daily ? qs.map(function(q, k){ return q.g && k % 3 === 2 ? 'artikel' : (k % 2 ? 'listen' : 'meaning'); }) : null; }
     var save1 = function(){ st({qs:qs.map(function(q){ return q.de; }), types:types, i:i, R:R, lbl:'السؤال ' + ar(i + 1) + ' من ' + ar(qs.length)}); };
     var next = function(){
@@ -1363,7 +1417,9 @@ function viewGame(gid, tid, opts){
       if (btn) btn.classList.add(ok ? 'ok' : 'no');
       if (!ok){ $$('.opt').forEach(function(b){ if (b.textContent.trim() === q.mn || b.textContent.trim() === (q.g ? ART[q.g] + ' ' + q.n : q.de)) b.classList.add('ok'); }); }
       $$('.opt,.artb').forEach(function(b){ b.disabled = true; });
-      showFb(ok, q, note, next);
+      if (!ok && LV){ hearts--; var hb = $('.hrt'); if (hb) hb.outerHTML = heartsH(); }
+      var cb = $('.combo'); if (cb && combo < 3) cb.remove(); else if (!cb && combo >= 3){ var pg = $('.gamebar .prog'); if (pg) pg.insertAdjacentHTML('afterend', comboH()); }
+      showFb(ok, q, note, LV && hearts <= 0 ? failLevel : next);
       if (ok) play(q);
     };
     next(); return;
@@ -1416,6 +1472,35 @@ function viewGame(gid, tid, opts){
       };
       end = Date.now() + 60000; timer = setInterval(function(){ var t = $('#tm'); if (!t){ clearInterval(timer); return; } var lft = Math.max(0, Math.ceil((end - Date.now()) / 1000)); t.textContent = lft; if (!lft){ clearInterval(timer); finish(); } }, 250);
       q1();
+    };
+    return;
+  }
+  if (gid === 'rain'){
+    var lives = 3, round = 0, ROUNDS = 15, raf = 0, alive = true, busy = false;
+    stage.innerHTML = '<div class="qcard"><div class="em">☄️</div><b>مطر الكلمات</b><p class="sub">تظهر الكلمة بالعربية في الأعلى، وتسقط ثلاث كلمات ألمانية. المس الكلمة الصحيحة قبل أن تصل إلى الأرض! لديك 3 قلوب، والسرعة تزيد.</p><button class="btn flame" id="rgo">🚀 ابدأ</button></div>';
+    $('#rgo').onclick = function(){
+      stage.innerHTML = '<div class="gamebar"><span class="hrt" id="rh"></span><div class="prog"><i id="rp" style="width:0"></i></div><span class="hearts" id="rs">⚡ 0</span></div><div class="rainq" id="rq"></div><div class="rain" id="rf"><div class="ground"></div></div>';
+      var field = $('#rf'), score = 0;
+      var hud = function(){ $('#rh').innerHTML = '❤️'.repeat(lives) + '<i>' + '🤍'.repeat(3 - lives) + '</i>'; $('#rs').textContent = '⚡ ' + score; $('#rp').style.width = (round / ROUNDS * 100) + '%'; };
+      var stop = function(){ alive = false; cancelAnimationFrame(raf); };
+      addEventListener('hashchange', stop, {once:true});
+      var drop = function(){
+        if (!alive) return; if (lives <= 0 || round >= ROUNDS){ stop(); return finish(); }
+        round++; hud(); busy = false;
+        var q = pool2[Math.floor(rnd() * pool2.length)], ch = shuffle([q].concat(others(q, 2, 'mn')), rnd);
+        $('#rq').innerHTML = '<span>' + (q.e ? q.e + ' ' : '') + esc(q.mn) + '</span>';
+        $$('.drop', field).forEach(function(d){ d.remove(); });
+        var H = field.clientHeight - 56, speed = 38 + round * 5, y0 = performance.now(), els = [];
+        ch.forEach(function(c, k){ var d = document.createElement('button'); d.className = 'drop de'; d.style.left = (k * 33.33 + 1.5) + '%'; d.innerHTML = deHTML(c); field.appendChild(d); els.push(d);
+          d.onclick = function(){ if (busy) return; busy = true; var ok = c === q; R.total++; judge(ok, q);
+            if (ok){ R.ok++; score += combo >= 3 ? 20 : 10; d.classList.add('hit'); play(q); } else { R.mistakes++; lives--; d.classList.add('miss'); els.forEach(function(x, j){ if (ch[j] === q) x.classList.add('right'); }); }
+            hud(); setTimeout(drop, ok ? 450 : 900); }; });
+        var tick = function(t){ if (!alive || busy) return; var y = (t - y0) / 1000 * speed; els.forEach(function(d){ d.style.transform = 'translateY(' + y + 'px)'; });
+          if (y >= H){ busy = true; R.total++; R.mistakes++; lives--; judge(false, q); els.forEach(function(x, j){ if (ch[j] === q) x.classList.add('right'); }); hud(); setTimeout(drop, 900); return; }
+          raf = requestAnimationFrame(tick); };
+        raf = requestAnimationFrame(tick);
+      };
+      hud(); drop();
     };
     return;
   }
@@ -1664,7 +1749,7 @@ function route(){
   var h = (location.hash || '#/').slice(1), parts = h.split('#'), p = parts[0].split('/').filter(Boolean), anchor = parts[1];
   countView();
   if (!p.length) return viewHome();
-  var GUARD = {exam:'exam', test:'test', speak:'speak', mistakes:'mistakes', stories:'stories', story:'stories', letters:'letters', letter:'letters', tool:'tools', play:'games', g:'games', daily:'games', journey:'journey'};
+  var GUARD = {exam:'exam', test:'test', speak:'speak', mistakes:'mistakes', stories:'stories', story:'stories', letters:'letters', letter:'letters', tool:'tools', play:'games', adv:'games', g:'games', daily:'games', journey:'journey'};
   if ((GUARD[p[0]] && hidden(GUARD[p[0]])) || (p[0] === 'l' && /^a2-/.test(p[1] || '') && hidden('a2'))){ toast('هذا القسم غير متاح حاليًا'); return viewHome(); }
   switch (p[0]){
     case 'learn': return viewLearn(p[1] || anchor);
@@ -1674,6 +1759,7 @@ function route(){
     case 'levels': return viewLevels();
     case 'tool': return ({numbers:viewNumTool, clock:viewClock, calendar:viewCalendar, intro:viewIntro}[p[1]] || viewLearn)();
     case 'play': return viewPlay();
+    case 'adv': return p[1] ? viewAdvLevel(+p[1]) : viewAdventure();
     case 'g': return viewGame(p[1], p[2] || 'all');
     case 'daily': return viewGame('meaning', 'all', {daily:true});
     case 'test': return viewTest();
