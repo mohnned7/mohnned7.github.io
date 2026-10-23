@@ -250,11 +250,29 @@ function checkBadges(){
   if (got.length){ save(); var b = BADGES.find(function(x){ return x.id === got[0]; }); setTimeout(function(){ toast(b.e + ' وسام جديد: ' + b.t); confetti(); }, 700); }
 }
 function addXP(n, quiet){
-  S.xp += n; var t = today();
+  if (n > 0 && !quiet) xpFloat(n);
+  var xp0 = S.xp; S.xp += n; var t = today();
   if (S.last !== t){ S.streak = (S.last === yesterday()) ? S.streak + 1 : 1; S.last = t; }
   S.days[t] = (S.days[t] || 0) + n; save();
-  if (!quiet) checkBadges(); updateRibbon(); var gc = $('.goal'); if (gc){ var was = gc.classList.contains('done'); gc.outerHTML = goalHTML(); if (!was && S.goal && (S.days[t] || 0) >= S.goal) setTimeout(function(){ toast('🎯 حققت هدف اليوم!'); confetti(); }, 400); } else if (S.goal && (S.days[t] || 0) >= S.goal && (S.days[t] - n) < S.goal) setTimeout(function(){ toast('🎯 حققت هدف اليوم!'); }, 400);
+  if (!quiet) checkBadges(); updateRibbon(); countUp(xp0, S.xp); var gc = $('.goal'); if (gc){ var was = gc.classList.contains('done'); gc.outerHTML = goalHTML(); if (!was && S.goal && (S.days[t] || 0) >= S.goal) setTimeout(function(){ toast('🎯 حققت هدف اليوم!'); confetti(); }, 400); } else if (S.goal && (S.days[t] || 0) >= S.goal && (S.days[t] - n) < S.goal) setTimeout(function(){ toast('🎯 حققت هدف اليوم!'); }, 400);
 }
+/* ---------------- effects ---------------- */
+var lastTap = null, actx = null;
+document.addEventListener('pointerdown', function(e){ lastTap = {x:e.clientX, y:e.clientY, t:Date.now()}; }, true);
+function fxOn(){ return S.set.fx !== false; }
+function calm(){ try{ return matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } }
+function tone(freqs, dur, type, vol){ try{ actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume(); var t0 = actx.currentTime;
+  freqs.forEach(function(f, k){ var o = actx.createOscillator(), g = actx.createGain(); o.type = type || 'sine'; o.frequency.value = f; var st = t0 + k * dur * .8;
+    g.gain.setValueAtTime(0, st); g.gain.linearRampToValueAtTime(vol || .12, st + .015); g.gain.exponentialRampToValueAtTime(.0001, st + dur); o.connect(g); g.connect(actx.destination); o.start(st); o.stop(st + dur + .02); }); }catch(e){} }
+function fx(ok){ if (!fxOn()) return;
+  if (ok){ tone([660, 990], .16, 'sine', .1); try{ navigator.vibrate && navigator.vibrate(18); }catch(e){} }
+  else { tone([220, 180], .18, 'triangle', .09); try{ navigator.vibrate && navigator.vibrate([35, 50, 35]); }catch(e){} } }
+function xpFloat(n){ if (!fxOn() || calm()) return; var x = innerWidth / 2, y = innerHeight / 2;
+  if (lastTap && Date.now() - lastTap.t < 2500){ x = lastTap.x; y = lastTap.y; }
+  var d = document.createElement('div'); d.className = 'xpf'; d.textContent = '+' + n + ' ⚡'; d.style.left = Math.max(30, Math.min(innerWidth - 30, x)) + 'px'; d.style.top = Math.max(60, y - 10) + 'px';
+  document.body.appendChild(d); setTimeout(function(){ d.remove(); }, 1100); }
+function countUp(a, b){ var el = $('[data-st="xp"] b'); if (!el || b <= a || calm()) return; var t0 = performance.now(), dur = 700;
+  el.classList.add('bump'); (function step(t){ var k = Math.min(1, (t - t0) / dur); el.textContent = Math.round(a + (b - a) * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); else { el.textContent = b; el.classList.remove('bump'); } })(t0); }
 function touch(tool){ S.tools[tool] = 1; save(); }
 
 /* ---------------- toast / confetti / modal ---------------- */
@@ -405,7 +423,7 @@ function bindCtl(){
 function streakNow(){ return (S.last === today() || S.last === yesterday()) ? S.streak : 0; }
 function updateRibbon(){ var r = $('#ribbon'); if (r){ r.innerHTML = ribbonHTML(); bindRibbon(); } }
 function ribbonHTML(){ var st = station();
-  return '<button class="stat" data-st="xp"><i>⚡</i><b>' + S.xp + '</b><span>نقطة</span></button><button class="stat" data-st="streak"><i>🔥</i><b>' + streakNow() + '</b><span>أيام متتالية</span></button>' +
+  return '<button class="stat" data-st="xp"><i>⚡</i><b>' + S.xp + '</b><span>نقطة</span></button><button class="stat' + (streakNow() ? ' lit' : '') + '" data-st="streak"><i>🔥</i><b>' + streakNow() + '</b><span>أيام متتالية</span></button>' +
     '<button class="stat" data-st="station"><i>' + st.e + '</i><b class="sm">' + st.a + '</b><span>محطتك</span></button>'; }
 function bindRibbon(){ $$('[data-st]').forEach(function(b){ b.onclick = function(){ var k = b.dataset.st; if (k === 'xp') xpInfo(); else if (k === 'streak') streakInfo(); else go('#/journey'); }; }); }
 function xpInfo(){
@@ -501,14 +519,15 @@ function viewHome(){
      (hidden('games') ? '' : bigTile('#/play', '🎮', '#FF6B2C', 'الألعاب', '9 ألعاب ومهمة اليوم', 'tile_play')) + (hidden('journey') ? '' : bigTile('#/journey', '🚀', '#19C79A', 'رحلتي', st.e + ' ' + st.a, 'tile_journey')) + '</div>' +
    
    '<div class="sh"><h2>تواصل معي</h2></div>' + contactHTML(true) +
-   footer() + '</div>';
+   footerFull() + '</div>';
   render(html, 'home'); bindRibbon(); loadPics(w.grp);
   if (!S.onb) setTimeout(onboarding, 400);
   $('#wodPlay').onclick = function(){ play(w); };
   $('#launch').onclick = countdown;
   bindInstall();
 }
-function footer(){ return '<div class="foot"><div class="foot-l"><a href="#/about">عن الموقع</a><span>·</span><a href="#/suggest">💡 اقترح علينا</a><span>·</span><a href="de-index.html">فهرس الدروس</a><span>·</span><a href="#/privacy">الخصوصية</a><span>·</span><a href="#/me">الإعدادات</a></div>Sprachrakete 🚀 © ' + new Date().getFullYear() + ' مهند · جميع الحقوق محفوظة<br>النطق بالحروف العربية للمساعدة فقط، والأفضل الاعتماد على الصوت.</div>'; }
+function footer(){ return ''; }
+function footerFull(){ return '<div class="foot"><div class="foot-l"><a href="#/about">عن الموقع</a><a href="#/suggest">💡 اقترح علينا</a><a href="de-index.html">فهرس الدروس</a><a href="#/privacy">الخصوصية</a><a href="#/me">الإعدادات</a></div>Sprachrakete 🚀 © ' + new Date().getFullYear() + ' مهند · جميع الحقوق محفوظة' + (S.set.sp ? '<br>النطق بالحروف العربية للمساعدة فقط، والأفضل الاعتماد على الصوت.' : '') + '</div>'; }
 function viewAbout(){
   var html = '<div class="wrap"><div class="ph sm" style="--c:#5B3DF5"><a class="back" href="#/">→ الرئيسية</a><span class="em">🚀</span><h1>عن Sprachrakete</h1><div class="g">Über uns</div><p>موقع مجاني لتعلّم الألمانية بالعربية، من أول حرف حتى تتكلم.</p></div>' +
     '<div class="panel about"><h3>👋 من أنا؟</h3><p>أنا مهند، وصنعت هذا الموقع لأساعد الناطقين بالعربية على تعلّم الألمانية بطريقة سهلة وممتعة، وليكون رفيقك اليومي: تتعلم الكلمة، وتسمعها، وتلعب بها، ثم تختبر نفسك.</p></div>' +
@@ -566,9 +585,11 @@ function ladderHTML(){
   return '<div class="ladder">' + SR.levels.map(function(l, i){ var open = l[3] === 'open';
     return '<a class="rung ' + (open ? 'open' : '') + (i === 0 ? ' here' : '') + '" href="#/levels"><span class="lv de">' + l[0] + '</span><div><b>' + esc(l[1]) + '</b><span>' + esc(l[2]) + '</span></div><em>' + (open ? (i === 0 ? '📍 ابدأ هنا' : 'متاح') : 'قريبًا') + '</em></a>'; }).join('') + '</div>';
 }
+var ICON_CHAT = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 20.5l1.6-5.3A8.4 8.4 0 1 1 21 11.5z"/></svg>';
+var ICON_PLAYC = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>';
 function contactHTML(withInstall){
-  return '<div class="contact">' + (waNum() ? '<a class="cbtn wa" href="https://wa.me/' + waNum() + '?text=' + encodeURIComponent('مرحبًا! وصلت إليك من موقع Sprachrakete 🚀') + '" target="_blank" rel="noopener"><i>💬</i><div>راسلني على واتساب<small>رد سريع</small></div></a>' : '') +
-    (ytName() ? '<a class="cbtn yt" href="https://www.youtube.com/@' + encodeURIComponent(ytName()) + '?sub_confirmation=1" target="_blank" rel="noopener"><i>▶</i><div>اشترك في القناة<small>دروس بالفيديو</small></div></a>' : '') + '</div>' +
+  return '<div class="contact">' + (waNum() ? '<a class="cbtn wa" href="https://wa.me/' + waNum() + '?text=' + encodeURIComponent('مرحبًا! وصلت إليك من موقع Sprachrakete 🚀') + '" target="_blank" rel="noopener"><i>' + ICON_CHAT + '</i><div>تواصل معي على واتساب<small>رد سريع</small></div></a>' : '') +
+    (ytName() ? '<a class="cbtn yt" href="https://www.youtube.com/@' + encodeURIComponent(ytName()) + '?sub_confirmation=1" target="_blank" rel="noopener"><i>' + ICON_PLAYC + '</i><div>اشترك في القناة<small>دروس بالفيديو</small></div></a>' : '') + '</div>' +
     (withInstall ? '<div class="panel install" id="installCard"><span class="em">📲</span><div style="flex:1"><b>ثبّت Sprachrakete على شاشتك</b><div class="sub">يفتح مثل التطبيق بضغطة واحدة</div></div><button class="btn" id="installBtn">تثبيت</button></div>' : '');
 }
 var running = false;
@@ -760,7 +781,7 @@ function viewLevels(){
 /* ---------------- TOOLS ---------------- */
 function viewNumTool(){
   useAudio('num');
-  var html = '<div class="wrap"><div class="ph" style="--c:#FF6B2C"><a class="back" href="#/t/num">→ الأرقام</a><span class="em">🏭</span><h1>مصنع الأرقام</h1><div class="g">Zahlen-Fabrik</div><p>اكتب أي رقم من 0 إلى 1000000 وشاهد كيف يُركَّب.</p></div>' + ctlBar() +
+  var html = '<div class="wrap"><div class="ph" style="--c:#FF6B2C"><a class="back" href="#/t/num">→ الأرقام</a><span class="em phpic">' + uiPic('head_num', '🏭') + '</span><h1>مصنع الأرقام</h1><div class="g">Zahlen-Fabrik</div><p>اكتب أي رقم من 0 إلى 1000000 وشاهد كيف يُركَّب.</p></div>' + ctlBar() +
     '<div class="panel"><input class="inp de" id="nIn" inputmode="numeric" placeholder="مثلًا 2026" value="21" aria-label="الرقم"><div class="bigout" id="nOut"></div><div class="pr arp center" id="nAr" style="font-size:18px"></div>' +
     '<div class="row" style="justify-content:center;margin-top:12px"><button class="btn" id="nPlay">🔊 استمع</button><button class="btn alt" id="nRand">🎲 رقم عشوائي</button></div></div>' +
     '<div class="panel"><b>🎧 تحدٍّ: استمع واكتب الرقم</b><p style="color:var(--mute);font-size:14px;margin:4px 0 10px">ستسمع رقمًا بالألمانية، اكتبه بالأرقام.</p><div class="row"><button class="btn flame" id="qPlay">▶ استمع إلى الرقم</button><input class="inp de" id="qIn" inputmode="numeric" style="flex:1;min-width:120px" aria-label="إجابتك"><button class="btn" id="qChk">تحقّق</button></div><div id="qRes" class="center" style="margin-top:8px;font-weight:800"></div></div>' + footer() + '</div>';
@@ -809,7 +830,7 @@ function viewCalendar(){
   ['Mo','Di','Mi','Do','Fr','Sa','So'].forEach(function(x){ cells += '<span class="h">' + x + '</span>'; });
   for (var i = 0; i < off; i++) cells += '<span></span>';
   for (var k = 1; k <= dim; k++) cells += '<span class="' + (k === dn ? 't' : '') + '">' + k + '</span>';
-  var html = '<div class="wrap"><div class="ph" style="--c:#19C79A"><a class="back" href="#/t/calendar">→ الأيام والشهور</a><span class="em">🗓️</span><h1>التقويم الحي</h1><div class="g">' + esc(day[0]) + ' · ' + esc(mon[0]) + '</div><p>تاريخ اليوم والساعة الآن بالألمانية.</p></div>' + ctlBar() +
+  var html = '<div class="wrap"><div class="ph" style="--c:#19C79A"><a class="back" href="#/t/calendar">→ الأيام والشهور</a><span class="em phpic">' + uiPic('head_calendar', '🗓️') + '</span><h1>التقويم الحي</h1><div class="g">' + esc(day[0]) + ' · ' + esc(mon[0]) + '</div><p>تاريخ اليوم والساعة الآن بالألمانية.</p></div>' + ctlBar() +
     '<div class="panel"><b>📍 اليوم</b><div class="bigout sm">' + esc(sDe) + '</div><div class="pr arp center">' + pron(sAr) + '</div><div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="pD">🔊 استمع</button></div>' +
     '<div class="center" style="font-family:Outfit;font-weight:700;margin-top:14px">' + esc(mon[0]) + ' ' + y + '</div><div class="cal">' + cells + '</div></div>' +
     '<div class="panel"><b>⏰ الساعة الآن</b><div class="bigout sm" id="tNow"></div><div class="pr arp center" id="tAr"></div><div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="pT">🔊 استمع</button></div></div>' +
@@ -942,7 +963,7 @@ var examTimer = null;
 function stopExamTimer(){ if (examTimer){ clearInterval(examTimer); examTimer = null; } }
 function viewExam(){
   if (!SX.exam) return go('#/');
-  var html = '<div class="wrap"><div class="ph sm" style="--c:#8338EC"><a class="back" href="#/train">→ التدريب</a><span class="em">📝</span><h1>تدريب على امتحان A1</h1><div class="g">Prüfungstraining A1</div><p>بنفس نظام الامتحان الرسمي: أربعة أجزاء، والأسئلة بالألمانية، والنتيجة في النهاية.</p></div>' +
+  var html = '<div class="wrap"><div class="ph sm" style="--c:#8338EC"><a class="back" href="#/train">→ التدريب</a><span class="em phpic">' + uiPic('tile_train', '📝') + '</span><h1>تدريب على امتحان A1</h1><div class="g">Prüfungstraining A1</div><p>بنفس نظام الامتحان الرسمي: أربعة أجزاء، والأسئلة بالألمانية، والنتيجة في النهاية.</p></div>' +
     '<div class="tiles big">' + EXAM_PARTS.map(function(p){ var best = S.exam[p.id]; return '<a class="tile" href="#/exam/' + p.id + '" style="--c:' + p.c + '"><span class="em">' + p.e + '</span><b>' + p.t + ' · <span class="de">' + p.de + '</span></b><span>' + (best != null ? 'أفضل نتيجة: ' + best + '٪' : p.d) + '</span></a>'; }).join('') + '</div>' +
     '<div class="tip tip" style="margin-top:14px"><b class="k">💡 كيف يعمل التدريب؟</b>لن ترى الإجابة الصحيحة أثناء الامتحان. اختر إجابتك وانتقل، ويمكنك الرجوع وتغييرها. في النهاية تظهر النتيجة ومراجعة كل سؤال مع الترجمة. النجاح من 60٪.</div>' + footer() + '</div>';
   render(html, 'train');
@@ -1286,7 +1307,7 @@ function viewGame(gid, tid, opts){
   }
   function bar(i, n){ return '<div class="gamebar"><div class="prog"><i style="width:' + (i / n * 100) + '%"></i></div><span class="hearts">' + ar(i) + '/' + ar(n) + '</span></div>'; }
   function others(item, n, key){ return shuffle(distract.filter(function(x){ return x[key] !== item[key]; }), rnd).slice(0, n); }
-  function judge(ok, q){ if (ok) fixMistake(q); else if (tid !== 'mist' || S.mist[q.de]) addMistake(q); }
+  function judge(ok, q){ fx(ok); if (ok){ xpFloat(10); fixMistake(q); } else if (tid !== 'mist' || S.mist[q.de]) addMistake(q); }
 
   if (gid === 'meaning' || gid === 'listen' || gid === 'artikel' || gid === 'type' || gid === 'order' || opts.daily){
     var N = 10, qs, types, i = 0;
@@ -1461,32 +1482,36 @@ function viewMe(){
     BADGES.map(function(b){ return '<div class="bd ' + (S.badges[b.id] ? 'got' : '') + '"><i>' + b.e + '</i><b>' + b.t + '</b><span>' + b.d + '</span></div>'; }).join('') + '</div>' +
     '<div class="sh"><h2>شهادتي</h2></div><div class="panel"><p class="sub" style="margin:0 0 10px">اكتب اسمك واحصل على شهادة بمحطتك ونقاطك، تحفظها كصورة وتشاركها.</p><input class="inp de" id="cName" placeholder="Your name" value="' + esc(S.name) + '" aria-label="اسمك"><button class="btn wide flame" id="cert" style="margin-top:10px">🏅 اصنع شهادتي</button></div>' +
     '<div class="sh"><h2>الإعدادات</h2></div><div class="panel">' +
-    setRow('dark', '🌙 الوضع الليلي', isDark()) + setRow('sp', '🔤 النطق بالحروف العربية', S.set.sp) + setRow('kids', '🔠 خط كبير وأزرار أكبر', S.set.kids) +
+    setRow('dark', '🌙 الوضع الليلي', isDark()) + setRow('sp', '🔤 النطق بالحروف العربية', S.set.sp) + setRow('kids', '🔠 خط كبير وأزرار أكبر', S.set.kids) + setRow('fx', '🔊 مؤثرات الصوت والاهتزاز', S.set.fx !== false) +
     '<div class="set"><span>🐢 سرعة الصوت</span><div class="seg"><button data-sp="slow" class="' + (S.set.speed === 'slow' ? 'on' : '') + '">بطيء</button><button data-sp="normal" class="' + (S.set.speed !== 'slow' ? 'on' : '') + '">عادي</button></div></div>' +
     '<div class="set"><span>🎯 الهدف اليومي</span><div class="seg" id="goalSeg">' + GOALS.map(function(g){ return '<button data-goal="' + g.x + '" class="' + (S.goal === g.x ? 'on' : '') + '">' + g.m + ' د</button>'; }).join('') + '</div></div>' +
     '<div class="set"><span>📲 ثبّت الموقع على شاشتك</span><button class="btn" id="installBtn">تثبيت</button></div>' +
+    '<div class="set"><span>⏰ تذكير يومي بالمذاكرة</span><button class="btn" id="remBtn2">ضبط</button></div>' +
+    '<div class="set"><span>💾 نسخة احتياطية من تقدّمي</span><button class="btn" id="bkBtn2">نقل وحفظ</button></div>' +
     '<div class="set"><span>🗑️ ابدأ من جديد</span><button class="btn alt" id="reset">امسح تقدّمي</button></div></div>' +
     '<div class="sh"><h2>تواصل معي</h2></div>' + contactHTML(false) + footer() + '</div>';
   render(html, 'me'); bindCtl(); bindInstall(); bindRibbon();
   $$('[data-set]').forEach(function(b){ b.onclick = function(){ var k = b.dataset.set;
     if (k === 'dark'){ S.set.theme = isDark() ? 'light' : 'dark'; }
+    else if (k === 'fx'){ S.set.fx = S.set.fx === false; if (S.set.fx) fx(true); }
     else S.set[k] = !S.set[k];
     save(); applySettings(); b.classList.toggle('on'); }; });
   $$('[data-goal]').forEach(function(b){ b.onclick = function(){ S.goal = +b.dataset.goal; save(); $$('[data-goal]').forEach(function(x){ x.classList.toggle('on', x === b); }); toast('🎯 هدفك الجديد: ' + S.goal + ' نقطة يوميًا'); }; });
+  $('#bkBtn2').onclick = backupSheet; $('#remBtn2').onclick = reminderSheet;
   $('#reset').onclick = function(){ if (confirm('هل أنت متأكد؟ ستُمسح كل النقاط والأوسمة والتقدّم.')){ var keep = S.set, nm = S.name, gl = S.goal; S = blank(); S.set = keep; S.name = nm; S.goal = gl; S.onb = 1; S.popup = true; save(); viewMe(); } };
   $('#cert').onclick = function(){ var n = $('#cName').value.trim(); if (!n) return toast('اكتب اسمك أولًا'); S.name = n; save(); certificate(n); };
 }
 function settingsSheet(){
   var old = $('.modal'); if (old) old.remove();
   var m = modal('<h3 style="margin:0 0 10px">⚙️ الإعدادات</h3><div class="setlist">' +
-    setRow('dark', '🌙 الوضع الليلي', isDark()) + setRow('sp', '🔤 النطق بالحروف العربية', S.set.sp) + setRow('kids', '🔠 خط كبير وأزرار أكبر', S.set.kids) +
+    setRow('dark', '🌙 الوضع الليلي', isDark()) + setRow('sp', '🔤 النطق بالحروف العربية', S.set.sp) + setRow('kids', '🔠 خط كبير وأزرار أكبر', S.set.kids) + setRow('fx', '🔊 مؤثرات الصوت والاهتزاز', S.set.fx !== false) +
     '<div class="set"><span>🐢 سرعة الصوت</span><div class="seg"><button data-sp2="slow" class="' + (S.set.speed === 'slow' ? 'on' : '') + '">بطيء</button><button data-sp2="normal" class="' + (S.set.speed !== 'slow' ? 'on' : '') + '">عادي</button></div></div>' +
     '<div class="set"><span>🎯 الهدف اليومي</span><div class="seg">' + GOALS.map(function(g){ return '<button data-goal2="' + g.x + '" class="' + (S.goal === g.x ? 'on' : '') + '">' + g.m + ' د</button>'; }).join('') + '</div></div>' +
     '<div class="set"><span>📲 ثبّت الموقع على شاشتك</span><button class="btn" id="installBtn">تثبيت</button></div>' +
     '<div class="set"><span>⏰ تذكير يومي بالمذاكرة</span><button class="btn" id="remBtn">ضبط</button></div>' +
     '<div class="set"><span>💾 نسخة احتياطية من تقدّمي</span><button class="btn" id="bkBtn">نقل وحفظ</button></div></div>' +
     '<a class="btn alt wide" href="#/me" style="text-decoration:none;display:block;text-align:center;margin-top:12px">🧑‍🚀 صفحتي ونقاطي</a>', 'sheet'); m.classList.add('msheet');
-  $$('[data-set]', m).forEach(function(b){ b.onclick = function(){ var k = b.dataset.set; if (k === 'dark'){ S.set.theme = isDark() ? 'light' : 'dark'; } else S.set[k] = !S.set[k]; save(); applySettings(); b.classList.toggle('on'); }; });
+  $$('[data-set]', m).forEach(function(b){ b.onclick = function(){ var k = b.dataset.set; if (k === 'dark'){ S.set.theme = isDark() ? 'light' : 'dark'; } else if (k === 'fx'){ S.set.fx = S.set.fx === false; if (S.set.fx) fx(true); } else S.set[k] = !S.set[k]; save(); applySettings(); b.classList.toggle('on'); }; });
   $$('[data-sp2]', m).forEach(function(b){ b.onclick = function(){ setSpeed(b.dataset.sp2); $$('[data-sp2]', m).forEach(function(x){ x.classList.toggle('on', x === b); }); $$('[data-sp]').forEach(function(x){ x.classList.toggle('on', x.dataset.sp === b.dataset.sp2); }); }; });
   $$('[data-goal2]', m).forEach(function(b){ b.onclick = function(){ S.goal = +b.dataset.goal2; save(); $$('[data-goal2]', m).forEach(function(x){ x.classList.toggle('on', x === b); }); var gc = $('.goal'); if (gc) gc.outerHTML = goalHTML(); toast('🎯 هدفك الجديد: ' + S.goal + ' نقطة يوميًا'); }; });
   $$('a', m).forEach(function(a){ a.addEventListener('click', function(){ m.remove(); }); });
