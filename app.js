@@ -57,7 +57,7 @@ function save(){ try{ localStorage.setItem('sprachrakete', JSON.stringify(S)); }
 
 /* ---------------- owner config (config.json) ---------------- */
 var CFG = {announcement:{text:'', link:'', color:'gold'}, whatsapp:'201080845228', youtube:'u0_0z', suggest:'', hide:[], goatcounter:'', repo:'mohnned7/mohnned7.github.io'};
-var HIDE_KEYS = {exam:'تدريب الامتحان', test:'اختبار المستوى', speak:'اختبر نطقك', mistakes:'كرّاسة أخطائي', stories:'القصص', letters:'الرسائل', a2:'دروس A2', tools:'الأدوات', games:'الألعاب', journey:'رحلتي'};
+var HIDE_KEYS = {exam:'تدريب الامتحان', test:'اختبار المستوى', speak:'اختبر نطقك', mistakes:'كرّاسة أخطائي', stories:'القصص', letters:'الرسائل', a2:'دروس A2', tools:'الأدوات', games:'الألعاب', scenes:'ألعاب المواقف', journey:'رحلتي'};
 function hidden(k){ return (CFG.hide || []).indexOf(k) >= 0; }
 function waNum(){ return String(CFG.whatsapp || '').replace(/[^\d]/g, ''); }
 function ytName(){ return String(CFG.youtube || '').replace(/^@/, '').trim(); }
@@ -1242,6 +1242,110 @@ var GAMES = [
   {id:'cards',e:'🧠',c:'#06A77D',t:'بطاقات الحفظ',d:'تُعيد لك ما نسيته'},
   {id:'rain',e:'☄️',c:'#2B1F86',t:'مطر الكلمات',d:'التقط الكلمة الصحيحة قبل أن تسقط'}
 ];
+var SCENES = [
+ {id:'market', t:'في السوبرماركت', de:'Im Supermarkt', c:'#19C79A', pic:'ui/head_food', e:'🛒', npc:'🧑‍💼', npcPic:'jobs/Verkäufer', grp:'food', steps:[
+  {t:'say', de:'Guten Tag! Kann ich Ihnen helfen?', mn:'مرحبًا! هل يمكنني مساعدتك؟', opts:[['Ja, wo ist die Milch, bitte?','نعم، أين الحليب من فضلك؟',1],['Ich heiße Milch.','اسمي حليب.'],['Nein, ich bin müde.','لا، أنا متعب.']]},
+  {t:'ask', de:'Die Milch ist da hinten, neben dem Käse.', mn:'الحليب هناك في الخلف، بجانب الجبن.', q:'أين الحليب؟', opts:[['بجانب الجبن',1],['بجانب الخبز'],['عند الباب']]},
+  {t:'pick', task:'ضع في السلة: الحليب والخبز والتفاحة', need:['Milch','Brot','Apfel'], shelf:['Käse','Milch','Banane','Brot','Tomate','Apfel','Ei','Saft'], topic:'food'},
+  {t:'say', de:'Brauchen Sie eine Tüte?', mn:'هل تحتاج إلى كيس؟', opts:[['Ja, bitte.','نعم، من فضلك.',1],['Ich komme aus Ägypten.','أنا من مصر.'],['Guten Appetit!','بالهناء والشفاء!']]},
+  {t:'pay', de:'Das macht sieben Euro fünfzig.', mn:'الحساب سبعة يورو وخمسون سنتًا.', amount:7.5},
+  {t:'say', de:'Danke! Schönen Tag noch!', mn:'شكرًا! يومًا سعيدًا!', opts:[['Danke, gleichfalls!','شكرًا، ولك أيضًا!',1],['Gute Nacht, Mama!','تصبحين على خير يا أمي!'],['Ich habe Hunger.','أنا جائع.']]}
+ ]},
+ {id:'cafe', t:'في المقهى', de:'Im Café', c:'#C9971C', pic:'food/Kaffee', e:'☕', npc:'🧑‍🍳', grp:'food', steps:[
+  {t:'say', de:'Hallo! Was möchten Sie trinken?', mn:'مرحبًا! ماذا تحب أن تشرب؟', opts:[['Einen Kaffee, bitte.','قهوة من فضلك.',1],['Ich trinke ein Brot.','أنا أشرب خبزًا.'],['Ich wohne in Kairo.','أسكن في القاهرة.']]},
+  {t:'say', de:'Mit Milch und Zucker?', mn:'بالحليب والسكر؟', opts:[['Mit Milch, ohne Zucker.','بالحليب، بدون سكر.',1],['Ja, ich bin Student.','نعم، أنا طالب.'],['Um acht Uhr.','في الساعة الثامنة.']]},
+  {t:'say', de:'Möchten Sie auch etwas essen?', mn:'هل تحب أن تأكل شيئًا أيضًا؟', opts:[['Ja, ein Stück Kuchen, bitte.','نعم، قطعة كعك من فضلك.',1],['Nein, ich spiele Fußball.','لا، ألعب كرة القدم.'],['Das ist mein Bruder.','هذا أخي.']]},
+  {t:'ask', de:'Ein Kaffee und ein Kuchen. Das macht sechs Euro.', mn:'قهوة وكعكة. الحساب ستة يورو.', q:'كم الحساب؟', opts:[['6 يورو',1],['16 يورو'],['60 يورو']]},
+  {t:'pay', de:'Sechs Euro, bitte.', mn:'ستة يورو من فضلك.', amount:6},
+  {t:'say', de:'Vielen Dank! Auf Wiedersehen!', mn:'شكرًا جزيلًا! إلى اللقاء!', opts:[['Tschüss, bis bald!','مع السلامة، إلى اللقاء قريبًا!',1],['Guten Morgen!','صباح الخير!'],['Ich bin krank.','أنا مريض.']]}
+ ]},
+ {id:'station', t:'في محطة القطار', de:'Am Bahnhof', c:'#3A86FF', pic:'travel/Bahnhof', e:'🚆', npc:'👩‍💼', grp:'travel', steps:[
+  {t:'say', de:'Guten Tag! Wohin möchten Sie fahren?', mn:'مرحبًا! إلى أين تريد أن تسافر؟', opts:[['Nach Berlin, bitte.','إلى برلين من فضلك.',1],['Ich fahre gern Rad.','أحب ركوب الدراجة.'],['Ich bin zwanzig Jahre alt.','عمري عشرون عامًا.']]},
+  {t:'say', de:'Einfach oder hin und zurück?', mn:'ذهاب فقط أم ذهاب وعودة؟', opts:[['Hin und zurück, bitte.','ذهاب وعودة من فضلك.',1],['Einen Tee, bitte.','شايًا من فضلك.'],['Ich gehe ins Bett.','أذهب إلى السرير.']]},
+  {t:'ask', de:'Das kostet neunundvierzig Euro.', mn:'هذا يكلف تسعة وأربعين يورو.', q:'كم سعر التذكرة؟', opts:[['49 يورو',1],['94 يورو'],['19 يورو']]},
+  {t:'pay', de:'Neunundvierzig Euro, bitte.', mn:'تسعة وأربعون يورو من فضلك.', amount:49},
+  {t:'ask', de:'Der Zug nach Berlin fährt um zehn Uhr fünfzehn von Gleis drei.', mn:'القطار إلى برلين يغادر الساعة العاشرة والربع من الرصيف 3.', q:'من أي رصيف يغادر القطار؟', opts:[['الرصيف 3',1],['الرصيف 10'],['الرصيف 15']], ann:1},
+  {t:'ask', de:'Achtung! Der Zug nach Berlin hat zehn Minuten Verspätung.', mn:'انتباه! القطار إلى برلين متأخر عشر دقائق.', q:'ماذا حدث للقطار؟', opts:[['متأخر 10 دقائق',1],['أُلغي'],['يغادر من الرصيف 10']], ann:1}
+ ]},
+ {id:'doctor', t:'عند الطبيب', de:'Beim Arzt', c:'#E63946', pic:'jobs/Arzt', e:'🏥', npc:'👨‍⚕️', npcPic:'jobs/Arzt', grp:'body', steps:[
+  {t:'say', de:'Guten Tag! Haben Sie einen Termin?', mn:'مرحبًا! هل لديك موعد؟', opts:[['Ja, um neun Uhr.','نعم، في الساعة التاسعة.',1],['Ja, ich habe Hunger.','نعم، أنا جائع.'],['Nein, ich habe einen Hund.','لا، عندي كلب.']]},
+  {t:'body', de:'Was fehlt Ihnen? Wo tut es weh?', mn:'مِمَّ تشكو؟ أين يؤلمك؟', task:'بطنك يؤلمك. اختر المكان الصحيح:', need:'Bauch', choices:['Kopf','Hand','Bauch','Fuß','Rücken','Auge'], topic:'body', say:'Mein Bauch tut weh.'},
+  {t:'say', de:'Seit wann haben Sie die Schmerzen?', mn:'منذ متى لديك هذه الآلام؟', opts:[['Seit zwei Tagen.','منذ يومين.',1],['Mit dem Bus.','بالحافلة.'],['Mein Name ist Mohannad.','اسمي مهند.']]},
+  {t:'say', de:'Haben Sie auch Fieber?', mn:'هل لديك حمّى أيضًا؟', opts:[['Ja, ein bisschen.','نعم، قليلًا.',1],['Ja, ich habe einen Bruder.','نعم، عندي أخ.'],['Nein, ich bin Lehrer.','لا، أنا معلم.']]},
+  {t:'ask', de:'Nehmen Sie die Tabletten dreimal am Tag.', mn:'تناول الأقراص ثلاث مرات في اليوم.', q:'كم مرة يتناول الدواء؟', opts:[['3 مرات في اليوم',1],['مرة واحدة في اليوم'],['كل ساعتين']]},
+  {t:'say', de:'Gute Besserung!', mn:'سلامتك!', opts:[['Danke schön! Auf Wiedersehen.','شكرًا جزيلًا! إلى اللقاء.',1],['Guten Appetit!','بالهناء والشفاء!'],['Herzlichen Glückwunsch!','مبارك!']]}
+ ]}
+];
+
+function scStars(id){ return (S.scenes && S.scenes[id]) || 0; }
+function scPic(key, e){ var u = picUrl(key); return '<span class="pic" data-n="' + key + '">' + (u ? '<img src="' + u + '" alt="" decoding="async">' : '<span class="pe">' + (e || '🔹') + '</span>') + '</span>'; }
+function scenesHTML(){ loadPics('food'); loadPics('travel'); loadPics('jobs'); return '<div class="sh"><h2>🎬 ألعاب المواقف</h2><span class="cnt">مواقف من الحياة</span></div><div class="scgrid">' + SCENES.map(function(sc){ var st = scStars(sc.id);
+  return '<a class="sccard" href="#/scene/' + sc.id + '" style="--c:' + sc.c + '"><span class="scp">' + scPic(sc.pic, sc.e) + '</span><b>' + sc.e + ' ' + sc.t + '</b><span class="scs">' + (st ? '<i>' + '★'.repeat(st) + '</i>' + '★'.repeat(3 - st) : 'ابدأ الموقف') + '</span></a>'; }).join('') + '</div>'; }
+function viewScene(id){
+  var sc = SCENES.find(function(x){ return x.id === id; }); if (!sc) return go('#/play');
+  useAudio('scenes'); useAudio(sc.grp); useAudio('situations'); loadPics(sc.grp === 'body' ? 'body' : 'food'); loadPics('travel'); loadPics('jobs');
+  var i = 0, hearts = 3, mistakes = 0, okc = 0, busy = false;
+  render('<div class="wrap"><div class="ph sm" style="--c:' + sc.c + '"><a class="back" href="#/play">→ الألعاب</a><span class="em phpic">' + scPic(sc.pic, sc.e) + '</span><h1>' + sc.t + '</h1><div class="g">' + sc.de + '</div></div><div id="scbar"></div><div class="chat" id="chat"></div><div id="act"></div></div>', 'play');
+  var chat = $('#chat'), act = $('#act');
+  function barH(){ $('#scbar').innerHTML = '<div class="gamebar"><div class="prog"><i style="width:' + (i / sc.steps.length * 100) + '%"></i></div><span class="hrt">' + '❤️'.repeat(hearts) + '<i>' + '🤍'.repeat(3 - hearts) + '</i></span></div>'; }
+  function bubble(who, de, mn, ann){ var k = chat.children.length;
+    chat.insertAdjacentHTML('beforeend', '<div class="bub2 ' + who + (ann ? ' ann' : '') + '"><span class="av">' + (who === 'me' ? '🙋' : ann ? '📢' : sc.npcPic ? scPic(sc.npcPic, sc.npc) : sc.npc) + '</span><div class="bx"><div class="d de">' + esc(de) + '</div>' + (mn ? '<button class="trb" data-tr="' + k + '">👁 الترجمة</button><div class="tr" hidden>' + esc(mn) + '</div>' : '') + '</div>' + (who === 'npc' ? '<button class="rp" aria-label="استمع">' + ICON_PLAY + '</button>' : '') + '</div>');
+    var el = chat.lastElementChild; var tb = el.querySelector('.trb'); if (tb) tb.onclick = function(){ el.querySelector('.tr').hidden = false; tb.remove(); };
+    var rp = el.querySelector('.rp'); if (rp) rp.onclick = function(){ speak(de); };
+    el.scrollIntoView({block:'end', behavior:'smooth'}); return el; }
+  function wrong(btn){ mistakes++; hearts--; fx(false); if (btn){ btn.classList.add('no'); } barH(); if (hearts <= 0){ busy = true; setTimeout(fail, 900); return true; } return false; }
+  function right(btn){ okc++; fx(true); xpFloat(10); if (btn) btn.classList.add('ok'); }
+  function nextStep(){ i++; barH(); busy = false; if (i >= sc.steps.length) return setTimeout(win, 500); setTimeout(step, 450); }
+  function step(){
+    var st = sc.steps[i]; act.innerHTML = ''; setTimeout(function(){ if (act.firstChild) act.scrollIntoView({block:'end', behavior:'smooth'}); }, 380);
+    if (st.t === 'say' || st.t === 'ask'){
+      bubble('npc', st.de, st.mn, st.ann); speak(st.de);
+      var opts = shuffle(st.opts.slice(), Math.random);
+      act.innerHTML = (st.q ? '<div class="scq">' + esc(st.q) + '</div>' : '<div class="scq">ماذا تقول؟</div>') + '<div class="opts">' + opts.map(function(o, k){ return '<button class="opt' + (st.t === 'say' ? ' de' : '') + '" data-o="' + k + '">' + esc(o[0]) + '</button>'; }).join('') + '</div>';
+      $$('[data-o]', act).forEach(function(b){ b.onclick = function(){ if (busy) return; var o = opts[+b.dataset.o];
+        if (o[2] || (st.t === 'ask' && o[1] === 1)){ busy = true; right(b); $$('[data-o]', act).forEach(function(x){ x.disabled = true; });
+          if (st.t === 'say'){ bubble('me', o[0], o[1]); speak(o[0], function(){}); setTimeout(nextStep, 900); } else setTimeout(nextStep, 700); }
+        else { b.disabled = true; wrong(b); } }; });
+    } else if (st.t === 'pick'){
+      act.innerHTML = '<div class="scq">🧺 ' + esc(st.task) + '</div><div class="shelf">' + st.shelf.map(function(n, k){ var it = itemsOf(st.topic).find(function(x){ return x.n === n; }) || {de:n, n:n};
+        return '<button class="shi" data-s="' + k + '">' + scPic(st.topic + '/' + n, it.e) + '<span class="de">' + esc(it.de) + '</span></button>'; }).join('') + '</div><div class="basket" id="bk">🛒 السلة: <b>0</b> / ' + st.need.length + '</div>';
+      var got = 0;
+      $$('[data-s]', act).forEach(function(b){ b.onclick = function(){ if (busy || b.disabled) return; var n = st.shelf[+b.dataset.s], it = itemsOf(st.topic).find(function(x){ return x.n === n; });
+        if (st.need.indexOf(n) >= 0){ b.disabled = true; right(b); got++; $('#bk b').textContent = got; if (it) speak(it.de); if (got === st.need.length){ busy = true; setTimeout(nextStep, 700); } }
+        else { if (it) speak(it.de); b.classList.add('no'); setTimeout(function(){ b.classList.remove('no'); }, 450); wrong(null); } }; });
+    } else if (st.t === 'pay'){
+      bubble('npc', st.de, st.mn); speak(st.de);
+      var paid = 0, M = [0.5, 1, 2, 5, 10, 20, 50];
+      var fmt = function(v){ return (Math.round(v * 100) / 100).toFixed(v % 1 ? 2 : 0).replace('.', ',') + ' €'; };
+      act.innerHTML = '<div class="scq">💶 ادفع المبلغ بالضبط</div><div class="paid">دفعت: <b id="pd">0 €</b></div><div class="money">' + M.map(function(v){ return '<button class="' + (v < 5 ? 'coin' : 'note') + '" data-m="' + v + '">' + (v < 1 ? '50 ct' : v + ' €') + '</button>'; }).join('') + '</div>' +
+        '<div class="row" style="margin-top:12px"><button class="btn alt" id="pclr">↺ مسح</button><button class="btn" id="pgo" style="flex:1">ادفع</button></div>';
+      $$('[data-m]', act).forEach(function(b){ b.onclick = function(){ if (busy) return; paid = Math.round((paid + +b.dataset.m) * 100) / 100; $('#pd').textContent = fmt(paid); b.classList.remove('tap'); void b.offsetWidth; b.classList.add('tap'); }; });
+      $('#pclr').onclick = function(){ paid = 0; $('#pd').textContent = '0 €'; };
+      $('#pgo').onclick = function(){ if (busy) return; if (!paid) return toast('اختر النقود أولًا');
+        if (Math.abs(paid - st.amount) < .001){ busy = true; right($('#pgo')); bubble('me', 'Hier, bitte.', 'تفضّل.'); speak('Hier, bitte.'); setTimeout(nextStep, 900); }
+        else { toast(paid > st.amount ? 'دفعت أكثر من المطلوب. المطلوب: ' + fmt(st.amount) : 'المبلغ ناقص. المطلوب: ' + fmt(st.amount)); paid = 0; $('#pd').textContent = '0 €'; wrong(null); } };
+    } else if (st.t === 'body'){
+      bubble('npc', st.de, st.mn); speak(st.de);
+      act.innerHTML = '<div class="scq">🩺 ' + esc(st.task) + '</div><div class="shelf body">' + st.choices.map(function(n, k){ var it = itemsOf(st.topic).find(function(x){ return x.n === n; }) || {de:n};
+        return '<button class="shi" data-b="' + k + '">' + scPic(st.topic + '/' + n, it.e) + '<span class="de">' + esc(it.de) + '</span></button>'; }).join('') + '</div>';
+      $$('[data-b]', act).forEach(function(b){ b.onclick = function(){ if (busy) return; var n = st.choices[+b.dataset.b];
+        if (n === st.need){ busy = true; right(b); bubble('me', st.say, ''); speak(st.say); setTimeout(nextStep, 1000); } else { b.disabled = true; wrong(b); } }; });
+    }
+  }
+  function fail(){ act.innerHTML = ''; $('#scbar').innerHTML = '';
+    act.innerHTML = '<div class="result lvres"><div class="em">💔</div><h2>انتهت القلوب</h2><p class="sub">لا بأس! جرّب الموقف مرة أخرى، وستتحسن في كل مرة.</p><div class="row" style="justify-content:center;margin-top:10px"><button class="btn" id="again">🔁 حاول مرة أخرى</button><a class="btn alt" href="#/play" style="text-decoration:none">الألعاب</a></div></div>';
+    $('#again').onclick = function(){ viewScene(id); }; act.scrollIntoView({block:'center'}); }
+  function win(){
+    var stars = mistakes === 0 ? 3 : mistakes === 1 ? 2 : 1, xp = okc * 10 + stars * 10 + 20;
+    S.scenes = S.scenes || {}; S.scenes[id] = Math.max(scStars(id), stars); S.games.scene = 1; save(); addXP(xp); confetti();
+    var k = SCENES.indexOf(sc), nx = SCENES[k + 1];
+    act.innerHTML = '<div class="result lvres"><div class="em">' + (stars === 3 ? '🏆' : '🎉') + '</div><h2>' + (stars === 3 ? 'أداء مثالي!' : 'أحسنت! أنهيت الموقف') + '</h2>' +
+      '<div class="bigstars">' + [1, 2, 3].map(function(n){ return '<span class="' + (n <= stars ? 'on' : '') + '" style="animation-delay:' + (n * .25) + 's">★</span>'; }).join('') + '</div><div class="xpgain">+' + ar(xp) + ' نقطة ⚡</div>' +
+      '<p class="sub">اضغط على 👁 الترجمة في المحادثة لتراجع معنى كل جملة.</p>' +
+      '<div class="row" style="justify-content:center;margin-top:10px">' + (nx ? '<a class="btn flame" href="#/scene/' + nx.id + '" style="text-decoration:none">▶ ' + nx.t + '</a>' : '') + '<button class="btn alt" id="again">🔁 أعد</button><a class="btn alt" href="#/play" style="text-decoration:none">الألعاب</a></div></div>';
+    $('#again').onclick = function(){ viewScene(id); }; act.scrollIntoView({block:'center'}); }
+  barH(); step();
+}
 /* ---------------- adventure map ---------------- */
 var ADV_T = ['greet','colors','num','family','food','home','body','animals','jobs','weather','travel','calendar','verbs','intro'];
 var ADV_M = [{m:'meaning', t:'المعنى', e:'🎯'}, {m:'listen', t:'الاستماع', e:'🎧'}, {m:'mix', t:'التحدّي', e:'👑'}];
@@ -1274,6 +1378,7 @@ function viewPlay(){
   var html = '<div class="wrap"><div class="ph sm" style="--c:#FF6B2C"><span class="em phpic">' + uiPic('tile_play', '🎮') + '</span><h1>الألعاب</h1><div class="g">Spielen</div><p>كل إجابة صحيحة = 10 نقاط. اختر لعبة ثم اختر الموضوع.</p></div>' +
     '<a class="advbanner" href="#/adv"><span class="ab-p">' + uiPic('tile_journey', '🗺️') + '</span><div><b>🗺️ مغامرة الكلمات</b><span>' + ar(advLevels().length) + ' مرحلة · قلوب ونجوم · ⭐ ' + ar(advTotal()) + '</span></div><span class="arr">‹</span></a>' +
     '<a class="mission ' + (S.daily[today()] ? 'done' : '') + '" href="#/daily" style="margin-top:12px"><span class="em">🎯</span><div><b>مهمة اليوم</b><span>' + (S.daily[today()] ? 'أنهيتها ✅ عُد غدًا' : '10 أسئلة متنوعة + 50 نقطة') + '</span></div><span class="arr">‹</span></a>' +
+    (hidden('scenes') ? '' : scenesHTML()) +
     '<div class="sh"><h2>اختر لعبة</h2><span class="cnt">' + GAMES.length + ' ألعاب</span></div><div class="tiles">' + GAMES.map(function(g){ return gameTile(g); }).join('') + '</div>' + footer() + '</div>';
   render(html, 'play');
 }
@@ -1749,7 +1854,7 @@ function route(){
   var h = (location.hash || '#/').slice(1), parts = h.split('#'), p = parts[0].split('/').filter(Boolean), anchor = parts[1];
   countView();
   if (!p.length) return viewHome();
-  var GUARD = {exam:'exam', test:'test', speak:'speak', mistakes:'mistakes', stories:'stories', story:'stories', letters:'letters', letter:'letters', tool:'tools', play:'games', adv:'games', g:'games', daily:'games', journey:'journey'};
+  var GUARD = {exam:'exam', test:'test', speak:'speak', mistakes:'mistakes', stories:'stories', story:'stories', letters:'letters', letter:'letters', tool:'tools', play:'games', adv:'games', scene:'games', g:'games', daily:'games', journey:'journey'};
   if ((GUARD[p[0]] && hidden(GUARD[p[0]])) || (p[0] === 'l' && /^a2-/.test(p[1] || '') && hidden('a2'))){ toast('هذا القسم غير متاح حاليًا'); return viewHome(); }
   switch (p[0]){
     case 'learn': return viewLearn(p[1] || anchor);
@@ -1759,6 +1864,7 @@ function route(){
     case 'levels': return viewLevels();
     case 'tool': return ({numbers:viewNumTool, clock:viewClock, calendar:viewCalendar, intro:viewIntro}[p[1]] || viewLearn)();
     case 'play': return viewPlay();
+    case 'scene': return viewScene(p[1]);
     case 'adv': return p[1] ? viewAdvLevel(+p[1]) : viewAdventure();
     case 'g': return viewGame(p[1], p[2] || 'all');
     case 'daily': return viewGame('meaning', 'all', {daily:true});
