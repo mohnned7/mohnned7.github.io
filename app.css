@@ -917,3 +917,5 @@ html.tswitch body,html.tswitch .panel,html.tswitch .it,html.tswitch .tile,html.t
 .jr{left:auto;inset-inline-start:26px;top:calc(-4% - var(--f,0) * 46%);transform:translateY(-50%);z-index:3;font-size:26px;animation:jrBob 2.4s ease-in-out infinite}
 @keyframes jrBob{50%{margin-top:-6px}}
 .badge-done.half{display:block;border-radius:16px;line-height:1.6;background:color-mix(in srgb,var(--gold) 18%,transparent);color:var(--ink);font-weight:700}
+/* v15 */
+.linkbtn{display:block;width:100%;margin-top:12px;background:none;border:0;color:var(--muted,#B3ADD9);font:inherit;font-size:14px;text-decoration:underline;cursor:pointer}

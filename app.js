@@ -442,9 +442,10 @@ function onboarding(){
     var b = $('#onb', m);
     if (step === 0){
       b.innerHTML = dotsH() + '<div class="big">🚀</div><h3>أهلًا بك في Sprachrakete!</h3><p>' + (old ? 'أضفنا ميزات جديدة! ' : 'رحلتك لتعلّم الألمانية تبدأ الآن. ') + 'ما اسمك؟</p>' +
-        '<input class="inp" id="onbName" placeholder="اكتب اسمك" value="' + esc(data.name) + '" autocomplete="given-name"><button class="btn wide" id="onbNext" style="margin-top:12px">التالي</button><button class="btn alt wide" id="onbSkip" style="margin-top:8px">تخطَّ</button>';
+        '<input class="inp" id="onbName" placeholder="اكتب اسمك" value="' + esc(data.name) + '" autocomplete="given-name"><button class="btn wide" id="onbNext" style="margin-top:12px">التالي</button><button class="btn alt wide" id="onbSkip" style="margin-top:8px">تخطَّ</button>' + (old ? '' : '<button class="linkbtn" id="onbRestore">💾 لديك كود تقدّم من جهاز آخر؟ استرجعه</button>');
       $('#onbNext', m).onclick = function(){ data.name = $('#onbName', m).value.trim(); step = steps[1]; draw(); };
       $('#onbSkip', m).onclick = function(){ step = steps[1]; draw(); };
+      var rb = $('#onbRestore', m); if (rb) rb.onclick = function(){ m.remove(); backupSheet(); };
       $('#onbName', m).onkeydown = function(e){ if (e.key === 'Enter') $('#onbNext', m).click(); };
       setTimeout(function(){ var i = $('#onbName', m); if (i) i.focus(); }, 80);
     } else if (step === 1){
@@ -498,7 +499,7 @@ function viewHome(){
    '<div class="sh"><h2>إلى أين اليوم؟</h2></div><div class="tiles big">' +
      bigTile('#/learn', '📚', '#5B3DF5', 'الدروس', 'الكلمات ودروس A1 وA2', 'tile_learn') + bigTile('#/train', '🎯', '#8338EC', 'التدريب', 'الامتحان والنطق والأخطاء', 'tile_train') +
      (hidden('games') ? '' : bigTile('#/play', '🎮', '#FF6B2C', 'الألعاب', '9 ألعاب ومهمة اليوم', 'tile_play')) + (hidden('journey') ? '' : bigTile('#/journey', '🚀', '#19C79A', 'رحلتي', st.e + ' ' + st.a, 'tile_journey')) + '</div>' +
-   (hidden('tools') ? '' : '<div class="sh"><h2>🧰 أدوات سريعة</h2></div><div class="qtools">' + TOOLS.map(function(t){ return '<a class="qt" href="' + t.h + '" style="--c:' + t.c + '"><span>' + t.e + '</span><b>' + t.t + '</b></a>'; }).join('') + '</div>') +
+   
    '<div class="sh"><h2>تواصل معي</h2></div>' + contactHTML(true) +
    footer() + '</div>';
   render(html, 'home'); bindRibbon(); loadPics(w.grp);
@@ -507,7 +508,7 @@ function viewHome(){
   $('#launch').onclick = countdown;
   bindInstall();
 }
-function footer(){ return '<div class="foot"><div class="foot-l"><a href="#/about">عن الموقع</a><span>·</span><a href="#/suggest">💡 اقترح علينا</a><span>·</span><a href="#/me">الإعدادات</a></div>Sprachrakete 🚀 © ' + new Date().getFullYear() + ' مهند · جميع الحقوق محفوظة<br>النطق بالحروف العربية للمساعدة فقط، والأفضل الاعتماد على الصوت.</div>'; }
+function footer(){ return '<div class="foot"><div class="foot-l"><a href="#/about">عن الموقع</a><span>·</span><a href="#/suggest">💡 اقترح علينا</a><span>·</span><a href="de-index.html">فهرس الدروس</a><span>·</span><a href="#/privacy">الخصوصية</a><span>·</span><a href="#/me">الإعدادات</a></div>Sprachrakete 🚀 © ' + new Date().getFullYear() + ' مهند · جميع الحقوق محفوظة<br>النطق بالحروف العربية للمساعدة فقط، والأفضل الاعتماد على الصوت.</div>'; }
 function viewAbout(){
   var html = '<div class="wrap"><div class="ph sm" style="--c:#5B3DF5"><a class="back" href="#/">→ الرئيسية</a><span class="em">🚀</span><h1>عن Sprachrakete</h1><div class="g">Über uns</div><p>موقع مجاني لتعلّم الألمانية بالعربية، من أول حرف حتى تتكلم.</p></div>' +
     '<div class="panel about"><h3>👋 من أنا؟</h3><p>أنا مهند، وصنعت هذا الموقع لأساعد الناطقين بالعربية على تعلّم الألمانية بطريقة سهلة وممتعة، وليكون رفيقك اليومي: تتعلم الكلمة، وتسمعها، وتلعب بها، ثم تختبر نفسك.</p></div>' +
@@ -516,6 +517,16 @@ function viewAbout(){
     '<div class="panel about"><h3>💡 نصائح للاستفادة</h3><ul><li>استمع إلى كل كلمة وكرّرها بصوت عالٍ.</li><li>عشر دقائق كل يوم أفضل من ساعتين مرة في الأسبوع.</li><li>راجع كرّاسة أخطائي باستمرار.</li></ul></div>' +
     '<div class="sh"><h2>تواصل معي</h2></div>' + contactHTML(false) +
     '<p class="sub center" style="margin-top:16px">الخط العربي: Readex Pro (رخصة SIL OFL). جميع المحتويات والتصميم © مهند.</p>' + footer() + '</div>';
+  render(html, 'home');
+}
+function viewPrivacy(){
+  var html = '<div class="wrap"><div class="ph sm" style="--c:#14103A"><a class="back" href="#/">→ الرئيسية</a><span class="em">🔒</span><h1>سياسة الخصوصية</h1><div class="g">Datenschutz</div><p>باختصار: لا نجمع أي بيانات شخصية عنك.</p></div>' +
+    '<div class="panel about"><h3>ما الذي يُحفظ؟</h3><p>تقدّمك ونقاطك وإعداداتك محفوظة على جهازك فقط (في ذاكرة المتصفح)، ولا تُرسل إلى أي خادم. يمكنك مسحها في أي وقت من إعدادات المتصفح.</p></div>' +
+    '<div class="panel about"><h3>لا حسابات</h3><p>لا تحتاج إلى تسجيل أو بريد إلكتروني أو رقم هاتف لاستخدام الموقع.</p></div>' +
+    '<div class="panel about"><h3>عدّاد الزيارات</h3><p>قد نستخدم عدّاد زيارات بسيطًا يحسب عدد الزيارات والصفحات فقط، دون ملفات تعريف الارتباط ودون التعرّف على هويتك.</p></div>' +
+    '<div class="panel about"><h3>النسخة الاحتياطية</h3><p>كود النسخة الاحتياطية يُنشأ على جهازك، ولا يصل إلينا. أنت من يقرر أين تحفظه.</p></div>' +
+    '<div class="panel about"><h3>التواصل</h3><p>إذا راسلتنا عبر واتساب، يصلنا ما تكتبه فقط، ولا نشاركه مع أحد.</p></div>' +
+    '<p class="sub center">آخر تحديث: أكتوبر 2026</p>' + footer() + '</div>';
   render(html, 'home');
 }
 function viewSuggest(){
@@ -549,6 +560,7 @@ function planet(t){
 }
 var TOOLS = [{h:'#/tool/numbers',e:'🔢',c:'#FF6B2C',t:'مصنع الأرقام',d:'اكتب أي رقم واستمع إليه'},{h:'#/tool/clock',e:'🕐',c:'#5B3DF5',t:'الساعة الناطقة',d:'حرّك العقارب واستمع للوقت'},
   {h:'#/tool/calendar',e:'🗓️',c:'#19C79A',t:'التقويم الحي',d:'تاريخ اليوم بالألمانية'}];
+function toolBanner(h, g){ var t = TOOLS.find(function(x){ return x.h === h; }); if (!t || hidden('tools')) return ''; return '<a class="mission" href="' + h + '" style="background:linear-gradient(115deg,' + t.c + ',' + (g || '#FFC53D') + ');color:#fff;margin:0 0 12px"><span class="em">' + t.e + '</span><div><b>جرّب أداة: ' + t.t + '</b><span>' + t.d + '</span></div><span class="arr">‹</span></a>'; }
 function toolsHTML(){ return TOOLS.map(function(t){ return bigTile(t.h, t.e, t.c, t.t, t.d); }).join(''); }
 function ladderHTML(){
   return '<div class="ladder">' + SR.levels.map(function(l, i){ var open = l[3] === 'open';
@@ -609,7 +621,7 @@ function viewLearn(tab){
   } else {
     body = '<p class="lead">أدوات تفاعلية تساعدك على الأرقام والوقت والتاريخ.</p><div class="tiles big">' + toolsHTML() + '</div>';
   }
-  var html = '<div class="wrap"><div class="ph sm" style="--c:#5B3DF5"><span class="em">📚</span><h1>الدروس</h1><div class="g">Lernen</div></div>' +
+  var html = '<div class="wrap"><div class="ph sm" style="--c:#5B3DF5"><span class="em phpic">' + uiPic('tile_learn', '📚') + '</span><h1>الدروس</h1><div class="g">Lernen</div></div>' +
     tabBar(LT, tab, '#/learn/') + '<div class="tabbody">' + body + '</div>' + footer() + '</div>';
   render(html, 'learn');
   var on = $('.tabs .tab.on'); if (on && on.scrollIntoView) try{ on.scrollIntoView({block:'nearest', inline:'center'}); }catch(e){}
@@ -617,7 +629,7 @@ function viewLearn(tab){
 }
 function viewTrain(){
   var mc = Object.keys(S.mist).length, ex = EXAM_PARTS.filter(function(p){ return S.done['e:' + p.id]; }).length;
-  var html = '<div class="wrap"><div class="ph sm" style="--c:#8338EC"><span class="em">🎯</span><h1>التدريب</h1><div class="g">Training</div><p>استعد للامتحان، واعرف مستواك، وصحّح نطقك وأخطاءك.</p></div>' +
+  var html = '<div class="wrap"><div class="ph sm" style="--c:#8338EC"><span class="em phpic">' + uiPic('tile_train', '🎯') + '</span><h1>التدريب</h1><div class="g">Training</div><p>استعد للامتحان، واعرف مستواك، وصحّح نطقك وأخطاءك.</p></div>' +
     '<div class="tiles big">' +
       (hidden('exam') ? '' : bigTile('#/exam', '📝', '#8338EC', 'تدريب على امتحان A1', ex ? 'أكملت ' + ex + ' من 4 أجزاء' : 'استماع، قراءة، كتابة، محادثة')) +
       (hidden('test') ? '' : bigTile('#/test', '🧭', '#2B1F86', 'اختبار المستوى', S.test == null ? '12 سؤالًا تحدد من أين تبدأ' : 'نتيجتك السابقة: ' + S.test + ' من 12')) +
@@ -676,7 +688,7 @@ function viewTopic(id){
   var m = modById(id); if (!m) return go('#/learn');
   var uid = 't:' + id; useAudio(m.id);
   var html = '<div class="wrap"><div class="ph" style="--c:' + m.color + '"><a class="back" href="#/learn/words">→ الكلمات</a>' + headPic(m) + '<h1>' + esc(m.title) + '</h1><div class="g">' + esc(m.de) + '</div><p>' + esc(m.desc) + '</p></div>' +
-    unitBar(uid) + ctlBar(m.items ? '<button class="chip go2" id="playAll">▶ تشغيل الكل</button>' : '');
+    unitBar(uid) + (m.id === 'calendar' ? toolBanner('#/tool/calendar', '#3A86FF') : '') + ctlBar(m.items ? '<button class="chip go2" id="playAll">▶ تشغيل الكل</button>' : '');
   var list = [];
   if (m.dialogs){
     m.dialogs.forEach(function(d){ html += '<div class="dlg" style="--c:' + m.color + '"><h3>' + d.e + ' ' + esc(d.t) + '</h3>';
@@ -727,7 +739,7 @@ function viewLesson(id){
   var list = l.items.map(function(it, k){ return Object.assign({grp:grp, u:uid, k:k}, it); });
   var TK = {tip:'💡 معلومة', trap:'⚠️ انتبه', memo:'🧠 احفظها هكذا'};
   var html = '<div class="wrap"><div class="ph" style="--c:' + l.color + '"><a class="back" href="#/learn/' + grp + '">→ دروس ' + grp.toUpperCase() + '</a><span class="em">' + (l.e || '📘') + '</span><h1>' + esc(l.title) + '</h1><div class="g">' + esc(l.de) + '</div>' + (l.mission ? '<p>🎯 ' + esc(l.mission) + '</p>' : '') + '</div>' +
-    unitBar(uid) + l.rules.map(function(r){ return '<div class="rule">' + rich(r) + '</div>'; }).join('') +
+    unitBar(uid) + (id === 'a1-8' ? toolBanner('#/tool/clock', '#8338EC') : '') + l.rules.map(function(r){ return '<div class="rule">' + rich(r) + '</div>'; }).join('') +
     (l.tips || []).map(function(t){ return '<div class="tip ' + t.k + '"><b class="k">' + TK[t.k] + '</b>' + rich(t.t) + '</div>'; }).join('') +
     ctlBar('<button class="chip go2" id="playAll">▶ تشغيل الكل</button>') + '<div class="list">';
   var last = null;
@@ -748,7 +760,7 @@ function viewLevels(){
 /* ---------------- TOOLS ---------------- */
 function viewNumTool(){
   useAudio('num');
-  var html = '<div class="wrap"><div class="ph" style="--c:#FF6B2C"><a class="back" href="#/learn/tools">→ الأدوات</a><span class="em">🏭</span><h1>مصنع الأرقام</h1><div class="g">Zahlen-Fabrik</div><p>اكتب أي رقم من 0 إلى 1000000 وشاهد كيف يُركَّب.</p></div>' + ctlBar() +
+  var html = '<div class="wrap"><div class="ph" style="--c:#FF6B2C"><a class="back" href="#/t/num">→ الأرقام</a><span class="em">🏭</span><h1>مصنع الأرقام</h1><div class="g">Zahlen-Fabrik</div><p>اكتب أي رقم من 0 إلى 1000000 وشاهد كيف يُركَّب.</p></div>' + ctlBar() +
     '<div class="panel"><input class="inp de" id="nIn" inputmode="numeric" placeholder="مثلًا 2026" value="21" aria-label="الرقم"><div class="bigout" id="nOut"></div><div class="pr arp center" id="nAr" style="font-size:18px"></div>' +
     '<div class="row" style="justify-content:center;margin-top:12px"><button class="btn" id="nPlay">🔊 استمع</button><button class="btn alt" id="nRand">🎲 رقم عشوائي</button></div></div>' +
     '<div class="panel"><b>🎧 تحدٍّ: استمع واكتب الرقم</b><p style="color:var(--mute);font-size:14px;margin:4px 0 10px">ستسمع رقمًا بالألمانية، اكتبه بالأرقام.</p><div class="row"><button class="btn flame" id="qPlay">▶ استمع إلى الرقم</button><input class="inp de" id="qIn" inputmode="numeric" style="flex:1;min-width:120px" aria-label="إجابتك"><button class="btn" id="qChk">تحقّق</button></div><div id="qRes" class="center" style="margin-top:8px;font-weight:800"></div></div>' + footer() + '</div>';
@@ -774,7 +786,7 @@ function clockSVG(h, m){
 }
 function viewClock(){
   var now = new Date(), st = {h:now.getHours(), m:Math.floor(now.getMinutes()/5)*5};
-  var html = '<div class="wrap"><div class="ph" style="--c:#5B3DF5"><a class="back" href="#/learn/tools">→ الأدوات</a><span class="em">🕐</span><h1>الساعة الناطقة</h1><div class="g">Wie spät ist es?</div><p>غيّر الساعة والدقائق، وشاهد الوقت بالطريقتين.</p></div>' + ctlBar() +
+  var html = '<div class="wrap"><div class="ph" style="--c:#5B3DF5"><a class="back" href="#/l/a1-8">→ الوقت ويومك</a><span class="em">🕐</span><h1>الساعة الناطقة</h1><div class="g">Wie spät ist es?</div><p>غيّر الساعة والدقائق، وشاهد الوقت بالطريقتين.</p></div>' + ctlBar() +
     '<div class="panel"><div class="clockwrap" id="ck"></div><div class="steps"><button class="btn alt" data-d="h-1">− ساعة</button><button class="btn alt" data-d="h1">+ ساعة</button><button class="btn alt" data-d="m-5">− 5 د</button><button class="btn alt" data-d="m5">+ 5 د</button></div></div>' +
     '<div class="panel"><b>💬 في الكلام اليومي</b><div class="bigout sm" id="inf"></div><div class="pr arp center" id="infAr"></div><div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="pInf">🔊 استمع</button></div></div>' +
     '<div class="panel"><b>🚉 الصيغة الرسمية (المواعيد والقطارات)</b><div class="bigout sm" id="frm"></div><div class="pr arp center" id="frmAr"></div><div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="pFrm">🔊 استمع</button></div></div>' +
@@ -797,7 +809,7 @@ function viewCalendar(){
   ['Mo','Di','Mi','Do','Fr','Sa','So'].forEach(function(x){ cells += '<span class="h">' + x + '</span>'; });
   for (var i = 0; i < off; i++) cells += '<span></span>';
   for (var k = 1; k <= dim; k++) cells += '<span class="' + (k === dn ? 't' : '') + '">' + k + '</span>';
-  var html = '<div class="wrap"><div class="ph" style="--c:#19C79A"><a class="back" href="#/learn/tools">→ الأدوات</a><span class="em">🗓️</span><h1>التقويم الحي</h1><div class="g">' + esc(day[0]) + ' · ' + esc(mon[0]) + '</div><p>تاريخ اليوم والساعة الآن بالألمانية.</p></div>' + ctlBar() +
+  var html = '<div class="wrap"><div class="ph" style="--c:#19C79A"><a class="back" href="#/t/calendar">→ الأيام والشهور</a><span class="em">🗓️</span><h1>التقويم الحي</h1><div class="g">' + esc(day[0]) + ' · ' + esc(mon[0]) + '</div><p>تاريخ اليوم والساعة الآن بالألمانية.</p></div>' + ctlBar() +
     '<div class="panel"><b>📍 اليوم</b><div class="bigout sm">' + esc(sDe) + '</div><div class="pr arp center">' + pron(sAr) + '</div><div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="pD">🔊 استمع</button></div>' +
     '<div class="center" style="font-family:Outfit;font-weight:700;margin-top:14px">' + esc(mon[0]) + ' ' + y + '</div><div class="cal">' + cells + '</div></div>' +
     '<div class="panel"><b>⏰ الساعة الآن</b><div class="bigout sm" id="tNow"></div><div class="pr arp center" id="tAr"></div><div class="row" style="justify-content:center;margin-top:8px"><button class="btn" id="pT">🔊 استمع</button></div></div>' +
@@ -850,7 +862,7 @@ function viewIntro(){
 /* ---------------- STORIES ---------------- */
 function viewStories(){
   var st = SX.stories || [];
-  var html = '<div class="wrap"><div class="ph" style="--c:#FF3D7F"><a class="back" href="#/learn/read">→ اقرأ واكتب</a><span class="em">📖</span><h1>قصص قصيرة</h1><div class="g">Kurze Geschichten</div><p>استمع إلى القصة جملة جملة، ثم أجب عن الأسئلة.</p></div><div class="list">' +
+  var html = '<div class="wrap"><div class="ph" style="--c:#FF3D7F"><a class="back" href="#/learn/read">→ اقرأ واكتب</a><span class="em phpic">' + uiPic('story_anna', '📖') + '</span><h1>قصص قصيرة</h1><div class="g">Kurze Geschichten</div><p>استمع إلى القصة جملة جملة، ثم أجب عن الأسئلة.</p></div><div class="list">' +
     st.map(function(s, i){ var uid = 's:' + s.id; return '<a class="it lesson" href="#/story/' + s.id + '" style="--c:' + s.color + '"><span class="em cov">' + uiPic('story_' + s.id, s.e) + '</span><div class="tx"><b>' + esc(s.title) + '</b><div class="cj">' + esc(s.de) + '</div><div class="m">' + esc(s.lvl || 'A1') + ' · ' + plural(s.lines.length, 'جملة', 'جملتان', 'جمل', 'جملة') + '</div></div><span class="st">' + (S.done[uid] ? '✅' : '‹') + '</span></a>'; }).join('') + '</div>' + footer() + '</div>';
   render(html, 'learn');
 }
@@ -887,7 +899,7 @@ function viewStory(id){
 /* ---------------- LETTERS ---------------- */
 function viewLetters(){
   var ls = SX.letters || [];
-  var html = '<div class="wrap"><div class="ph" style="--c:#3A86FF"><a class="back" href="#/learn/read">→ اقرأ واكتب</a><span class="em">✉️</span><h1>رسائل جاهزة</h1><div class="g">Briefe und E-Mails</div><p>نماذج لرسائل قصيرة كما تُطلب في امتحان A1، بالصوت والترجمة.</p></div>' +
+  var html = '<div class="wrap"><div class="ph" style="--c:#3A86FF"><a class="back" href="#/learn/read">→ اقرأ واكتب</a><span class="em phpic">' + uiPic('letter_termin', '✉️') + '</span><h1>رسائل جاهزة</h1><div class="g">Briefe und E-Mails</div><p>نماذج لرسائل قصيرة كما تُطلب في امتحان A1، بالصوت والترجمة.</p></div>' +
     '<div class="tip tip"><b class="k">💡 القاعدة الذهبية</b>كل رسالة فيها: <b>تحية</b> ← <b>ثلاث نقاط</b> مطلوبة ← <b>خاتمة</b> ← <b>اسمك</b>. هذا كل ما يحتاجه الممتحن.</div><div class="list">' +
     ls.map(function(w){ var uid = 'w:' + w.id; return '<a class="it lesson" href="#/letter/' + w.id + '" style="--c:' + w.color + '"><span class="em cov">' + uiPic('letter_' + w.id, w.e) + '</span><div class="tx"><b>' + esc(w.title) + '</b><div class="m">' + esc(w.sit) + '</div><div class="prog thin"><i style="width:' + unitPct(uid) + '%"></i></div></div><span class="st">' + (S.done[uid] ? '✅' : '‹') + '</span></a>'; }).join('') + '</div>' + footer() + '</div>';
   render(html, 'learn');
@@ -1156,7 +1168,7 @@ function viewJourney(){
   var rows = STATIONS.map(function(s, i){ var reached = i <= si;
     return '<div class="jst ' + (reached ? 'got' : '') + (i === si ? ' cur' : '') + '" style="--i:' + i + '"><div class="jp jpic">' + uiPic('st' + i, s.e) + '</div><div class="jt"><b>' + s.a + '</b><small>' + (i === 0 ? 'نقطة البداية' : ar(stNeed(i)) + ' وحدة') + '</small></div>' + (i === si ? '<div class="jr" style="--f:' + frac.toFixed(2) + '">🚀</div>' : '') + '</div>'; }).reverse().join('');
   var o = pathOrder().filter(function(id){ return !S.done[id]; }).slice(0, 4).map(function(id){ return UMAP[id]; });
-  var html = '<div class="wrap"><div class="ph space" style="--c:#2B1F86"><a class="back" href="#/">→ الرئيسية</a><span class="em">🚀</span><h1>رحلتك الفضائية</h1><div class="g">Deine Weltraumreise</div><p>كل درس تكمله يقرّب صاروخك من المحطة التالية.</p></div>' +
+  var html = '<div class="wrap"><div class="ph space" style="--c:#2B1F86"><a class="back" href="#/">→ الرئيسية</a><span class="em phpic">' + uiPic('tile_journey', '🚀') + '</span><h1>رحلتك الفضائية</h1><div class="g">Deine Weltraumreise</div><p>كل درس تكمله يقرّب صاروخك من المحطة التالية.</p></div>' +
     '<div class="jsum"><div><b>' + ar(n) + '</b><span>وحدة مكتملة</span></div><div><b>' + ar(T) + '</b><span>وحدة في الرحلة</span></div><div><b>' + STATIONS[si].e + '</b><span>' + STATIONS[si].a + '</span></div></div>' +
     (nx ? '<div class="panel center"><b>تبقّى ' + plural(need, 'وحدة واحدة', 'وحدتان', 'وحدات', 'وحدة') + ' للوصول إلى ' + nx.e + ' ' + nx.a + '</b><div class="prog" style="margin-top:10px"><i style="width:' + Math.round(frac * 100) + '%"></i></div></div>' : '<div class="panel center"><b>🎉 أكملت الرحلة كلها! أنت بطل المجرة.</b></div>') +
     '<div class="journey">' + rows + '</div>' +
@@ -1210,7 +1222,7 @@ var GAMES = [
 ];
 function gameTile(g, topic){ return '<a class="tile" href="#/g/' + g.id + '/' + (topic || 'all') + '" style="--c:' + g.c + '"><span class="em">' + g.e + '</span><b>' + g.t + '</b><span>' + g.d + '</span></a>'; }
 function viewPlay(){
-  var html = '<div class="wrap"><div class="ph sm" style="--c:#FF6B2C"><span class="em">🎮</span><h1>الألعاب</h1><div class="g">Spielen</div><p>كل إجابة صحيحة = 10 نقاط. اختر لعبة ثم اختر الموضوع.</p></div>' +
+  var html = '<div class="wrap"><div class="ph sm" style="--c:#FF6B2C"><span class="em phpic">' + uiPic('tile_play', '🎮') + '</span><h1>الألعاب</h1><div class="g">Spielen</div><p>كل إجابة صحيحة = 10 نقاط. اختر لعبة ثم اختر الموضوع.</p></div>' +
     '<a class="mission ' + (S.daily[today()] ? 'done' : '') + '" href="#/daily" style="margin-top:0"><span class="em">🎯</span><div><b>مهمة اليوم</b><span>' + (S.daily[today()] ? 'أنهيتها ✅ عُد غدًا' : '10 أسئلة متنوعة + 50 نقطة') + '</span></div><span class="arr">‹</span></a>' +
     '<div class="sh"><h2>اختر لعبة</h2><span class="cnt">' + GAMES.length + ' ألعاب</span></div><div class="tiles">' + GAMES.map(function(g){ return gameTile(g); }).join('') + '</div>' + footer() + '</div>';
   render(html, 'play');
@@ -1470,13 +1482,51 @@ function settingsSheet(){
     setRow('dark', '🌙 الوضع الليلي', isDark()) + setRow('sp', '🔤 النطق بالحروف العربية', S.set.sp) + setRow('kids', '🔠 خط كبير وأزرار أكبر', S.set.kids) +
     '<div class="set"><span>🐢 سرعة الصوت</span><div class="seg"><button data-sp2="slow" class="' + (S.set.speed === 'slow' ? 'on' : '') + '">بطيء</button><button data-sp2="normal" class="' + (S.set.speed !== 'slow' ? 'on' : '') + '">عادي</button></div></div>' +
     '<div class="set"><span>🎯 الهدف اليومي</span><div class="seg">' + GOALS.map(function(g){ return '<button data-goal2="' + g.x + '" class="' + (S.goal === g.x ? 'on' : '') + '">' + g.m + ' د</button>'; }).join('') + '</div></div>' +
-    '<div class="set"><span>📲 ثبّت الموقع على شاشتك</span><button class="btn" id="installBtn">تثبيت</button></div></div>' +
+    '<div class="set"><span>📲 ثبّت الموقع على شاشتك</span><button class="btn" id="installBtn">تثبيت</button></div>' +
+    '<div class="set"><span>⏰ تذكير يومي بالمذاكرة</span><button class="btn" id="remBtn">ضبط</button></div>' +
+    '<div class="set"><span>💾 نسخة احتياطية من تقدّمي</span><button class="btn" id="bkBtn">نقل وحفظ</button></div></div>' +
     '<a class="btn alt wide" href="#/me" style="text-decoration:none;display:block;text-align:center;margin-top:12px">🧑‍🚀 صفحتي ونقاطي</a>', 'sheet'); m.classList.add('msheet');
   $$('[data-set]', m).forEach(function(b){ b.onclick = function(){ var k = b.dataset.set; if (k === 'dark'){ S.set.theme = isDark() ? 'light' : 'dark'; } else S.set[k] = !S.set[k]; save(); applySettings(); b.classList.toggle('on'); }; });
   $$('[data-sp2]', m).forEach(function(b){ b.onclick = function(){ setSpeed(b.dataset.sp2); $$('[data-sp2]', m).forEach(function(x){ x.classList.toggle('on', x === b); }); $$('[data-sp]').forEach(function(x){ x.classList.toggle('on', x.dataset.sp === b.dataset.sp2); }); }; });
   $$('[data-goal2]', m).forEach(function(b){ b.onclick = function(){ S.goal = +b.dataset.goal2; save(); $$('[data-goal2]', m).forEach(function(x){ x.classList.toggle('on', x === b); }); var gc = $('.goal'); if (gc) gc.outerHTML = goalHTML(); toast('🎯 هدفك الجديد: ' + S.goal + ' نقطة يوميًا'); }; });
   $$('a', m).forEach(function(a){ a.addEventListener('click', function(){ m.remove(); }); });
   bindInstall();
+  $('#bkBtn', m).onclick = function(){ m.remove(); backupSheet(); };
+  $('#remBtn', m).onclick = function(){ m.remove(); reminderSheet(); };
+}
+/* ---------------- backup / restore ---------------- */
+function progCode(){ return 'SR1-' + btoa(unescape(encodeURIComponent(JSON.stringify(S)))); }
+function readCode(c){ c = String(c || '').replace(/\s+/g, ''); var i = c.indexOf('SR1-'); if (i < 0) return null; try{ var x = JSON.parse(decodeURIComponent(escape(atob(c.slice(i + 4))))); return x && typeof x === 'object' && x.v ? x : null; }catch(e){ return null; } }
+function backupSheet(){
+  var code = progCode();
+  var m = modal('<h3 style="margin:0 0 6px">💾 نسخة احتياطية من تقدّمي</h3><p class="sub">تقدّمك محفوظ على هذا الجهاز فقط. احفظ الكود في مكان آمن (مثل رسائل واتساب لنفسك)، واستخدمه لنقل تقدّمك إلى جهاز آخر أو استرجاعه إذا مُسح.</p>' +
+    '<div class="row" style="gap:8px;flex-wrap:wrap;margin:10px 0"><button class="btn" id="bkCopy">📋 نسخ الكود</button>' + (navigator.share ? '<button class="btn alt" id="bkShare">📤 مشاركة</button>' : '') + '<button class="btn alt" id="bkFile">⬇️ حفظ كملف</button></div>' +
+    '<h3 style="margin:16px 0 6px">📥 استرجاع تقدّمي</h3><p class="sub">الصق الكود هنا. سيحلّ محل التقدّم الموجود على هذا الجهاز.</p>' +
+    '<textarea id="rsIn" rows="3" dir="ltr" placeholder="SR1-..." style="width:100%;border-radius:12px;padding:10px;font:inherit;font-size:13px"></textarea>' +
+    '<button class="btn wide" id="rsGo" style="margin-top:8px">استرجاع</button>', 'sheet'); m.classList.add('msheet');
+  $('#bkCopy', m).onclick = function(){ var done = function(){ toast('✅ تم نسخ الكود. احفظه في مكان آمن'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(done, function(){ fallbackCopy(code); done(); }); else { fallbackCopy(code); done(); } };
+  var sh = $('#bkShare', m); if (sh) sh.onclick = function(){ navigator.share({title:'تقدّمي في Sprachrakete', text:code}).catch(function(){}); };
+  $('#bkFile', m).onclick = function(){ var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([code], {type:'text/plain'})); a.download = 'Sprachrakete-' + today() + '.txt'; document.body.appendChild(a); a.click(); a.remove(); };
+  $('#rsGo', m).onclick = function(){ var x = readCode($('#rsIn', m).value); if (!x) return toast('⚠️ الكود غير صحيح، تأكد أنك نسخته كاملًا');
+    if (!confirm('سيُستبدل التقدّم الحالي على هذا الجهاز. هل تريد المتابعة؟')) return;
+    try{ localStorage.setItem('sprachrakete', JSON.stringify(x)); }catch(e){} toast('✅ تم استرجاع تقدّمك'); setTimeout(function(){ location.reload(); }, 900); };
+}
+function fallbackCopy(t){ var ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(e){} ta.remove(); }
+/* ---------------- daily reminder (calendar) ---------------- */
+function reminderSheet(){
+  var t = S.set.rem || '20:00';
+  var m = modal('<h3 style="margin:0 0 6px">⏰ تذكير يومي</h3><p class="sub">اختر الوقت المناسب، وسيُضاف تذكير يومي إلى تقويم هاتفك يفتح لك الموقع مباشرة.</p>' +
+    '<input type="time" id="remT" value="' + t + '" style="font:inherit;font-size:22px;padding:10px 14px;border-radius:12px;margin:8px 0;width:100%">' +
+    '<button class="btn wide" id="remGo">➕ أضف إلى التقويم</button><p class="sub center" style="margin-top:8px">على آيفون: اضغط «إضافة الكل» بعد فتح الملف.</p>', 'sheet'); m.classList.add('msheet');
+  $('#remGo', m).onclick = function(){ var v = ($('#remT', m).value || '20:00').split(':'), hh = ('0' + (+v[0] || 0)).slice(-2), mm = ('0' + (+v[1] || 0)).slice(-2);
+    S.set.rem = hh + ':' + mm; save();
+    var d = new Date(), ds = d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2), url = location.origin + location.pathname;
+    var ics = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Sprachrakete//AR','CALSCALE:GREGORIAN','BEGIN:VEVENT','UID:sprachrakete-daily-' + ds + '@mohnned7','DTSTAMP:' + ds + 'T000000Z',
+      'DTSTART:' + ds + 'T' + hh + mm + '00','DURATION:PT15M','RRULE:FREQ=DAILY','SUMMARY:🚀 وقت الألماني! ' + (S.goal || 30) + ' نقطة اليوم','DESCRIPTION:افتح Sprachrakete وحافظ على سلسلة أيامك: ' + url,'URL:' + url,
+      'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:وقت الألماني!','TRIGGER:PT0M','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
+    var a = document.createElement('a'); a.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics); a.download = 'Sprachrakete-reminder.ics'; document.body.appendChild(a); a.click(); a.remove();
+    toast('⏰ افتح الملف وأضفه إلى التقويم'); };
 }
 function setRow(k, label, on){ return '<div class="set"><span>' + label + '</span><button class="switch ' + (on ? 'on' : '') + '" data-set="' + k + '" aria-label="' + label + '"></button></div>'; }
 function certificate(name){
@@ -1596,6 +1646,7 @@ function route(){
     case 'admin-mohannad': return viewAdmin();
     case 'about': return viewAbout();
     case 'suggest': return viewSuggest();
+    case 'privacy': return viewPrivacy();
     default: return viewNotFound();
   }
 }
