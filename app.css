@@ -919,3 +919,7 @@ html.tswitch body,html.tswitch .panel,html.tswitch .it,html.tswitch .tile,html.t
 .badge-done.half{display:block;border-radius:16px;line-height:1.6;background:color-mix(in srgb,var(--gold) 18%,transparent);color:var(--ink);font-weight:700}
 /* v15 */
 .linkbtn{display:block;width:100%;margin-top:12px;background:none;border:0;color:var(--muted,#B3ADD9);font:inherit;font-size:14px;text-decoration:underline;cursor:pointer}
+.gcbars{display:grid;gap:10px}
+.gcr{display:grid;grid-template-columns:120px 1fr 44px;align-items:center;gap:10px;font-size:14px}
+.gcr i{display:block;height:12px;border-radius:99px;background:linear-gradient(90deg,#FFC53D,#FF6B2C)}
+.gcr b{text-align:left}

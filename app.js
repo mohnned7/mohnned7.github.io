@@ -1579,7 +1579,9 @@ function viewAdmin(){
   var html = '<div class="wrap"><div class="ph sm" style="--c:#14103A"><span class="em">🔐</span><h1>لوحة المالك</h1><div class="g">MOHANNAD</div><p>صفحة خاصة بك. لا تشارك رابطها.</p></div>' +
     '<div class="jsum"><div><b>' + UNITS.length + '</b><span>وحدة في الموقع</span></div><div><b>' + words + '</b><span>كلمة وجملة</span></div><div><b>' + lessonItems + '</b><span>مثال في الدروس</span></div></div>' +
     '<div class="sh"><h2>📊 الإحصائيات</h2></div>' +
-    (code ? '<div class="list">' + row('https://' + code + '.goatcounter.com', '📈', 'زوار الموقع', 'عدد الزوار والصفحات والبلدان') + '</div>'
+    (code ? '<div id="gcBox"><div class="jsum"><div><b id="gcD">…</b><span>زوار اليوم</span></div><div><b id="gcW">…</b><span>آخر 7 أيام</span></div><div><b id="gcA">…</b><span>كل الزوار</span></div></div>' +
+      '<div class="sh"><h2>🔥 أكثر الأقسام زيارة</h2></div><div class="panel gcbars" id="gcTop"><p class="sub">جارٍ التحميل…</p></div><p class="sub center">الأرقام تتحدّث كل بضع ساعات.</p></div>' +
+      '<div class="list">' + row('https://' + code + '.goatcounter.com', '📈', 'التفاصيل الكاملة', 'البلدان والأجهزة ومن أين جاء الزوار') + '</div>'
           : '<div class="tip trap"><b class="k">لم تُفعَّل بعد</b>أنشئ حسابًا مجانيًا على goatcounter.com، ثم اكتب اسم الحساب في خانة <b>goatcounter</b> داخل ملف الإعدادات.</div>') +
     '<div class="sh"><h2>⚙️ التحكم</h2></div><div class="list">' +
       row(gh + '/edit/main/config.json', '📝', 'تعديل ملف الإعدادات', 'الإعلان، واتساب، يوتيوب، إخفاء الأقسام، الإحصائيات') +
@@ -1593,6 +1595,23 @@ function viewAdmin(){
       '<p class="sub">احذر: لا تحذف الفواصل <span class="de">,</span> ولا علامات التنصيص <span class="de">"</span>، وإلا سيتجاهل الموقع الملف ويستخدم الإعدادات الأساسية.</p></div>' +
     '<div class="sh"><h2>الإعدادات المطبقة الآن</h2></div><pre class="cfg" dir="ltr">' + esc(cfgView) + '</pre>' + footer() + '</div>';
   render(html, '');
+  if (code) gcStats(code);
+}
+function gcStats(code){
+  var base = 'https://' + code + '.goatcounter.com/counter/';
+  function get(path, q){ return fetch(base + (path === 'TOTAL' ? 'TOTAL' : encodeURIComponent(path)) + '.json' + (q ? '?' + q : ''), {cache:'no-store'})
+    .then(function(r){ if (r.status === 404) return 0; if (!r.ok) throw r.status; return r.json().then(function(j){ return +String(j.count || '0').replace(/[^0-9]/g, '') || 0; }); }); }
+  var d = new Date(), td = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  function set(id, v){ var el = $('#' + id); if (el) el.textContent = ar(v); }
+  get('TOTAL').then(function(v){ set('gcA', v);
+    get('TOTAL', 'start=' + td).then(function(x){ set('gcD', x); }).catch(function(){ set('gcD', 0); });
+    get('TOTAL', 'start=week').then(function(x){ set('gcW', x); }).catch(function(){ set('gcW', 0); });
+    var P = [['/', '🏠 الرئيسية'], ['/learn/words', '📚 الكلمات'], ['/learn/a1', '📘 دروس A1'], ['/learn/a2', '📗 دروس A2'], ['/play', '🎮 الألعاب'], ['/daily', '🎯 مهمة اليوم'], ['/train', '🎯 التدريب'], ['/exam', '📝 تدريب الامتحان'], ['/test', '🧭 اختبار المستوى'], ['/journey', '🚀 الرحلة'], ['/stories', '📖 القصص'], ['/letters', '✉️ الرسائل'], ['/t/abc', '🔤 الحروف'], ['/t/num', '🔢 الأرقام'], ['/search', '🔍 البحث'], ['/suggest', '💡 الاقتراحات']];
+    Promise.all(P.map(function(x){ return get(x[0]).catch(function(){ return 0; }); })).then(function(n){
+      var rows = P.map(function(x, i){ return {t:x[1], n:n[i]}; }).filter(function(r){ return r.n > 0; }).sort(function(a, b){ return b.n - a.n; }).slice(0, 8), mx = rows.length ? rows[0].n : 1;
+      var box = $('#gcTop'); if (!box) return;
+      box.innerHTML = rows.length ? rows.map(function(r){ return '<div class="gcr"><span>' + r.t + '</span><i style="width:' + Math.max(6, Math.round(r.n / mx * 100)) + '%"></i><b>' + ar(r.n) + '</b></div>'; }).join('') : '<p class="sub">لا توجد زيارات بعد.</p>'; });
+  }).catch(function(){ var b = $('#gcBox'); if (b) b.innerHTML = '<div class="tip trap"><b class="k">خطوة أخيرة</b>افتح موقع العدّاد ← <b>Settings</b> ← فعّل خيار <b>Allow adding visitor counts on your website</b> ← <b>Save</b>. بعدها ستظهر الأرقام هنا بالعربية.</div>'; });
 }
 
 /* ---------------- popups / install ---------------- */
