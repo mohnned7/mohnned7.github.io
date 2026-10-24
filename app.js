@@ -1273,7 +1273,7 @@ var SCENES = [
   {t:'pay', de:'Das macht sieben Euro fünfzig.', mn:'الحساب سبعة يورو وخمسون سنتًا.', amount:7.5},
   {t:'say', de:'Danke! Schönen Tag noch!', mn:'شكرًا! يومًا سعيدًا!', opts:[['Danke, gleichfalls!','شكرًا، ولك أيضًا!',1],['Gute Nacht, Mama!','تصبحين على خير يا أمي!'],['Ich habe Hunger.','أنا جائع.']]}
  ]},
- {id:'cafe', ds:'اطلب قهوة وكعكة وادفع الحساب', t:'في المقهى', de:'Im Café', c:'#C9971C', pic:'food/Kaffee', e:'☕', npc:'🧑‍🍳', grp:'food', steps:[
+ {id:'cafe', ds:'اطلب قهوة وكعكة وادفع الحساب', t:'في المقهى', de:'Im Café', c:'#C9971C', pic:'ui/scene_cafe', e:'☕', npc:'🧑‍🍳', grp:'food', steps:[
   {t:'say', de:'Hallo! Was möchten Sie trinken?', mn:'مرحبًا! ماذا تحب أن تشرب؟', opts:[['Einen Kaffee, bitte.','قهوة من فضلك.',1],['Ich trinke ein Brot.','أنا أشرب خبزًا.'],['Ich wohne in Kairo.','أسكن في القاهرة.']]},
   {t:'say', de:'Mit Milch und Zucker?', mn:'بالحليب والسكر؟', opts:[['Mit Milch, ohne Zucker.','بالحليب، بدون سكر.',1],['Ja, ich bin Student.','نعم، أنا طالب.'],['Um acht Uhr.','في الساعة الثامنة.']]},
   {t:'say', de:'Möchten Sie auch etwas essen?', mn:'هل تحب أن تأكل شيئًا أيضًا؟', opts:[['Ja, ein Stück Kuchen, bitte.','نعم، قطعة كعك من فضلك.',1],['Nein, ich spiele Fußball.','لا، ألعب كرة القدم.'],['Das ist mein Bruder.','هذا أخي.']]},
