@@ -113,7 +113,8 @@ window.SRI = function(o){ IDX = o || null; };
 (function(){ var s = document.createElement('script'); s.src = 'audio_index.js'; s.async = true;
   function fin(){ idxDone = true; var p = pend; pend = []; p.forEach(function(g){ loadAudio(g); }); }
   s.onload = fin; s.onerror = function(){ s.remove(); fin(); }; document.head.appendChild(s); })();
-function addScript(f){ if (loadedF[f]) return; loadedF[f] = 1; var s = document.createElement('script'); s.src = f; s.async = true; s.onerror = function(){ s.remove(); }; document.head.appendChild(s); }
+var loadingN = 0;
+function addScript(f){ if (loadedF[f]) return; loadedF[f] = 1; loadingN++; var s = document.createElement('script'); s.src = f; s.async = true; s.onload = function(){ loadingN = Math.max(0, loadingN - 1); }; s.onerror = function(){ loadingN = Math.max(0, loadingN - 1); s.remove(); }; document.head.appendChild(s); }
 function loadAudio(grp){
   if (!grp) return;
   if (!idxDone){ if (pend.indexOf(grp) < 0) pend.push(grp); return; }
@@ -130,13 +131,18 @@ function pickVoice(){
 }
 if (synth){ pickVoice(); synth.onvoiceschanged = pickVoice; }
 function stopAudio(){ token++; if (synth) synth.cancel(); if (curA){ try{ curA.pause(); }catch(e){} curA = null; } }
-function speak(text, done){
+var PL = null;
+function unlockAudio(){ try{ if (!PL){ PL = new Audio(); } if (!PL._u){ PL._u = 1; PL.src = 'data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAACAAABIADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAASDs90hvAAAAAAAAAAAAAAAAAAAA'; var pr = PL.play(); if (pr && pr.catch) pr.catch(function(){ PL._u = 0; }); } }catch(e){} }
+document.addEventListener('pointerdown', unlockAudio, {passive:true}); document.addEventListener('touchend', unlockAudio, {passive:true});
+function speak(text, done, tries){
   if (curA){ try{ curA.pause(); }catch(e){} curA = null; }
   var slow = S.set.speed === 'slow', b = slow && AUDS[text] ? AUDS[text] : AUD[text], native = slow && !!AUDS[text];
+  /* recorded voice still downloading: wait for it instead of using the phone's voice */
+  if (!b && (loadingN > 0 || !idxDone) && (tries || 0) < 40){ var tk = token; setTimeout(function(){ if (tk === token) speak(text, done, (tries || 0) + 1); }, 150); return; }
   var fin = false; function end(){ if (fin) return; fin = true; if (done) done(); }
   if (b){
     if (synth) synth.cancel();
-    var a = new Audio('data:audio/mpeg;base64,' + b); a.playbackRate = native ? 1 : (slow ? 0.82 : 1);
+    var a = (PL && PL._u) ? PL : new Audio(); a.onended = null; a.onerror = null; a.src = 'data:audio/mpeg;base64,' + b; a.playbackRate = native ? 1 : (slow ? 0.82 : 1);
     try{ a.preservesPitch = true; a.mozPreservesPitch = true; a.webkitPreservesPitch = true; }catch(e){}
     a.onended = end; a.onerror = function(){ fin = true; tts(text, done); };
     curA = a; a.play().catch(function(){ if (!fin){ fin = true; tts(text, done); } });
