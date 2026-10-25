@@ -85,8 +85,12 @@ function startStats(){
   var code = String(CFG.goatcounter || '').trim().replace(/[^a-z0-9-]/gi, ''); if (!code || statsOn || location.protocol !== 'https:') return;
   statsOn = true; window.goatcounter = {no_onload:true};
   var s = document.createElement('script'); s.async = true; s.src = 'https://gc.zgo.at/count.js'; s.setAttribute('data-goatcounter', 'https://' + code + '.goatcounter.com/count');
-  s.onload = function(){ countView(); }; document.head.appendChild(s);
+  s.onload = function(){ countPeople(); countView(); }; document.head.appendChild(s);
 }
+function countPeople(){ try{ if (/^#\/?admin/.test(location.hash || '')) return; var g = window.goatcounter, now = Date.now(), d = new Date(), td = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(), k = 'sr_ppl', m = {}; try{ m = JSON.parse(localStorage.getItem(k) || '{}') || {}; }catch(e){}
+  var send = function(path){ g.count({path:path, title:path, event:false}); };
+  if (!m.f){ send('/_people_all'); m.f = 1; } if (m.d !== td){ send('/_people_day'); m.d = td; } if (!m.w || now - m.w > 6048e5){ send('/_people_week'); m.w = now; }
+  try{ localStorage.setItem(k, JSON.stringify(m)); }catch(e){} }catch(e){} }
 function countView(){ try{ if (window.goatcounter && window.goatcounter.count){ var h = (location.hash || '#/').replace(/^#\/?/, '').split('/').slice(0, 2).join('/'); if (/^admin/.test(h)) return; window.goatcounter.count({path:'/' + h, title:document.title}); } }catch(e){} }
 
 /* ---------------- theme / settings ---------------- */
@@ -401,8 +405,7 @@ var ROCKET = '<svg viewBox="0 0 120 230" class="rocket" aria-hidden="true"><defs
 
 function shell(){
   document.body.insertAdjacentHTML('afterbegin',
-   '<header class="top" id="top"><div class="wrap"><a class="ibtn me tback" id="topBack" href="#/" hidden aria-label="رجوع">' + ic('back') + '<small>رجوع</small></a><a class="logo" href="#/"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="#14103A"/><circle cx="31" cy="10" r="1.3" fill="#fff"/><circle cx="9" cy="14" r="1" fill="#fff"/>'+
-   '<path d="M20 7c6 5 7 13 5 21h-10c-2-8-1-16 5-21z" fill="#FFF7E8"/><path d="M20 7c3 2 5 5 5.6 9h-11.2C15 12 17 9 20 7z" fill="#FF6B2C"/><circle cx="20" cy="19" r="3" fill="#5B3DF5"/><path d="M17 28q3 8 6 0z" fill="#FFC53D"/></svg>'+
+   '<header class="top" id="top"><div class="wrap"><a class="ibtn me tback" id="topBack" href="#/" hidden aria-label="رجوع">' + ic('back') + '<small>رجوع</small></a><a class="logo" href="#/"><svg viewBox="0 0 100 100" class="lgo"><defs><linearGradient id="lgB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2A0E6E"/><stop offset="1" stop-color="#7B2FE0"/></linearGradient><linearGradient id="lgF" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF3B0"/><stop offset=".5" stop-color="#FFC53D"/><stop offset="1" stop-color="#FF8A00"/></linearGradient><linearGradient id="lgW" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#DCD7F0"/></linearGradient></defs><circle cx="50" cy="50" r="50" fill="url(#lgB)"/><g fill="#fff"><circle class="lg-tw" cx="22" cy="26" r="2"/><circle class="lg-tw2" cx="76" cy="20" r="1.8"/><circle class="lg-tw" cx="84" cy="62" r="1.8"/><circle class="lg-tw2" cx="16" cy="60" r="1.6"/><path class="lg-tw2" d="M33 12l1.4 3.2 3.2 1.4-3.2 1.4-1.4 3.2-1.4-3.2-3.2-1.4 3.2-1.4z"/></g><g class="lg-rk"><g transform="translate(-4 5) rotate(45 50 50) scale(.92) translate(4 2)"><g class="lg-fl"><path d="M41 67C40 76 44 84 50 98 56 84 60 76 59 67 56 71 53 72 50 72 47 72 44 71 41 67z" fill="url(#lgF)"/><path d="M45 67C45 74 47 80 50 88 53 80 55 74 55 67z" fill="#FFF3B0"/></g><path d="M42 50C34 56 31 64 31 72L42 66z" fill="#FF6B2C"/><path d="M58 50C66 56 69 64 69 72L58 66z" fill="#FF6B2C"/><path d="M50 16C60 24 62 44 58 68H42C38 44 40 24 50 16z" fill="url(#lgW)"/><path d="M50 16C55.5 20 58.6 26 59.8 32H40.2C41.4 26 44.5 20 50 16z" fill="#FF6B2C"/><circle cx="50" cy="44" r="6" fill="#5B2BD9" stroke="#fff" stroke-width="2"/><circle cx="48" cy="42" r="1.6" fill="#fff" opacity=".7"/><path d="M47 68 50 60 53 68z" fill="#FF6B2C"/></g></g></svg>'+
    '<b>Sprach<span>rakete</span></b></a><button class="ibtn tmini" id="themeBtn" aria-label="الوضع الليلي أو النهاري">' + ic('sun') + '</button><span class="tsp"></span><a class="ibtn me" id="meBtn" href="#/me" title="حسابي" aria-label="حسابي">' + ic('me') + '<small>أنا</small></a><button class="ibtn" id="setBtn" aria-label="الإعدادات" title="الإعدادات">' + ic('gear') + '</button></div></header>'+
    '<main id="app"></main>'+
    '<nav class="nav" aria-label="القائمة"><div class="in">'+
@@ -628,8 +631,8 @@ function countdown(){
 }
 
 /* ---------------- LEARN ---------------- */
-var LTABS = [{id:'words', i:'words', t:'الكلمات'}, {id:'a1', i:'a1', t:'دروس A1'}, {id:'a2', i:'a2', t:'دروس A2'}, {id:'read', i:'read', t:'اقرأ واكتب'}, {id:'tools', i:'tools', t:'أدوات'}];
-function tabBar(list, cur, base){ return '<div class="tabs" role="tablist">' + list.map(function(t){ return '<a role="tab" aria-selected="' + (t.id === cur) + '" class="tab' + (t.id === cur ? ' on' : '') + '" href="' + base + t.id + '">' + (t.i ? ic(t.i) : '<span>' + t.e + '</span>') + t.t + '</a>'; }).join('') + '</div>'; }
+var LTABS = [{id:'words', i:'words', t:'الكلمات'}, {id:'a1', i:'a1', t:'دروس A1'}, {id:'a2', i:'a2', t:'دروس A2'}, {id:'b1', i:'a2', t:'دروس B1', soon:1}, {id:'read', i:'read', t:'اقرأ واكتب'}, {id:'tools', i:'tools', t:'أدوات'}];
+function tabBar(list, cur, base){ return '<div class="tabs" role="tablist">' + list.map(function(t){ return '<a role="tab" aria-selected="' + (t.id === cur) + '" class="tab' + (t.id === cur ? ' on' : '') + '" href="' + base + t.id + '">' + (t.i ? ic(t.i) : '<span>' + t.e + '</span>') + t.t + (t.soon ? '<em class="soon">قريبًا</em>' : '') + '</a>'; }).join('') + '</div>'; }
 function viewLearn(tab){
   var LT = LTABS.filter(function(t){ return !(t.id === 'a2' && hidden('a2')) && !(t.id === 'tools' && hidden('tools')) && !(t.id === 'read' && hidden('stories') && hidden('letters')); });
   if (!LT.some(function(t){ return t.id === tab; })) tab = '';
@@ -650,6 +653,9 @@ function viewLearn(tab){
     body = '<p class="lead">بعد A1: الماضي، والمقارنة، والجمل الأطول.</p>' +
       '<div class="sh"><h2>دروس A2</h2><span class="cnt">' + a2d + ' من ' + SR.a2.length + '</span></div><div class="list">' + SR.a2.map(lessonRow).join('') + '</div>' +
       '<div class="sh"><h2>سلّم المستويات</h2><a href="#/levels">التفاصيل</a></div>' + ladderHTML();
+  } else if (tab === 'b1'){
+    body = '<div class="panel center b1soon"><div class="big">🚀</div><h3>دروس B1 قريبًا</h3><p class="sub">نعمل الآن على دروس المستوى B1: جمل أطول، والماضي والمستقبل، والتعبير عن رأيك. أكمل A1 وA2 الآن، وستجد B1 بانتظارك قريبًا!</p>' +
+      '<a class="btn" href="#/learn/a2" style="text-decoration:none;display:inline-block;margin-top:10px">ابدأ بدروس A2</a></div>';
   } else if (tab === 'read'){
     body = '<p class="lead">طبّق ما تعلمته: اقرأ واستمع إلى قصص قصيرة، وتعلّم كتابة الرسائل كما في الامتحان.</p>' +
       '<div class="tiles big">' + (hidden('stories') ? '' : bigTile('#/stories', '📖', '#FF3D7F', 'قصص قصيرة', plural((SX.stories || []).length, 'قصة واحدة', 'قصتان', 'قصص', 'قصة') + ' بالصوت والأسئلة')) + (hidden('letters') ? '' : bigTile('#/letters', '✉️', '#3A86FF', 'رسائل جاهزة', plural((SX.letters || []).length, 'نموذج واحد', 'نموذجان', 'نماذج', 'نموذجًا') + ' للكتابة')) + '</div>';
@@ -1847,7 +1853,7 @@ function viewAdmin(){
   var html = '<div class="wrap"><div class="ph sm" style="--c:#14103A"><span class="em">🔐</span><h1>لوحة المالك</h1><div class="g">MOHANNAD</div><p>صفحة خاصة بك. لا تشارك رابطها.</p></div>' +
     '<div class="jsum"><div><b>' + UNITS.length + '</b><span>وحدة في الموقع</span></div><div><b>' + words + '</b><span>كلمة وجملة</span></div><div><b>' + lessonItems + '</b><span>مثال في الدروس</span></div></div>' +
     '<div class="sh"><h2>📊 الإحصائيات</h2></div>' +
-    (code ? '<div id="gcBox"><div class="jsum"><div><b id="gcD">…</b><span>زوار اليوم</span></div><div><b id="gcW">…</b><span>آخر 7 أيام</span></div><div><b id="gcA">…</b><span>كل الزوار</span></div></div>' +
+    (code ? '<div id="gcBox"><div class="jsum"><div><b id="gcD">…</b><span>زوار اليوم</span></div><div><b id="gcW">…</b><span>آخر 7 أيام</span></div><div><b id="gcA">…</b><span>كل الزوار</span></div></div><p class="sub">عدد الأشخاص الحقيقي: كل جهاز يُحسب مرة واحدة فقط (بدأ العدّ من 25 أكتوبر).</p>' +
       '<div class="sh"><h2>🔥 أكثر الأقسام زيارة</h2></div><div class="panel gcbars" id="gcTop"><p class="sub">جارٍ التحميل…</p></div><p class="sub center">الأرقام تتحدّث كل بضع ساعات.</p></div>' +
       '<div class="list">' + row('https://' + code + '.goatcounter.com', '📈', 'التفاصيل الكاملة', 'البلدان والأجهزة ومن أين جاء الزوار') + '</div>'
           : '<div class="tip trap"><b class="k">لم تُفعَّل بعد</b>أنشئ حسابًا مجانيًا على goatcounter.com، ثم اكتب اسم الحساب في خانة <b>goatcounter</b> داخل ملف الإعدادات.</div>') +
@@ -1871,9 +1877,10 @@ function gcStats(code){
     .then(function(r){ if (r.status === 404) return 0; if (!r.ok) throw r.status; return r.json().then(function(j){ return +String(j.count || '0').replace(/[^0-9]/g, '') || 0; }); }); }
   var d = new Date(), td = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
   function set(id, v){ var el = $('#' + id); if (el) el.textContent = ar(v); }
-  get('TOTAL').then(function(v){ set('gcA', v);
-    get('TOTAL', 'start=' + td).then(function(x){ set('gcD', x); }).catch(function(){ set('gcD', 0); });
-    get('TOTAL', 'start=week').then(function(x){ set('gcW', x); }).catch(function(){ set('gcW', 0); });
+  get('TOTAL').then(function(v){
+    get('/_people_all').then(function(x){ set('gcA', x); }).catch(function(){ set('gcA', 0); });
+    get('/_people_day', 'start=' + td).then(function(x){ set('gcD', x); }).catch(function(){ set('gcD', 0); });
+    get('/_people_week', 'start=week').then(function(x){ set('gcW', x); }).catch(function(){ set('gcW', 0); });
     var P = [['/', '🏠 الرئيسية'], ['/learn/words', '📚 الكلمات'], ['/learn/a1', '📘 دروس A1'], ['/learn/a2', '📗 دروس A2'], ['/play', '🎮 الألعاب'], ['/daily', '🎯 مهمة اليوم'], ['/train', '🎯 التدريب'], ['/exam', '📝 تدريب الامتحان'], ['/test', '🧭 اختبار المستوى'], ['/journey', '🚀 الرحلة'], ['/stories', '📖 القصص'], ['/letters', '✉️ الرسائل'], ['/t/abc', '🔤 الحروف'], ['/t/num', '🔢 الأرقام'], ['/search', '🔍 البحث'], ['/suggest', '💡 الاقتراحات']];
     Promise.all(P.map(function(x){ return get(x[0]).catch(function(){ return 0; }); })).then(function(n){
       var rows = P.map(function(x, i){ return {t:x[1], n:n[i]}; }).filter(function(r){ return r.n > 0; }).sort(function(a, b){ return b.n - a.n; }).slice(0, 8), mx = rows.length ? rows[0].n : 1;
