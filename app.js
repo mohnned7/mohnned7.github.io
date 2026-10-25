@@ -636,9 +636,8 @@ function tabBar(list, cur, base){ return '<div class="tabs" role="tablist">' + l
 function viewLearn(tab){
   var LT = LTABS.filter(function(t){ return !(t.id === 'a2' && hidden('a2')) && !(t.id === 'tools' && hidden('tools')) && !(t.id === 'read' && hidden('stories') && hidden('letters')); });
   if (!LT.some(function(t){ return t.id === tab; })) tab = '';
-  if (!LT.some(function(t){ return t.id === tab; })) tab = S.set.ltab && LT.some(function(t){ return t.id === S.set.ltab; }) ? S.set.ltab : 'words';
-  if (S.set.ltab !== tab){ S.set.ltab = tab; save(); }
-  var body = '';
+  if (!tab) return learnHub(LT);
+  var body = '', TT = LT.filter(function(t){ return t.id === tab; })[0];
   if (tab === 'words'){
     body = '<p class="lead">ابدأ من هنا: الحروف والأرقام أولًا، ثم كلمات كل موضوع بالصوت والمعنى.</p>' +
       '<div class="starter">' + TOPIC_EXTRA.map(function(t){ var uid = 't:' + t.id, pct = unitPct(uid);
@@ -662,11 +661,19 @@ function viewLearn(tab){
   } else {
     body = '<p class="lead">أدوات تفاعلية تساعدك على الأرقام والوقت والتاريخ.</p><div class="tiles big">' + toolsHTML() + '</div>';
   }
-  var html = '<div class="wrap"><div class="ph sm" style="--c:#5B3DF5"><span class="em phpic">' + uiPic('tile_learn', '📚') + '</span><h1>الدروس</h1><div class="g">Lernen</div></div>' +
-    tabBar(LT, tab, '#/learn/') + '<div class="tabbody">' + body + '</div>' + footer() + '</div>';
+  var html = '<div class="wrap"><a class="back" href="#/learn">→ الدروس</a><div class="lsec-h"><span class="lsec-i">' + ic(TT.i) + '</span><h1>' + TT.t + '</h1></div>' +
+    '<div class="tabbody">' + body + '</div>' + footer() + '</div>';
   render(html, 'learn');
-  var on = $('.tabs .tab.on'); if (on && on.scrollIntoView) try{ on.scrollIntoView({block:'nearest', inline:'center'}); }catch(e){}
   window.scrollTo(0, 0);
+}
+var LHUB = {words:['#FF9F1C', 'الحروف والأرقام وكلمات كل موضوع'], a1:['#5B3DF5', 'قواعد البداية خطوة بخطوة'], a2:['#3A86FF', 'الماضي والمقارنة والجمل الأطول'], b1:['#8338EC', 'نعمل عليها الآن'], read:['#FF3D7F', 'قصص قصيرة ورسائل جاهزة'], tools:['#06D6A0', 'الأرقام والوقت والتاريخ']};
+function learnHub(LT){
+  function cnt(t){ if (t.id === 'a1' || t.id === 'a2'){ var L = SR[t.id], d = L.filter(function(l){ return S.done['l:' + l.id]; }).length; return '<span class="lhc-n">' + ar(d) + ' من ' + ar(L.length) + '</span><span class="lhc-bar"><i style="width:' + Math.round(d / L.length * 100) + '%"></i></span>'; }
+    if (t.id === 'words'){ return '<span class="lhc-n">' + ar(SR.modules.length) + ' موضوعًا</span>'; } return ''; }
+  var html = '<div class="wrap"><div class="ph sm" style="--c:#5B3DF5"><span class="em phpic">' + uiPic('tile_learn', '📚') + '</span><h1>الدروس</h1><div class="g">Lernen</div></div>' +
+    '<p class="lead">اختر ما تريد أن تتعلّمه:</p><div class="lhub">' + LT.map(function(t){ var h = LHUB[t.id] || ['#5B3DF5', ''];
+      return '<a class="lhc' + (t.soon ? ' soon' : '') + '" href="#/learn/' + t.id + '" style="--c:' + h[0] + '"><span class="lhc-i">' + ic(t.i) + '</span><b>' + t.t + '</b><small>' + h[1] + '</small>' + (t.soon ? '<em class="soon">قريبًا</em>' : cnt(t)) + '</a>'; }).join('') + '</div>' + footer() + '</div>';
+  render(html, 'learn'); window.scrollTo(0, 0);
 }
 function viewTrain(){
   var mc = Object.keys(S.mist).length, ex = EXAM_PARTS.filter(function(p){ return S.done['e:' + p.id]; }).length;
