@@ -467,6 +467,23 @@ function goalHTML(){
   var got = S.days[today()] || 0, pct = Math.min(100, Math.round(got / S.goal * 100)), done = got >= S.goal;
   return '<div class="goal' + (done ? ' done' : '') + '"><div class="goal-t"><b>' + (done ? '✅ حققت هدف اليوم!' : '🎯 هدفك اليوم') + '</b><span>' + Math.min(got, S.goal) + ' / ' + S.goal + ' نقطة</span></div><div class="prog"><i style="width:' + pct + '%"></i></div></div>';
 }
+function lenaWelcome(next){
+  if ($('.modal')) return;
+  var L = [[0, 'Hallo!', 'أهلًا!'], [2.0, 'Willkommen bei Sprachrakete!', 'مرحبًا بك في Sprachrakete!'], [5.0, 'Lass uns zusammen Deutsch lernen – Schritt für Schritt!', 'هيا نتعلّم الألمانية معًا، خطوة بخطوة!']];
+  var m = modal('<div class="ln-st"><svg class="lnsvg" viewBox="0 0 300 320"> <defs> <linearGradient id="ln-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8F7BFF"/><stop offset="1" stop-color="#5B3DF5"/></linearGradient> </defs> <circle cx="150" cy="170" r="130" fill="url(#ln-bg)"/> <circle cx="60" cy="70" r="5" fill="#FFC53D"/><circle cx="245" cy="95" r="4" fill="#fff" opacity=".7"/><circle cx="238" cy="230" r="6" fill="#FF6B2C"/> <g id="ln-all"> <path d="M96 140 C92 96 118 70 150 70 C182 70 208 96 204 140 C202 168 198 190 190 204 L110 204 C102 190 98 168 96 140z" fill="#7A4A2A"/> <circle cx="150" cy="68" r="24" fill="#7A4A2A"/><path d="M136 60 q12 -10 26 -2" stroke="#9A6340" stroke-width="4" fill="none" stroke-linecap="round"/> <path d="M70 320 C70 256 102 224 150 224 C198 224 230 256 230 320z" fill="#2FA36B"/> <path d="M128 226 Q150 242 172 226" fill="none" stroke="#228553" stroke-width="8" stroke-linecap="round"/> <path d="M134 180 h32 v42 q-16 10 -32 0z" fill="#EDB993"/> <g id="ln-arm"> <path d="M205 262 C222 252 236 232 242 206" stroke="#2FA36B" stroke-width="28" stroke-linecap="round" fill="none"/> <circle cx="246" cy="186" r="17" fill="#F7CFAF"/> <path d="M233 178 v-12 M241 174 v-16 M249 174 v-15 M257 178 v-11 M231 192 l-8 -6" stroke="#F7CFAF" stroke-width="7" stroke-linecap="round"/> </g> <g id="ln-head"> <ellipse cx="150" cy="142" rx="50" ry="56" fill="#F7CFAF"/> <path d="M98 136 C96 98 120 80 150 80 C182 80 206 100 202 136 C190 118 176 108 160 104 C150 116 126 124 100 128z" fill="#8B5632"/> <path d="M100 124 C94 150 96 178 106 196 C110 176 108 150 110 132z" fill="#8B5632"/> <path d="M200 124 C206 150 204 178 194 196 C190 176 192 150 190 132z" fill="#8B5632"/> <g id="ln-eyes"><ellipse cx="130" cy="148" rx="5.5" ry="7" fill="#2B1B14"/><ellipse cx="170" cy="148" rx="5.5" ry="7" fill="#2B1B14"/> <circle cx="132" cy="145.5" r="1.8" fill="#fff"/><circle cx="172" cy="145.5" r="1.8" fill="#fff"/></g> <path d="M122 134 q8 -4 16 0 M162 134 q8 -4 16 0" stroke="#6B4026" stroke-width="2.6" fill="none" stroke-linecap="round"/> <ellipse cx="118" cy="164" rx="9" ry="5.5" fill="#FF8C8C" opacity=".5"/><ellipse cx="182" cy="164" rx="9" ry="5.5" fill="#FF8C8C" opacity=".5"/> <path d="M150 154 q2.5 4 -0.5 6" stroke="#E0A582" stroke-width="2.2" fill="none" stroke-linecap="round"/> <path d="M118 96 C128 86 142 82 152 82" stroke="#A9714A" stroke-width="5" fill="none" stroke-linecap="round"/> <path id="ln-sm" d="M140 168 Q150 177 160 168" stroke="#A8413F" stroke-width="3.2" fill="none" stroke-linecap="round"/> <g id="ln-mo" transform="translate(150 170) scale(1 0)"><path d="M-10 -2 Q0 -3 10 -2 Q9 12 0 13 Q-9 12 -10 -2z" fill="#7A2830"/><path d="M-6 7 Q0 4 6 7 Q4 11 0 11 Q-4 11 -6 7z" fill="#F27A80"/></g> </g> </g> </svg></div><div class="ln-cap" id="lnCap"><div class="de">Hallo! 👋</div><div class="ar">أنا لينا، اضغط لتسمعني</div></div><button class="btn wide" id="lnPlay">▶ استمع إلى لينا</button><button class="linkbtn" id="lnSkip">تخطَّ</button>', 'lncard');
+  var au = new Audio('lena.mp3'), raf, cur = -1, done = 0, mo = $('#ln-mo', m), sm = $('#ln-sm', m), cap = $('#lnCap', m), pb = $('#lnPlay', m);
+  au.preload = 'auto';
+  function close(){ try{ au.pause(); }catch(e){} cancelAnimationFrame(raf); S.lena = 1; save(); m.remove(); if (next) setTimeout(next, 300); }
+  m.querySelector('.x').onclick = close; m.onclick = function(e){ if (e.target === m) close(); }; $('#lnSkip', m).onclick = close;
+  function mouth(v){ mo.setAttribute('transform', 'translate(150 170) scale(1 ' + v.toFixed(2) + ')'); sm.style.opacity = v > .15 ? 0 : 1; }
+  function setCap(a, b){ cap.innerHTML = '<div class="de">' + a + '</div><div class="ar">' + b + '</div>'; }
+  function loop(){ var t = au.currentTime, ph = t % 1, v = au.paused ? 0 : Math.max(0, .15 + .75 * Math.abs(Math.sin(t * 11)));
+    var gap = (t > 1.3 && t < 2.05) || (t > 4.3 && t < 5.05); mouth(gap || v < .12 ? 0 : v);
+    for (var k = L.length - 1; k >= 0; k--){ if (t >= L[k][0]){ if (cur !== k){ cur = k; setCap(L[k][1], L[k][2]); } break; } }
+    if (!au.paused && !au.ended) raf = requestAnimationFrame(loop); else mouth(0); }
+  au.onended = function(){ mouth(0); done = 1; pb.textContent = '🚀 لنبدأ التعلّم'; pb.classList.add('flame'); };
+  pb.onclick = function(){ if (done) return close(); cur = -1; au.currentTime = 0; var pr = au.play(); if (pr && pr.catch) pr.catch(function(){ toast('اضغط مرة أخرى للاستماع'); }); pb.textContent = '🔊 ...'; cancelAnimationFrame(raf); loop(); };
+}
 function onboarding(){
   if (S.onb || $('.modal')) return;
   var step = 0, data = {name:S.name || '', lvl:null, goal:60}, old = S.xp > 0, steps = old ? [0, 2] : [0, 1, 2];
@@ -538,7 +555,7 @@ function viewHome(){
    '<div class="sh"><h2>تواصل معي</h2></div>' + contactHTML(true) +
    footerFull() + '</div>';
   render(html, 'home'); bindRibbon(); loadPics(w.grp);
-  if (!S.onb) setTimeout(onboarding, 400);
+  if (!S.onb) setTimeout(function(){ if (!S.lena && !(S.xp > 0)) lenaWelcome(onboarding); else onboarding(); }, 400);
   $('#wodPlay').onclick = function(){ play(w); };
   $('#launch').onclick = countdown;
   bindInstall();
