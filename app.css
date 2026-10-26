@@ -1165,3 +1165,14 @@ html.tswitch body,html.tswitch .panel,html.tswitch .it,html.tswitch .tile,html.t
 
 /* v26 stop button */
 .chip.stopbtn{background:#E5484D!important;color:#fff!important;border-color:#E5484D!important}
+/* v27 compact learn hub: 3 per row, room for more */
+.lhub{grid-template-columns:repeat(3,1fr);gap:10px}
+.lhc{min-height:0;padding:12px 10px 10px;border-radius:18px;gap:3px;align-items:center;text-align:center}
+.lhc-i{width:40px;height:40px;border-radius:13px;margin-bottom:4px}.lhc-i svg{width:22px;height:22px}
+.lhc b{font-size:15px;line-height:1.3}
+.lhc small{font-size:11.5px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lhc-n{font-size:11px;padding-top:4px}.lhc-bar{width:100%;height:4px}
+.lhc .soon{top:6px;left:6px;font-size:10px;padding:1px 7px}
+@media (max-width:340px){.lhub{grid-template-columns:repeat(2,1fr)}}
+/* v27 header fits search button */
+@media (max-width:480px){.top .wrap{gap:6px}.top .ibtn{width:38px;height:38px;min-width:38px}.top .ibtn .ic{width:19px;height:19px}.top .ibtn small{font-size:9.5px}.top .logo b{font-size:19px}.top .logo .lgo{width:34px;height:34px}}
