@@ -130,15 +130,34 @@ function pickVoice(){
   voice = good.find(function(x){ return /de[-_]DE/i.test(x.lang); }) || good[0] || de.find(function(x){ return /de[-_]DE/i.test(x.lang); }) || de[0] || null;
 }
 if (synth){ pickVoice(); synth.onvoiceschanged = pickVoice; }
-function stopAudio(){ token++; if (synth) synth.cancel(); if (curA){ try{ curA.pause(); }catch(e){} curA = null; } }
+var paBtn = null, paLabel = '';
+function paStart(b){ paEnd(); paBtn = b; paLabel = b.textContent; b.textContent = '⏹ إيقاف'; b.classList.add('stopbtn'); }
+function paEnd(){ if (paBtn){ paBtn.textContent = paLabel; paBtn.classList.remove('stopbtn'); paBtn = null; } }
+function paToggle(b, run){ if (!b) return; b.onclick = function(){ if (paBtn === b){ stopAudio(); return; } stopAudio(); paStart(b); run(); }; }
+function stopAudio(){ token++; spId++; paEnd(); if (synth) synth.cancel(); if (curA){ try{ curA.pause(); }catch(e){} curA = null; } }
 var PL = null;
 function unlockAudio(){ try{ if (!PL){ PL = new Audio(); } if (!PL._u){ PL._u = 1; PL.src = 'data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAACAAABIADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAASDs90hvAAAAAAAAAAAAAAAAAAAA'; var pr = PL.play(); if (pr && pr.catch) pr.catch(function(){ PL._u = 0; }); } }catch(e){} }
 document.addEventListener('pointerdown', unlockAudio, {passive:true}); document.addEventListener('touchend', unlockAudio, {passive:true});
-function speak(text, done, tries){
+var spId = 0, spWait = 0;
+/* a swipe/scroll must never count as a tap on a word card */
+var tg = {x:0, y:0, moved:false, sy:0, t:0}, lastScrollT = 0;
+document.addEventListener('pointerdown', function(e){ tg = {x:e.clientX, y:e.clientY, moved:false, sy:scrollY, t:Date.now()}; }, true);
+document.addEventListener('pointermove', function(e){ if (Math.abs(e.clientX - tg.x) > 8 || Math.abs(e.clientY - tg.y) > 8) tg.moved = true; }, {capture:true, passive:true});
+addEventListener('scroll', function(){ lastScrollT = Date.now(); }, {passive:true});
+document.addEventListener('click', function(e){
+  var c = e.target && e.target.closest && e.target.closest('.it[data-i],.lt,.sline,[data-s],[data-x],.bub');
+  if (!c) return;
+  if (tg.moved || Math.abs(scrollY - tg.sy) > 4){ e.stopPropagation(); e.preventDefault(); }
+}, true);
+/* finger drag (scrolling) cancels a word that is still waiting for its audio */
+document.addEventListener('touchmove', function(){ if (spWait && spWait === spId) spId++; spWait = 0; }, {passive:true});
+function speak(text, done, tries, id){
+  if (id === undefined) id = ++spId; else if (id !== spId) return;
   if (curA){ try{ curA.pause(); }catch(e){} curA = null; }
   var slow = S.set.speed === 'slow', b = slow && AUDS[text] ? AUDS[text] : AUD[text], native = slow && !!AUDS[text];
   /* recorded voice still downloading: wait for it instead of using the phone's voice */
-  if (!b && (loadingN > 0 || !idxDone) && (tries || 0) < 40){ var tk = token; setTimeout(function(){ if (tk === token) speak(text, done, (tries || 0) + 1); }, 150); return; }
+  if (!b && (loadingN > 0 || !idxDone) && (tries || 0) < 25){ spWait = id; setTimeout(function(){ speak(text, done, (tries || 0) + 1, id); }, 150); return; }
+  spWait = 0;
   var fin = false; function end(){ if (fin) return; fin = true; if (done) done(); }
   if (b){
     if (synth) synth.cancel();
@@ -741,12 +760,12 @@ function picCard(it, i, c){
     '<span class="play sm" aria-hidden="true">' + ICON_PLAY + '</span>' + (it.u != null && S.heard[it.u] && S.heard[it.u][it.k] ? '<span class="hd">✓</span>' : '') + '</button>';
 }
 function bindItems(list){
-  $$('.it[data-i]').forEach(function(el){ el.onclick = function(){ var it = list[+el.dataset.i]; play(it, el); if (it.u != null && !el.querySelector('.hd')) el.insertAdjacentHTML('beforeend', '<span class="hd">✓</span>'); }; });
-  var pa = $('#playAll'); if (pa) pa.onclick = function(){ playAllList(list); };
+  $$('.it[data-i]').forEach(function(el){ el.onclick = function(){ if (paBtn) stopAudio(); var it = list[+el.dataset.i]; play(it, el); if (it.u != null && !el.querySelector('.hd')) el.insertAdjacentHTML('beforeend', '<span class="hd">✓</span>'); }; });
+  paToggle($('#playAll'), function(){ playAllList(list); });
 }
 function playAllList(list){
-  stopAudio(); var my = token, i = 0, els = $$('.it[data-i]');
-  (function next(){ if (my !== token || i >= els.length) return; var el = els[i], it = list[+el.dataset.i]; i++; el.scrollIntoView({block:'center', behavior:'smooth'});
+  var my = token, i = 0, els = $$('.it[data-i]');
+  (function next(){ if (my !== token) return; if (i >= els.length) return paEnd(); var el = els[i], it = list[+el.dataset.i]; i++; el.scrollIntoView({block:'center', behavior:'smooth'});
     if (it.u != null && !el.querySelector('.hd')) el.insertAdjacentHTML('beforeend', '<span class="hd">✓</span>');
     play(it, el, function(){ if (my === token) setTimeout(next, S.set.speed === 'slow' ? 900 : 600); }); token = my; })();
 }
@@ -947,9 +966,9 @@ function viewStory(id){
     '<div class="sh"><h2>هل فهمت القصة؟</h2></div><div id="sq"></div>' + footer() + '</div>';
   render(html, 'learn'); bindCtl();
   var showTr = false; $('#trOn').onclick = function(){ showTr = !showTr; $('#story').classList.toggle('notr', !showTr); $$('#story .sline.peek').forEach(function(x){ x.classList.remove('peek'); }); this.classList.toggle('on', showTr); this.textContent = showTr ? '🙈 إخفاء الترجمة' : '👁️ إظهار الترجمة'; };
-  $$('[data-s]').forEach(function(b){ b.onclick = function(){ play(list[+b.dataset.s], b); }; });
-  $('#playAll').onclick = function(){ stopAudio(); var my = token, i = 0, els = $$('.sline');
-    (function next(){ if (my !== token || i >= els.length) return; var el = els[i], it = list[i]; i++; el.scrollIntoView({block:'center', behavior:'smooth'}); play(it, el, function(){ if (my === token) setTimeout(next, 600); }); token = my; })(); };
+  $$('[data-s]').forEach(function(b){ b.onclick = function(){ if (paBtn) stopAudio(); play(list[+b.dataset.s], b); }; });
+  paToggle($('#playAll'), function(){ var my = token, i = 0, els = $$('.sline');
+    (function next(){ if (my !== token) return; if (i >= els.length) return paEnd(); var el = els[i], it = list[i]; i++; el.scrollIntoView({block:'center', behavior:'smooth'}); play(it, el, function(){ if (my === token) setTimeout(next, 600); }); token = my; })(); });
   var qi = 0, ok = 0;
   function q(){
     var box = $('#sq'); if (!box) return;

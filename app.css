@@ -1162,3 +1162,6 @@ html.tswitch body,html.tswitch .panel,html.tswitch .it,html.tswitch .tile,html.t
 #ln-arm{transform-origin:205px 262px;animation:lnWv .55s ease-in-out infinite alternate}
 @keyframes lnWv{from{transform:rotate(-8deg)}to{transform:rotate(10deg)}}
 @media (prefers-reduced-motion:reduce){#ln-all,#ln-head,#ln-arm{animation:none}}
+
+/* v26 stop button */
+.chip.stopbtn{background:#E5484D!important;color:#fff!important;border-color:#E5484D!important}
