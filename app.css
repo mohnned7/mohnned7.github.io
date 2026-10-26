@@ -1176,3 +1176,16 @@ html.tswitch body,html.tswitch .panel,html.tswitch .it,html.tswitch .tile,html.t
 @media (max-width:340px){.lhub{grid-template-columns:repeat(2,1fr)}}
 /* v27 header fits search button */
 @media (max-width:480px){.top .wrap{gap:6px}.top .ibtn{width:38px;height:38px;min-width:38px}.top .ibtn .ic{width:19px;height:19px}.top .ibtn small{font-size:9.5px}.top .logo b{font-size:19px}.top .logo .lgo{width:34px;height:34px}}
+
+/* v28 scene translation reveal */
+.bub2 .tr.trin{animation:trIn .45s ease}@keyframes trIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+
+/* v29 speaking check */
+.sres{margin:12px 0;padding:12px 14px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface);display:flex;flex-direction:column;gap:8px}
+.sres.good{border-color:#19C79A}.sres.mid{border-color:#FFC53D}
+.sres-h{font-weight:800}.sres-h b{float:left}
+.sres-r span{font-size:13px;color:var(--mut)}.sres-r .de{font-size:18px;font-weight:700;margin-top:2px;direction:ltr;text-align:left;line-height:1.7}
+.wok{color:#19A97E}.wno{color:#E5484D;text-decoration:underline wavy;text-underline-offset:4px}
+.sres-k{font-size:14px;color:#C2410C}
+.btn.pulse{animation:btnPulse 1.2s ease-in-out 3}@keyframes btnPulse{50%{transform:scale(1.05);box-shadow:0 0 0 6px rgba(255,197,61,.35)}}
+.sres .wok{color:#19C79A!important}.sres .wno{color:#FF5C61!important}

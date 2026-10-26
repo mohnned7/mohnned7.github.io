@@ -1187,7 +1187,10 @@ function speakExam(P, SP){
       var c = cards[ci], p = SP.parts[c.part]; ci++;
       stage.innerHTML = '<div class="exbar"><span class="expos">بطاقة ' + ci + ' من ' + cards.length + '</span></div><div class="exhead"><b>' + esc(p.t) + '</b><div class="de">' + esc(p.de) + '</div></div>' +
         '<div class="scard"><div class="em">' + (c.e || '💬') + '</div><div class="de big">' + esc(c.w) + '</div></div>' +
-        '<p class="center sub">قل جملتك بصوت عالٍ أولًا، ثم اضغط لترى النموذج.</p><button class="btn wide" id="rev">👀 اعرض النموذج</button><div id="model"></div>';
+        '<p class="center sub">' + (SRec ? 'اضغط على الميكروفون وقل جملتك، والموقع يسمعك ويقارنها بالجواب الصحيح.' : 'قل جملتك بصوت عالٍ أولًا، ثم اضغط لترى النموذج.') + '</p>' +
+        (SRec ? '<button class="mic" id="smic">' + ICON_MIC + '<span>اضغط وقل جملتك</span></button><div id="sfb"></div>' : '') +
+        '<button class="btn wide alt" id="rev">👀 اعرض النموذج</button><div id="model"></div>';
+      if (SRec) $('#smic').onclick = function(){ micCheck(this, c, function(r){ $('#sfb').innerHTML = r.html; if ($('#rev')) $('#rev').click(); var y = $('#sYes'), n = $('#sNo'); if (y && n){ (r.good ? y : n).classList.add('pulse'); } }); };
       $('#rev').onclick = function(){ this.remove();
         $('#model').innerHTML = '<div class="rv-t" style="margin-bottom:8px">' + esc(p.ta) + ' · ' + esc(c.mn) + '</div><div class="list">' + c.model.map(function(m, k){ return '<button class="it" data-m="' + k + '" style="--c:' + P.c + '"><span class="tx"><span class="d">' + esc(m.de) + '</span><span class="m">' + esc(m.mn) + '</span></span><span class="play sm">' + ICON_PLAY + '</span></button>'; }).join('') + '</div>' +
           '<div class="row" style="margin-top:12px"><button class="btn alt" id="sNo" style="flex:1">🔁 لم أعرفها</button><button class="btn" id="sYes" style="flex:1">✅ قلتها صحيحة</button></div>';
@@ -1198,6 +1201,29 @@ function speakExam(P, SP){
   });
 }
 
+/* ---------------- speaking check (exam cards) ---------------- */
+var SRec = window.SpeechRecognition || window.webkitSpeechRecognition, srec = null;
+function wnorm(s){ return norm(String(s).replace(/\d+/g, function(d){ try{ return ' ' + numDe(+d) + ' '; }catch(e){ return d; } })); }
+function wHit(w, arr){ return arr.some(function(x){ return x === w || (w.length > 3 && x.length > 3 && simil(x, w) >= .75); }); }
+function micCheck(btn, c, cb){
+  if (srec){ try{ srec.stop(); }catch(e){} return; }
+  stopAudio(); srec = new SRec(); srec.lang = 'de-DE'; srec.interimResults = false; srec.maxAlternatives = 3;
+  btn.classList.add('live'); btn.querySelector('span').textContent = 'أستمع إليك… اضغط للإنهاء';
+  var got = false;
+  srec.onresult = function(e){ got = true; var r = e.results[0], said = r[0].transcript, sw = wnorm(said).split(' ').filter(Boolean);
+    var best = null; c.model.forEach(function(m){ var sc = simil(wnorm(said), wnorm(m.de)); if (!best || sc > best.sc) best = {m:m, sc:sc}; });
+    var mw = best.m.de.split(/\s+/), hit = 0, colored = mw.map(function(w){ var n = wnorm(w); var ok = !n || n.split(' ').every(function(p){ return wHit(p, sw); }); if (ok) hit++; return '<span class="' + (ok ? 'wok' : 'wno') + '">' + esc(w) + '</span>'; }).join(' ');
+    var key = wnorm(c.w).split(' ').filter(function(x){ return x.length > 2 && ['der','die','das'].indexOf(x) < 0; }), keyOk = !key.length || key.some(function(k){ return sw.some(function(x){ return x.indexOf(k.slice(0, 3)) === 0 || simil(x, k) >= .7; }); });
+    var pct = Math.round(hit / mw.length * 100); if (!keyOk && pct >= 70) keyOk = true; var good = pct >= 75 && keyOk;
+    cb({good:good, html:'<div class="sres ' + (good ? 'good' : 'mid') + '"><div class="sres-h">' + (good ? '✅ ممتاز! جملتك صحيحة تقريبًا' : pct >= 45 ? '👍 قريب! قارن جملتك بالنموذج' : '🔁 حاول مرة أخرى بعد الاستماع إلى النموذج') + ' <b>' + ar(pct) + '٪</b></div>' +
+      '<div class="sres-r"><span>🗣️ سمعتُك تقول:</span><div class="de">' + esc(said) + '</div></div>' +
+      '<div class="sres-r"><span>✔️ الجملة الأقرب (الأخضر قلته، والأحمر ناقص أو مختلف):</span><div class="de">' + colored + '</div></div>' +
+      (keyOk ? '' : '<div class="sres-k">⚠️ لم تستخدم كلمة البطاقة: <b class="de">' + esc(c.w) + '</b></div>') + '</div>'}); };
+  srec.onerror = function(e){ if (e.error === 'not-allowed' || e.error === 'service-not-allowed') toast('اسمح للموقع باستخدام الميكروفون من إعدادات المتصفح'); else if (e.error === 'no-speech') toast('لم أسمع شيئًا، حاول مرة أخرى'); };
+  srec.onend = function(){ srec = null; btn.classList.remove('live'); btn.querySelector('span').textContent = got ? '🎙️ حاول مرة أخرى' : 'اضغط وقل جملتك'; };
+  leaveHook = function(){ if (srec){ try{ srec.abort(); }catch(e){} srec = null; } };
+  try{ srec.start(); }catch(e){ srec = null; btn.classList.remove('live'); }
+}
 /* ---------------- SPEAK (pronunciation) ---------------- */
 function lev(a, b){ var m = [], i, j; for (i = 0; i <= b.length; i++) m[i] = [i]; for (j = 0; j <= a.length; j++) m[0][j] = j;
   for (i = 1; i <= b.length; i++) for (j = 1; j <= a.length; j++) m[i][j] = Math.min(m[i-1][j-1] + (b[i-1] === a[j-1] ? 0 : 1), m[i][j-1] + 1, m[i-1][j] + 1); return m[b.length][a.length]; }
@@ -1361,17 +1387,18 @@ function scenesHTML(){ loadPics('food'); loadPics('travel'); loadPics('jobs'); r
 function viewScene(id){
   var sc = SCENES.find(function(x){ return x.id === id; }); if (!sc) return go('#/play');
   useAudio('scenes'); useAudio(sc.grp); useAudio('situations'); loadPics(sc.grp === 'body' ? 'body' : 'food'); loadPics('travel'); loadPics('jobs');
-  var i = 0, hearts = 3, mistakes = 0, okc = 0, busy = false;
+  var i = 0, hearts = 3, mistakes = 0, okc = 0, busy = false, lastNpc = null;
+  function reveal(){ var t = lastNpc && lastNpc.querySelector('.tr'); if (t && t.hidden){ t.hidden = false; t.classList.add('trin'); } }
   render('<div class="wrap"><div class="ph sm" style="--c:' + sc.c + '"><a class="back" href="#/play">→ الألعاب</a><span class="em phpic">' + scPic(sc.pic, sc.e) + '</span><h1>' + sc.t + '</h1><div class="g">' + sc.de + '</div></div><div id="scbar"></div><div class="chat" id="chat"></div><div id="act"></div></div>', 'play');
   var chat = $('#chat'), act = $('#act');
   function barH(){ $('#scbar').innerHTML = '<div class="gamebar"><div class="prog"><i style="width:' + (i / sc.steps.length * 100) + '%"></i></div><span class="hrt">' + '❤️'.repeat(hearts) + '<i>' + '🤍'.repeat(3 - hearts) + '</i></span></div>'; }
   function bubble(who, de, mn, ann){ var k = chat.children.length;
-    chat.insertAdjacentHTML('beforeend', '<div class="bub2 ' + who + (ann ? ' ann' : '') + '"><span class="av">' + (who === 'me' ? '🙋' : ann ? '📢' : sc.npcPic ? scPic(sc.npcPic, sc.npc) : sc.npc) + '</span><div class="bx"><div class="d de">' + esc(de) + '</div>' + (mn ? '<button class="trb" data-tr="' + k + '">👁 الترجمة</button><div class="tr" hidden>' + esc(mn) + '</div>' : '') + '</div>' + (who === 'npc' ? '<button class="rp" aria-label="استمع">' + ICON_PLAY + '</button>' : '') + '</div>');
-    var el = chat.lastElementChild; var tb = el.querySelector('.trb'); if (tb) tb.onclick = function(){ el.querySelector('.tr').hidden = false; tb.remove(); };
+    chat.insertAdjacentHTML('beforeend', '<div class="bub2 ' + who + (ann ? ' ann' : '') + '"><span class="av">' + (who === 'me' ? '🙋' : ann ? '📢' : sc.npcPic ? scPic(sc.npcPic, sc.npc) : sc.npc) + '</span><div class="bx"><div class="d de">' + esc(de) + '</div>' + (mn ? '<div class="tr"' + (who === 'me' ? '' : ' hidden') + '>' + esc(mn) + '</div>' : '') + '</div>' + (who === 'npc' ? '<button class="rp" aria-label="استمع">' + ICON_PLAY + '</button>' : '') + '</div>');
+    var el = chat.lastElementChild; if (who !== 'me') lastNpc = el;
     var rp = el.querySelector('.rp'); if (rp) rp.onclick = function(){ speak(de); };
     el.scrollIntoView({block:'end', behavior:'smooth'}); return el; }
   function wrong(btn){ mistakes++; hearts--; fx(false); if (btn){ btn.classList.add('no'); } barH(); if (hearts <= 0){ busy = true; setTimeout(fail, 900); return true; } return false; }
-  function right(btn){ okc++; fx(true); xpFloat(10); if (btn) btn.classList.add('ok'); }
+  function right(btn){ okc++; fx(true); xpFloat(10); if (btn) btn.classList.add('ok'); reveal(); }
   function nextStep(){ i++; barH(); busy = false; if (i >= sc.steps.length) return setTimeout(win, 500); setTimeout(step, 450); }
   function step(){
     var st = sc.steps[i]; act.innerHTML = ''; setTimeout(function(){ if (act.firstChild) act.scrollIntoView({block:'end', behavior:'smooth'}); }, 380);
@@ -1418,7 +1445,7 @@ function viewScene(id){
     var k = SCENES.indexOf(sc), nx = SCENES[k + 1];
     act.innerHTML = '<div class="result lvres"><div class="em">' + (stars === 3 ? '🏆' : '🎉') + '</div><h2>' + (stars === 3 ? 'أداء مثالي!' : 'أحسنت! أنهيت الموقف') + '</h2>' +
       '<div class="bigstars">' + [1, 2, 3].map(function(n){ return '<span class="' + (n <= stars ? 'on' : '') + '" style="animation-delay:' + (n * .25) + 's">★</span>'; }).join('') + '</div><div class="xpgain">+' + ar(xp) + ' نقطة ⚡</div>' +
-      '<p class="sub">اضغط على 👁 الترجمة في المحادثة لتراجع معنى كل جملة.</p>' +
+      '<p class="sub">راجع المحادثة فوق، وتحت كل جملة ترجمتها.</p>' +
       '<div class="row" style="justify-content:center;margin-top:10px">' + (nx ? '<a class="btn flame" href="#/scene/' + nx.id + '" style="text-decoration:none">▶ ' + nx.t + '</a>' : '') + '<button class="btn alt" id="again">🔁 أعد</button><a class="btn alt" href="#/play" style="text-decoration:none">الألعاب</a></div></div>';
     $('#again').onclick = function(){ viewScene(id); }; act.scrollIntoView({block:'center'}); }
   barH(); step();
@@ -1779,24 +1806,8 @@ function viewMe(){
     '<div class="sh"><h2>أوسمتي</h2><span class="cnt">' + ar(Object.keys(S.badges).length) + ' من ' + ar(BADGES.length) + '</span></div><div class="badges">' +
     BADGES.map(function(b){ return '<div class="bd ' + (S.badges[b.id] ? 'got' : '') + '"><i>' + b.e + '</i><b>' + b.t + '</b><span>' + b.d + '</span></div>'; }).join('') + '</div>' +
     '<div class="sh"><h2>شهادتي</h2></div><div class="panel"><p class="sub" style="margin:0 0 10px">اكتب اسمك واحصل على شهادة بمحطتك ونقاطك، تحفظها كصورة وتشاركها.</p><input class="inp de" id="cName" placeholder="Your name" value="' + esc(S.name) + '" aria-label="اسمك"><button class="btn wide flame" id="cert" style="margin-top:10px">🏅 اصنع شهادتي</button></div>' +
-    '<div class="sh"><h2>الإعدادات</h2></div><div class="panel">' +
-    setRow('dark', '🌙 الوضع الليلي', isDark()) + setRow('sp', '🔤 النطق بالحروف العربية', S.set.sp) + setRow('kids', '🔠 خط كبير وأزرار أكبر', S.set.kids) + setRow('fx', '🔊 مؤثرات الصوت والاهتزاز', S.set.fx !== false) +
-    '<div class="set"><span>🐢 سرعة الصوت</span><div class="seg"><button data-sp="slow" class="' + (S.set.speed === 'slow' ? 'on' : '') + '">بطيء</button><button data-sp="normal" class="' + (S.set.speed !== 'slow' ? 'on' : '') + '">عادي</button></div></div>' +
-    '<div class="set"><span>🎯 الهدف اليومي</span><div class="seg" id="goalSeg">' + GOALS.map(function(g){ return '<button data-goal="' + g.x + '" class="' + (S.goal === g.x ? 'on' : '') + '">' + g.m + ' د</button>'; }).join('') + '</div></div>' +
-    '<div class="set"><span>📲 ثبّت الموقع على شاشتك</span><button class="btn" id="installBtn">تثبيت</button></div>' +
-    '<div class="set"><span>⏰ تذكير يومي بالمذاكرة</span><button class="btn" id="remBtn2">ضبط</button></div>' +
-    '<div class="set"><span>💾 نسخة احتياطية من تقدّمي</span><button class="btn" id="bkBtn2">نقل وحفظ</button></div>' +
-    '<div class="set"><span>🗑️ ابدأ من جديد</span><button class="btn alt" id="reset">امسح تقدّمي</button></div></div>' +
     '<div class="sh"><h2>تواصل معي</h2></div>' + contactHTML(false) + footer() + '</div>';
-  render(html, 'me'); bindCtl(); bindInstall(); bindRibbon();
-  $$('[data-set]').forEach(function(b){ b.onclick = function(){ var k = b.dataset.set;
-    if (k === 'dark'){ S.set.theme = isDark() ? 'light' : 'dark'; }
-    else if (k === 'fx'){ S.set.fx = S.set.fx === false; if (S.set.fx) fx(true); }
-    else S.set[k] = !S.set[k];
-    save(); applySettings(); b.classList.toggle('on'); }; });
-  $$('[data-goal]').forEach(function(b){ b.onclick = function(){ S.goal = +b.dataset.goal; save(); $$('[data-goal]').forEach(function(x){ x.classList.toggle('on', x === b); }); toast('🎯 هدفك الجديد: ' + S.goal + ' نقطة يوميًا'); }; });
-  $('#bkBtn2').onclick = backupSheet; $('#remBtn2').onclick = reminderSheet;
-  $('#reset').onclick = function(){ if (confirm('هل أنت متأكد؟ ستُمسح كل النقاط والأوسمة والتقدّم.')){ var keep = S.set, nm = S.name, gl = S.goal; S = blank(); S.set = keep; S.name = nm; S.goal = gl; S.onb = 1; S.popup = true; save(); viewMe(); } };
+  render(html, 'me'); bindRibbon();
   $('#cert').onclick = function(){ var n = $('#cName').value.trim(); if (!n) return toast('اكتب اسمك أولًا'); S.name = n; save(); certificate(n); };
 }
 function settingsSheet(){
@@ -1807,8 +1818,10 @@ function settingsSheet(){
     '<div class="set"><span>🎯 الهدف اليومي</span><div class="seg">' + GOALS.map(function(g){ return '<button data-goal2="' + g.x + '" class="' + (S.goal === g.x ? 'on' : '') + '">' + g.m + ' د</button>'; }).join('') + '</div></div>' +
     '<div class="set"><span>📲 ثبّت الموقع على شاشتك</span><button class="btn" id="installBtn">تثبيت</button></div>' +
     '<div class="set"><span>⏰ تذكير يومي بالمذاكرة</span><button class="btn" id="remBtn">ضبط</button></div>' +
-    '<div class="set"><span>💾 نسخة احتياطية من تقدّمي</span><button class="btn" id="bkBtn">نقل وحفظ</button></div></div>' +
+    '<div class="set"><span>💾 نسخة احتياطية من تقدّمي</span><button class="btn" id="bkBtn">نقل وحفظ</button></div>' +
+    '<div class="set"><span>🗑️ ابدأ من جديد</span><button class="btn alt" id="resetBtn">امسح تقدّمي</button></div></div>' +
     '<a class="btn alt wide" href="#/me" style="text-decoration:none;display:block;text-align:center;margin-top:12px">🧑‍🚀 صفحتي ونقاطي</a>', 'sheet'); m.classList.add('msheet');
+  $('#resetBtn', m).onclick = function(){ if (confirm('هل أنت متأكد؟ ستُمسح كل النقاط والأوسمة والتقدّم.')){ var keep = S.set, nm = S.name, gl = S.goal; S = blank(); S.set = keep; S.name = nm; S.goal = gl; S.onb = 1; S.lena = 1; S.popup = true; save(); m.remove(); route(); } };
   $$('[data-set]', m).forEach(function(b){ b.onclick = function(){ var k = b.dataset.set; if (k === 'dark'){ S.set.theme = isDark() ? 'light' : 'dark'; } else if (k === 'fx'){ S.set.fx = S.set.fx === false; if (S.set.fx) fx(true); } else S.set[k] = !S.set[k]; save(); applySettings(); b.classList.toggle('on'); }; });
   $$('[data-sp2]', m).forEach(function(b){ b.onclick = function(){ setSpeed(b.dataset.sp2); $$('[data-sp2]', m).forEach(function(x){ x.classList.toggle('on', x === b); }); $$('[data-sp]').forEach(function(x){ x.classList.toggle('on', x.dataset.sp === b.dataset.sp2); }); }; });
   $$('[data-goal2]', m).forEach(function(b){ b.onclick = function(){ S.goal = +b.dataset.goal2; save(); $$('[data-goal2]', m).forEach(function(x){ x.classList.toggle('on', x === b); }); var gc = $('.goal'); if (gc) gc.outerHTML = goalHTML(); toast('🎯 هدفك الجديد: ' + S.goal + ' نقطة يوميًا'); }; });
