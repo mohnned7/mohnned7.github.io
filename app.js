@@ -136,7 +136,11 @@ function paEnd(){ if (paBtn){ paBtn.textContent = paLabel; paBtn.classList.remov
 function paToggle(b, run){ if (!b) return; b.onclick = function(){ if (paBtn === b){ stopAudio(); return; } stopAudio(); paStart(b); run(); }; }
 function stopAudio(){ token++; spId++; paEnd(); if (synth) synth.cancel(); if (curA){ try{ curA.pause(); }catch(e){} curA = null; } }
 var PL = null;
-function unlockAudio(){ try{ if (!PL){ PL = new Audio(); } if (!PL._u){ PL._u = 1; PL.src = 'data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAACAAABIADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAASDs90hvAAAAAAAAAAAAAAAAAAAA'; var pr = PL.play(); if (pr && pr.catch) pr.catch(function(){ PL._u = 0; }); } }catch(e){} }
+/* iPhone needs one sound started by a tap before audio can play later. Done ONCE, with a valid silent clip,
+   and never while a word is playing, so it can never cut a word. */
+var SILENT = 'data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjE2LjEwMAAAAAAAAAAAAAAA//OEwAAAAAAAAAAAAEluZm8AAAAPAAAACQAABCAARUVFRUVFRUVFRUVdXV1dXV1dXV1dXXR0dHR0dHR0dHR0i4uLi4uLi4uLi4uioqKioqKioqKiorq6urq6urq6urq60dHR0dHR0dHR0dHo6Ojo6Ojo6Ojo6P//////////////AAAAAExhdmM2MC4zMQAAAAAAAAAAAAAAACQD8AAAAAAAAAQgDeb0IwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NExAAAAANIAAAAAExBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMu//NExFMAAANIAAAAADEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMu//NExKYAAANIAAAAADEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMu//NExKwAAANIAAAAADEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMu//NExKwAAANIAAAAADEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMu//NExKwAAANIAAAAADEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMu//NExKwAAANIAAAAADEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NExKwAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NExKwAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
+function unlockAudio(){ try{ if (!PL) PL = new Audio(); if (PL._u || PL._busy || curA === PL) return; PL._busy = 1; PL.src = SILENT;
+  var pr = PL.play(); if (pr && pr.then) pr.then(function(){ PL._u = 1; PL._busy = 0; document.removeEventListener('pointerdown', unlockAudio); document.removeEventListener('touchend', unlockAudio); }, function(){ PL._busy = 0; }); else PL._busy = 0; }catch(e){} }
 document.addEventListener('pointerdown', unlockAudio, {passive:true}); document.addEventListener('touchend', unlockAudio, {passive:true});
 var spId = 0, spWait = 0;
 /* a swipe/scroll must never count as a tap on a word card */
@@ -153,7 +157,7 @@ document.addEventListener('click', function(e){
 document.addEventListener('touchmove', function(){ if (spWait && spWait === spId) spId++; spWait = 0; }, {passive:true});
 function speak(text, done, tries, id){
   if (id === undefined) id = ++spId; else if (id !== spId) return;
-  if (curA){ try{ curA.pause(); }catch(e){} curA = null; }
+  if (curA){ try{ curA.onended = null; curA.onerror = null; curA.pause(); }catch(e){} curA = null; }
   var slow = S.set.speed === 'slow', b = slow && AUDS[text] ? AUDS[text] : AUD[text], native = slow && !!AUDS[text];
   /* recorded voice still downloading: wait for it instead of using the phone's voice */
   if (!b && (loadingN > 0 || !idxDone) && (tries || 0) < 25){ spWait = id; setTimeout(function(){ speak(text, done, (tries || 0) + 1, id); }, 150); return; }
@@ -163,8 +167,11 @@ function speak(text, done, tries, id){
     if (synth) synth.cancel();
     var a = (PL && PL._u) ? PL : new Audio(); a.onended = null; a.onerror = null; a.src = 'data:audio/mpeg;base64,' + b; a.playbackRate = native ? 1 : (slow ? 0.82 : 1);
     try{ a.preservesPitch = true; a.mozPreservesPitch = true; a.webkitPreservesPitch = true; }catch(e){}
-    a.onended = end; a.onerror = function(){ fin = true; tts(text, done); };
-    curA = a; a.play().catch(function(){ if (!fin){ fin = true; tts(text, done); } });
+    /* the phone's voice stays as the backup, but only for a real failure of the word that is still playing,
+       never because the user tapped something else (AbortError = interrupted on purpose) */
+    var backup = function(err){ if (fin || id !== spId || curA !== a) return; if (err && err.name === 'AbortError') return; fin = true; tts(text, done); };
+    a.onended = end; a.onerror = function(){ backup(null); };
+    curA = a; var pr = a.play(); if (pr && pr.catch) pr.catch(backup);
     return;
   }
   tts(text, end);
@@ -732,9 +739,15 @@ function lessonRow(l){
   var uid = 'l:' + l.id, n = l.num ? ar(l.num) : (l.e || ''), pct = unitPct(uid);
   return '<a class="it lesson" href="#/l/' + l.id + '" style="--c:' + l.color + '"><span class="em num">' + n + '</span><div class="tx"><b>' + esc(l.title) + '</b><div class="cj">' + esc(l.de) + '</div><div class="prog thin"><i style="width:' + pct + '%"></i></div></div><span class="st">' + (S.done[uid] ? '✅' : pct ? ar(pct) + '٪' : '‹') + '</span></a>';
 }
+/* conjugation rows (same pronoun in every part of the spoken text): show that pronoun, so rows like
+   "lernen · wohnen" for wir and for sie no longer look identical */
+var PRON_LBL = {ich:'ich', du:'du', er:'er/sie/es', wir:'wir', ihr:'ihr', sie:'sie/Sie'};
+function conjPron(it){ if (!it.say || it.say === it.de || it.de.indexOf('·') < 0) return '';
+  var parts = it.say.split(',').map(function(x){ return x.trim().split(/\s+/)[0]; });
+  var p = parts[0]; if (!PRON_LBL[p] || !parts.every(function(x){ return x === p; })) return ''; return PRON_LBL[p]; }
 function itemRow(it, i, c){
   return '<button class="it" data-i="' + i + '" style="--c:' + (c || 'var(--violet)') + '">' + (it.c ? '<span class="sw" style="background:' + it.c + '"></span>' : '<span class="em">' + (it.e || '🔹') + '</span>') +
-    '<span class="tx"><span class="d">' + deHTML(it) + '</span><span class="pr arp">' + pron(it.ar || '') + '</span><span class="m">' + esc(it.mn) + '</span>' +
+    '<span class="tx"><span class="d">' + (conjPron(it) ? '<span class="cjp" lang="de">' + conjPron(it) + '</span>' : '') + deHTML(it) + '</span><span class="pr arp">' + pron(it.ar || '') + '</span><span class="m">' + esc(it.mn) + '</span>' +
     (it.conj ? '<span class="cj">' + esc(it.conj) + '</span>' : '') + '</span><span class="play sm" aria-hidden="true">' + ICON_PLAY + '</span>' + (it.u != null && S.heard[it.u] && S.heard[it.u][it.k] ? '<span class="hd">✓</span>' : '') + '</button>';
 }
 /* picture cards: real photos load per topic from pics_<topic>.js (window.SRPIC), emoji is the fallback */

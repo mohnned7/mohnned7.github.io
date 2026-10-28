@@ -1189,3 +1189,6 @@ html.tswitch body,html.tswitch .panel,html.tswitch .it,html.tswitch .tile,html.t
 .sres-k{font-size:14px;color:#C2410C}
 .btn.pulse{animation:btnPulse 1.2s ease-in-out 3}@keyframes btnPulse{50%{transform:scale(1.05);box-shadow:0 0 0 6px rgba(255,197,61,.35)}}
 .sres .wok{color:#19C79A!important}.sres .wno{color:#FF5C61!important}
+
+/* conjugation pronoun label */
+.it .cjp{display:inline-block;direction:ltr;font-size:.78em;font-weight:800;padding:1px 9px;margin-inline-end:8px;border-radius:999px;background:color-mix(in srgb,var(--c,#5B3DF5) 22%,transparent);color:inherit;vertical-align:middle}
