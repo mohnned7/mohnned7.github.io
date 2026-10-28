@@ -451,6 +451,7 @@ function navHide(){ var g = $('.nav a[data-n="play"]'); if (g) g.hidden = hidden
 function setNav(n){ navHide(); $$('.nav a').forEach(function(a){ a.classList.toggle('on', a.dataset.n === n); }); var mb = $('#meBtn'); if (mb) mb.classList.toggle('on', n === 'me'); var sb = $('#srchBtn'); if (sb) sb.classList.toggle('on', n === 'search'); }
 var leaveHook = null;
 function render(html, nav){
+  document.body.classList.remove('lsn-tabs', 'th-neon');
   if (leaveHook){ try{ leaveHook(); }catch(e){} leaveHook = null; }
   stopAudio(); hideFb(); $$('.modal').forEach(function(m){ m.remove(); }); if (tipEl){ tipEl.remove(); tipEl = null; }
   var app = $('#app'); app.innerHTML = html; app.classList.remove('enter'); void app.offsetWidth; app.classList.add('enter');
@@ -840,17 +841,45 @@ function viewLesson(id){
   var l = SR.a1.concat(SR.a2).find(function(x){ return x.id === id; }); if (!l) return go('#/learn');
   var uid = 'l:' + id, grp = id.indexOf('a1') === 0 ? 'a1' : 'a2'; useAudio(grp);
   var list = l.items.map(function(it, k){ return Object.assign({grp:grp, u:uid, k:k}, it); });
-  var TK = {tip:'💡 معلومة', trap:'⚠️ انتبه', memo:'🧠 احفظها هكذا'};
-  var html = '<div class="wrap"><div class="ph" style="--c:' + l.color + '"><a class="back" href="#/learn/' + grp + '">→ دروس ' + grp.toUpperCase() + '</a><span class="em">' + (l.e || '📘') + '</span><h1>' + esc(l.title) + '</h1><div class="g">' + esc(l.de) + '</div>' + (l.mission ? '<p>🎯 ' + esc(l.mission) + '</p>' : '') + '</div>' +
-    unitBar(uid) + (id === 'a1-8' ? toolBanner('#/tool/clock', '#8338EC') : '') + l.rules.map(function(r){ return '<div class="rule">' + rich(r) + '</div>'; }).join('') +
-    (l.tips || []).map(function(t){ return '<div class="tip ' + t.k + '"><b class="k">' + TK[t.k] + '</b>' + rich(t.t) + '</div>'; }).join('') +
-    ctlBar('<button class="chip go2" id="playAll">▶ تشغيل الكل</button>') + '<div class="list">';
-  var last = null;
-  list.forEach(function(it, i){ if (l.items[i].grp && l.items[i].grp !== last){ last = l.items[i].grp; html += '<div class="gh" style="--c:' + l.color + '">' + esc(last) + '</div>'; } html += itemRow(it, i, l.color); });
-  var all = SR.a1.concat(SR.a2), k = all.indexOf(l), nx = all[k + 1];
-  html += '</div>' +
-    (nx ? '<a class="mission" href="#/l/' + nx.id + '" style="background:linear-gradient(115deg,' + nx.color + ',#14103A)"><span class="em">⏭️</span><div><b>الدرس التالي</b><span>' + esc(nx.title) + '</span></div><span class="arr">‹</span></a>' : '') + footer() + '</div>';
-  render(html, 'learn'); bindCtl(); bindItems(list);
+  var TK = {tip:['💡','معلومة'], trap:['⚠️','انتبه'], memo:['🧠','احفظها هكذا']};
+  var all = SR.a1.concat(SR.a2), k = all.indexOf(l), nx = all[k + 1], pv = all[k - 1];
+  /* group the examples; conjugation rows become one table */
+  var groups = [], cur = null;
+  list.forEach(function(it, i){ var g = l.items[i].grp || (cur ? cur.t : 'أمثلة'); if (!cur || cur.t !== g){ cur = {t:g, rows:[]}; groups.push(cur); } cur.rows.push([it, i]); });
+  function tiles(rows){ return '<div class="list">' + rows.map(function(r){ var h = itemRow(r[0], r[1], l.color); return (r[0].de.length > 34 || (r[0].mn || '').length > 40) ? h.replace('<button class="it"', '<button class="it wide"') : h; }).join('') + '</div>'; }
+  function conjTab(rows){ return '<div class="ctab" style="--c:' + l.color + '">' + rows.map(function(r){ var it = r[0];
+      return '<button class="it ctr" data-i="' + r[1] + '" style="--c:' + l.color + '"><span class="ctp" lang="de">' + conjPron(it) + '</span><span class="ctf de">' + esc(it.de).replace(/\s*·\s*/g, '<br>') + '</span><span class="play sm" aria-hidden="true">' + ICON_PLAY + '</span></button>'; }).join('') + '</div>'; }
+  function block(g){ var out = '', run = [], isC = null;
+    g.rows.forEach(function(r){ var c = !!conjPron(r[0]); if (isC !== null && c !== isC){ out += isC ? conjTab(run) : tiles(run); run = []; } isC = c; run.push(r); });
+    if (run.length) out += isC ? conjTab(run) : tiles(run); return out; }
+  var nEx = list.length, sec = 0;
+  function head(ic, t, sub){ sec++; return '<div class="lsec-hd" id="ls' + sec + '"><span class="lsec-n" style="--c:' + l.color + '">' + sec + '</span><div><b>' + ic + ' ' + t + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div></div>'; }
+  var html = '<div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div><div class="rkt" aria-hidden="true"><i></i><b id="rktB">🚀</b></div><div class="wrap lesson2"><div class="ph" style="--c:' + l.color + '"><a class="back" href="#/learn/' + grp + '">→ دروس ' + grp.toUpperCase() + '</a><span class="em">' + (l.e || '📘') + '</span><h1>' + esc(l.title) + '</h1><div class="g">' + esc(l.de) + '</div>' + (l.mission ? '<p>🎯 ' + esc(l.mission) + '</p>' : '') + '</div>' +
+    '<div class="lmap" style="--c:' + l.color + '"><button data-go="ls1">📖 الشرح</button><button data-go="ls2">🧩 الأمثلة <em>' + ar(nEx) + '</em></button><button data-go="ls3">✅ اختبر نفسك</button></div>' +
+    unitBar(uid) +
+    head('📖', 'الشرح', 'اقرأ القاعدة أولًا، ثم انتقل إلى الأمثلة') +
+    '<div class="rgrid">' + l.rules.map(function(r, n){ return '<div class="rcard" style="--c:' + l.color + '"><span class="rbig">' + (n + 1) + '</span><span class="rnum">القاعدة ' + ar(n + 1) + '</span><div>' + rich(r) + '</div></div>'; }).join('') + '</div>' +
+    (l.tips || []).map(function(t){ var x = TK[t.k] || ['💡','معلومة']; return '<div class="tip ' + t.k + ' tip2"><span class="tip-i">' + x[0] + '</span><div><b class="k">' + x[1] + '</b>' + rich(t.t) + '</div></div>'; }).join('') +
+    (id === 'a1-8' ? toolBanner('#/tool/clock', '#8338EC') : '') +
+    head('🧩', 'الأمثلة', 'اضغط على أي مثال لتسمعه') + ctlBar('<button class="chip go2" id="playAll">▶ تشغيل الكل</button>') +
+    groups.map(function(g){ return (groups.length > 1 || g.t !== 'أمثلة' ? '<div class="gh2" style="--c:' + l.color + '"><span></span>' + esc(g.t) + '<span></span></div>' : '') + block(g); }).join('') +
+    head('✅', 'اختبر نفسك', '3 أسئلة سريعة على هذا الدرس') + '<div id="lquiz" class="lquiz"></div>' +
+    '<div class="lnav2">' + (pv ? '<a class="lnb" href="#/l/' + pv.id + '"><small>الدرس السابق</small><b>' + esc(pv.title) + '</b></a>' : '<span></span>') + (nx ? '<a class="lnb nx" href="#/l/' + nx.id + '" style="--c:' + nx.color + '"><small>الدرس التالي</small><b>' + esc(nx.title) + '</b></a>' : '') + '</div>' + footer() + '</div>';
+  render(html, 'learn'); document.body.classList.add('th-neon'); bindCtl(); bindItems(list);
+  $$('.lmap [data-go]').forEach(function(b){ b.onclick = function(){ var t = $('#' + b.dataset.go); if (t) t.scrollIntoView({behavior:'smooth', block:'start'}); }; });
+  var mapB = $$('.lmap [data-go]'); function mapOn(){ var y = scrollY + 170, on = 'ls1'; ['ls1','ls2','ls3'].forEach(function(k){ var t = $('#' + k); if (t && t.getBoundingClientRect().top + scrollY <= y) on = k; }); mapB.forEach(function(b){ b.classList.toggle('on', b.dataset.go === on); }); }
+  function hdr(){ var m = $('.lmap'), h = $('.lesson2 .ph'); document.body.classList.toggle('lsn-tabs', !!(h && h.getBoundingClientRect().bottom < 70)); }
+  function rk(){ var b = $('#rktB'); if (!b) return; var max = document.documentElement.scrollHeight - innerHeight, f = max > 0 ? scrollY / max : 0; b.style.top = 'calc(' + (f * 100) + '% - ' + (f * 22) + 'px)'; }
+  rk(); hdr(); mapOn(); var mapT = 0; addEventListener('scroll', function sc(){ rk(); if (!$('.lesson2')){ document.body.classList.remove('lsn-tabs'); removeEventListener('scroll', sc); return; } hdr(); clearTimeout(mapT); mapT = setTimeout(mapOn, 60); }, {passive:true});
+  /* quick self-check: German example -> pick the Arabic meaning */
+  var pool = list.filter(function(x){ return x.mn; }), qs = shuffle(pool.slice()).slice(0, 3), qi = 0, ok = 0;
+  function q(){ var box = $('#lquiz'); if (!box) return;
+    if (!qs.length){ box.innerHTML = '<p class="sub">لا توجد أسئلة لهذا الدرس.</p>'; return; }
+    if (qi >= qs.length){ box.innerHTML = '<div class="lq-end"><b>' + (ok === qs.length ? '🏆 ممتاز!' : '👍 أحسنت') + '</b> أجبت عن ' + ar(ok) + ' من ' + ar(qs.length) + ' بشكل صحيح.<button class="btn alt" id="lqA">🔁 أسئلة أخرى</button></div>'; $('#lqA').onclick = function(){ qs = shuffle(pool.slice()).slice(0, 3); qi = 0; ok = 0; q(); }; return; }
+    var it = qs[qi], opts = shuffle([it.mn].concat(shuffle(pool.filter(function(x){ return x.mn !== it.mn; })).slice(0, 2).map(function(x){ return x.mn; })));
+    box.innerHTML = '<div class="lq-c"><span class="lq-n">سؤال ' + ar(qi + 1) + ' من ' + ar(qs.length) + '</span><div class="lq-de de">' + esc(it.de) + '</div><div class="lq-s">ما معنى هذه الجملة؟</div><div class="opts">' + opts.map(function(o, n){ return '<button class="opt" data-q="' + n + '">' + esc(o) + '</button>'; }).join('') + '</div></div>';
+    $$('[data-q]', box).forEach(function(b){ b.onclick = function(){ var good = opts[+b.dataset.q] === it.mn; $$('[data-q]', box).forEach(function(x){ x.disabled = true; if (opts[+x.dataset.q] === it.mn) x.classList.add('ok'); }); if (!good) b.classList.add('no'); else ok++; fx(good); setTimeout(function(){ qi++; q(); }, 1100); }; }); }
+  q();
 }
 function viewLevels(){
   var html = '<div class="wrap"><div class="ph" style="--c:#2B1F86"><a class="back" href="#/learn/a2">→ الدروس</a><span class="em">🧗</span><h1>سلّم المستويات</h1><div class="g">A1 → C2</div><p>هذه المستويات معيار أوروبي (CEFR) يُستخدم في الامتحانات والعمل.</p></div>' + ladderHTML() +
