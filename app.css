@@ -1329,3 +1329,4 @@ body.th-neon .lesson2 .lnb{color:var(--ink)}
 .ladder .rung.open{border-color:color-mix(in srgb,var(--violet) 45%,var(--line))}
 .ladder .rung .lv{display:grid;place-items:center;font-size:17px;line-height:1;padding:0;color:var(--mute)}.ladder .rung.open .lv{color:#fff}
 .ladder .rung > div span{white-space:normal;overflow:visible;text-overflow:clip;font-size:12.5px}
+.wainv{text-align:center}.wainv-i{width:64px;height:64px;margin:4px auto 10px;border-radius:50%;background:linear-gradient(135deg,#128C7E,#25D366);display:grid;place-items:center;box-shadow:0 10px 24px -8px rgba(37,211,102,.6)}.wainv-i svg{width:34px;height:34px}.wainv h3{margin:0 0 6px;font-size:18px;line-height:1.5}.wainv p{margin:0 0 14px;opacity:.85}.wainv .wainv-go{background:linear-gradient(120deg,#128C7E,#25D366);color:#fff;text-decoration:none;display:block}

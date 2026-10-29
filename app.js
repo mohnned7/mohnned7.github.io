@@ -520,6 +520,17 @@ function lenaWelcome(next){
   au.onended = function(){ mouth(0); done = 1; pb.textContent = '🚀 لنبدأ التعلّم'; pb.classList.add('flame'); };
   pb.onclick = function(){ if (done) return close(); cur = -1; au.currentTime = 0; var pr = au.play(); if (pr && pr.catch) pr.catch(function(){ toast('اضغط مرة أخرى للاستماع'); }); pb.textContent = '🔊 ...'; cancelAnimationFrame(raf); loop(); };
 }
+var WA_CH = 'https://whatsapp.com/channel/0029VbDTaxI6xCSKXFymw837';
+function waInvite(){
+  if (S.wainv || $('.modal')) return;
+  S.wainv = 1; save();
+  var m = modal('<div class="wainv"><div class="wainv-i"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9 0-1.4.7-2 1-2.3.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.1z"/></svg></div>' +
+    '<h3>📢 انضم إلى قناة Sprachrakete على واتساب</h3><p>دروس جديدة وتنبيهات أولًا بأول</p>' +
+    '<a class="btn wide wainv-go" href="' + WA_CH + '" target="_blank" rel="noopener">انضم الآن</a>' +
+    '<button class="btn alt wide" id="waLater" style="margin-top:8px">لاحقًا</button></div>');
+  $('.wainv-go', m).onclick = function(){ setTimeout(function(){ m.remove(); }, 300); };
+  $('#waLater', m).onclick = function(){ m.remove(); };
+}
 function onboarding(){
   if (S.onb || $('.modal')) return;
   var step = 0, data = {name:S.name || '', lvl:null, goal:60}, old = S.xp > 0, steps = old ? [0, 2] : [0, 1, 2];
@@ -549,6 +560,7 @@ function onboarding(){
       $$('.onb-o', m).forEach(function(o){ o.onclick = function(){ data.goal = +o.dataset.g; $$('.onb-o', m).forEach(function(z){ z.classList.toggle('on', z === o); }); }; });
       $('#onbGo', m).onclick = function(){
         if (data.name) S.name = data.name; S.goal = data.goal; S.onb = 1; save(); m.remove();
+        setTimeout(waInvite, 700);
         if (!data.lvl){ viewHome(); toast('🎯 هدفك اليومي: ' + S.goal + ' نقطة'); return; }
         go(data.lvl === 'test' ? '#/test' : data.lvl === 'some' ? '#/learn/a1' : '#/words');
       };
