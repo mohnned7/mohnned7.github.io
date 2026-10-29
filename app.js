@@ -589,7 +589,7 @@ function viewHome(){
      bigTile('#/learn', '📚', '#5B3DF5', 'الدروس', 'الكلمات ودروس A1 وA2', 'tile_learn') + bigTile('#/train', '🎯', '#8338EC', 'التدريب', 'الامتحان والنطق والأخطاء', 'tile_train') +
      (hidden('games') ? '' : bigTile('#/play', '🎮', '#FF6B2C', 'الألعاب', GAMES.length + ' ألعاب ومغامرة', 'tile_play')) + (hidden('journey') ? '' : bigTile('#/journey', '🚀', '#19C79A', 'رحلتي', st.e + ' ' + st.a, 'tile_journey')) + '</div>' +
    
-   '<div class="sh"><h2>تواصل معي</h2></div>' + contactHTML(true) +
+   '<div class="sh"><h2>تواصل معي</h2></div>' + contactHTML(false) +
    footerFull() + '</div>';
   render(html, 'home'); bindRibbon(); loadPics(w.grp);
   if (!S.onb) setTimeout(function(){ if (!S.lena && !(S.xp > 0)) lenaWelcome(onboarding); else onboarding(); }, 400);

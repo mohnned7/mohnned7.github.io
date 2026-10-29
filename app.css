@@ -1328,3 +1328,4 @@ body.th-neon .lesson2 .lnb{color:var(--ink)}
 .ladder .rung em{font-size:11px;padding:3px 10px;flex:none}
 .ladder .rung.open{border-color:color-mix(in srgb,var(--violet) 45%,var(--line))}
 .ladder .rung .lv{display:grid;place-items:center;font-size:17px;line-height:1;padding:0;color:var(--mute)}.ladder .rung.open .lv{color:#fff}
+.ladder .rung > div span{white-space:normal;overflow:visible;text-overflow:clip;font-size:12.5px}
