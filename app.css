@@ -1319,3 +1319,12 @@ body.th-neon .lesson2 .lnb{color:var(--ink)}
 .wach-i{width:46px;height:46px;flex:none;border-radius:50%;background:rgba(255,255,255,.2);display:grid;place-items:center}.wach-i svg{width:24px;height:24px}
 .wach b{display:block;font-size:16px}.wach small{display:block;opacity:.92;font-size:13px;margin:3px 0 10px;line-height:1.6}
 .wach-b{display:inline-block;background:#fff;color:#128C7E;font-weight:800;font-size:13.5px;border-radius:99px;padding:6px 16px}
+/* ladder: compact, all rungs the same size */
+.ladder{gap:8px}
+.ladder .rung{padding:9px 12px;border-radius:16px;gap:12px;min-height:64px;box-shadow:none}
+.ladder .rung .lv{width:42px;height:42px;font-size:17px;border-radius:13px;flex:none}
+.ladder .rung > div{flex:1;min-width:0}
+.ladder .rung b{font-size:14.5px}.ladder .rung > div span{font-size:12px;line-height:1.5;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ladder .rung em{font-size:11px;padding:3px 10px;flex:none}
+.ladder .rung.open{border-color:color-mix(in srgb,var(--violet) 45%,var(--line))}
+.ladder .rung .lv{display:grid;place-items:center;font-size:17px;line-height:1;padding:0;color:var(--mute)}.ladder .rung.open .lv{color:#fff}

@@ -654,7 +654,7 @@ function toolBanner(h, g){ var t = TOOLS.find(function(x){ return x.h === h; });
 function toolsHTML(){ return TOOLS.map(function(t){ return bigTile(t.h, t.e, t.c, t.t, t.d); }).join(''); }
 function ladderHTML(){
   return '<div class="ladder">' + SR.levels.map(function(l, i){ var open = l[3] === 'open';
-    return '<a class="rung ' + (open ? 'open' : '') + (i === 0 ? ' here' : '') + '" href="#/levels"><span class="lv de">' + l[0] + '</span><div><b>' + esc(l[1]) + '</b><span>' + esc(l[2]) + '</span></div><em>' + (open ? (i === 0 ? '📍 ابدأ هنا' : 'متاح') : 'قريبًا') + '</em></a>'; }).join('') + '</div>';
+    return '<a class="rung ' + (open ? 'open' : '') + '' + '" href="#/levels"><span class="lv de">' + l[0] + '</span><div><b>' + esc(l[1]) + '</b><span>' + esc(l[2]) + '</span></div><em>' + (open ? 'متاح' : 'قريبًا') + '</em></a>'; }).join('') + '</div>';
 }
 var ICON_CHAT = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 20.5l1.6-5.3A8.4 8.4 0 1 1 21 11.5z"/></svg>';
 var ICON_PLAYC = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>';
@@ -892,9 +892,7 @@ function viewLesson(id){
 }
 function viewLevels(){
   var html = '<div class="wrap"><div class="ph" style="--c:#2B1F86"><a class="back" href="#/learn">→ الدروس</a><span class="em">🧗</span><h1>سلّم المستويات</h1><div class="g">A1 → C2</div><p>هذه المستويات معيار أوروبي (CEFR) يُستخدم في الامتحانات والعمل.</p></div>' + ladderHTML() +
-    '<div class="sh"><h2>A1 · مبتدئ</h2></div><div class="list">' + SR.a1.map(lessonRow).join('') + '</div>' +
-    '<div class="sh"><h2>A2 · أساسي</h2></div><div class="list">' + SR.a2.map(lessonRow).join('') + '</div>' +
-    '<div class="panel center" style="margin-top:16px"><div style="font-size:44px">🛸</div><b>مستوى B1 وما بعده قريبًا</b><p style="color:var(--mute);font-size:14px;margin:6px 0 12px">اشترك في القناة ليصلك كل جديد.</p>' + contactHTML(false) + '</div>' + footer() + '</div>';
+    '<a class="wach" href="https://whatsapp.com/channel/0029VbDTaxI6xCSKXFymw837" target="_blank" rel="noopener"><span class="wach-i">' + ICON_CHAT + '</span><div><b>🛸 المستويات القادمة قريبًا</b><small>اشترك في قناة الواتساب، ويصلك كل جديد أولًا بأول 💬</small><span class="wach-b">اشترك في القناة</span></div></a>' + footer() + '</div>';
   render(html, 'learn');
 }
 
@@ -1367,11 +1365,9 @@ function fixMistake(q){ var m = q && S.mist[q.de]; if (!m) return; m.n--; if (m.
 function viewMistakes(){
   var keys = Object.keys(S.mist), list = keys.map(function(k){ return S.mist[k].it; });
   var html = '<div class="wrap"><div class="ph" style="--c:#E63946"><a class="back" href="#/train">→ التدريب</a><span class="em">🩹</span><h1>كرّاسة أخطائي</h1><div class="g">Meine Fehler</div><p>كل كلمة تخطئ فيها تُحفظ هنا، وتختفي عندما تجيبها صحيحة مرة أو اثنتين.</p></div>' +
-    (keys.length ? '<div class="tiles">' + ['meaning','listen','type','cards'].map(function(g){ return gameTile(GAMES.find(function(x){ return x.id === g; }), 'mist'); }).join('') + '</div>' +
-      '<div class="sh"><h2>' + plural(keys.length, 'كلمة واحدة', 'كلمتان', 'كلمات', 'كلمة') + '</h2><span class="cnt">صحّحت ' + ar(S.fixed || 0) + '</span></div><div class="list">' + list.map(function(it, i){ return itemRow(it, i, '#E63946'); }).join('') + '</div>'
+    (keys.length ? '<div class="sh"><h2>' + plural(keys.length, 'كلمة واحدة', 'كلمتان', 'كلمات', 'كلمة') + '</h2><span class="cnt">صحّحت ' + ar(S.fixed || 0) + '</span></div><div class="list">' + list.map(function(it, i){ return itemRow(it, i, '#E63946'); }).join('') + '</div>'
       : '<div class="empty"><i>🌟</i>لا توجد أخطاء الآن! العب أي لعبة، وأي كلمة تخطئ فيها ستظهر هنا للمراجعة.<br><br><a class="btn" href="#/play" style="text-decoration:none;display:inline-block">اذهب إلى الألعاب</a></div>') + footer() + '</div>';
   render(html, 'train'); bindItems(list);
-  if (keys.length < 4 && keys.length) $$('.tiles .tile').forEach(function(t){ t.classList.add('dim'); t.onclick = function(e){ e.preventDefault(); toast('تحتاج 4 كلمات على الأقل للعب، والآن يمكنك الاستماع إليها'); }; });
 }
 
 /* ---------------- JOURNEY ---------------- */
