@@ -1,4 +1,4 @@
-const V='sr-v34';
+const V='sr-v37';
 const M='sr-media-1';
 const CHANGED=["snd_a1_10.js", "snd_a1_12.js", "snd_a1_2.js", "snd_a1_3.js", "snd_a1_s13.js", "snd_a1_s16.js", "snd_a1_s2.js", "snd_a1_s3.js", "snd_a1_s4.js", "snd_abc_2.js", "snd_abc_3.js", "snd_abc_s2.js", "snd_abc_s3.js", "snd_abc_s4.js", "snd_calendar_1.js", "snd_calendar_s1.js", "snd_colors_1.js", "snd_colors_s1.js", "snd_exam_4.js", "snd_exam_s5.js", "snd_intro_1.js", "snd_intro_s1.js", "snd_jobs_1.js", "snd_jobs_s1.js", "snd_letter_3.js", "snd_letter_s3.js", "snd_num_1.js", "snd_num_2.js", "snd_num_s1.js", "snd_num_s2.js", "snd_verbs_1.js", "snd_verbs_s1.js", "snd_verbs_s2.js"];
 const CORE=["./", "index.html", "app.css", "app.js", "data.js", "extra.js", "manifest.json", "Outfit-Bold.ttf", "Outfit-Regular.ttf", "Readex-Arabic.woff", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];

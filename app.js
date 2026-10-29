@@ -198,6 +198,7 @@ function buildUnits(){
   topics().forEach(function(t){ add({id:'t:' + t.id, kind:'topic', key:t.id, title:t.title, e:t.e, color:t.color, href:'#/t/' + t.id, size:itemsOf(t.id).length}); });
   SR.a1.forEach(function(l){ add({id:'l:' + l.id, kind:'a1', key:l.id, title:l.title, e:'📘', color:l.color, href:'#/l/' + l.id, size:l.items.length, num:l.num}); });
   SR.a2.forEach(function(l){ add({id:'l:' + l.id, kind:'a2', key:l.id, title:l.title, e:l.e || '📗', color:l.color, href:'#/l/' + l.id, size:l.items.length}); });
+  (SR.b1 || []).forEach(function(l){ add({id:'l:' + l.id, kind:'b1', key:l.id, title:l.title, e:l.e || '📙', color:l.color, href:'#/l/' + l.id, size:l.items.length}); });
   (SX.stories || []).forEach(function(s){ add({id:'s:' + s.id, kind:'story', key:s.id, title:s.title, e:s.e, color:s.color, href:'#/story/' + s.id, size:1}); });
   (SX.letters || []).forEach(function(w){ add({id:'w:' + w.id, kind:'letter', key:w.id, title:w.title, e:w.e, color:w.color, href:'#/letter/' + w.id, size:w.lines.length}); });
   if (SX.exam) EXAM_PARTS.forEach(function(p){ add({id:'e:' + p.id, kind:'exam', key:p.id, title:'تدريب الامتحان: ' + p.t, e:p.e, color:p.c, href:'#/exam/' + p.id, size:1}); });
@@ -266,13 +267,15 @@ var BADGES = [
   {id:'adv10',e:'🗺️',t:'مغامر',d:'أكملت 10 مراحل في المغامرة'},
   {id:'stars50',e:'⭐',t:'جامع النجوم',d:'جمعت 50 نجمة'},
   {id:'scenes',e:'🎬',t:'ابن البلد',d:'أنهيت كل المواقف'},
-  {id:'lvl5',e:'🧑‍🚀',t:'المستوى 5',d:'وصلت إلى المستوى 5'}
+  {id:'lvl5',e:'🧑‍🚀',t:'المستوى 5',d:'وصلت إلى المستوى 5'},
+  {id:'week',e:'🏅',t:'بطل الأسبوع',d:'أنجزت تحدّي أسبوع كامل'},
+  {id:'review5',e:'🔁',t:'ذاكرة حديدية',d:'أنهيت 5 مراجعات'}
 ];
 function checkBadges(){
   var got = [];
   function give(id){ if (!S.badges[id]){ S.badges[id] = today(); got.push(id); } }
   var done = function(kind){ return UNITS.filter(function(u){ return u.kind === kind && S.done[u.id]; }).length; };
-  if (S.xp > 0) give('start');
+  if (S.xp > 0) give('start'); if (S.wk && Object.keys(S.wk).length) give('week'); if ((S.reviews || 0) >= 5) give('review5');
   if (S.test != null) give('test');
   if (S.streak >= 3) give('streak3');
   if (S.streak >= 7) give('streak7');
@@ -572,13 +575,14 @@ function viewHome(){
    '<div class="count" id="count" aria-live="polite"></div>' +
    '<div class="launch"><button class="go" id="launch">🚀 عُدّ معي بالألمانية</button><div class="rkwrap">' + ROCKET + '</div></div></section>' +
    '<div class="wrap"><section class="dash"><div class="dash-h"><div><small>' + greet() + '</small><b>' + (S.name ? esc(S.name) : 'رائد الفضاء') + ' 👋</b></div><a class="dash-j" href="#/journey"><span>' + st.e + '</span>' + esc(st.a) + '</a></div>' +
-     '<div class="ribbon" id="ribbon">' + ribbonHTML() + '</div>' + goalHTML() +
+     '<div class="ribbon" id="ribbon">' + ribbonHTML() + '</div>' + goalHTML() + weekHTML() +
      '<a class="dash-trip" href="#/journey"><span>' + (nx ? 'المحطة التالية: ' + nx.e + ' ' + nx.a : 'وصلت إلى المجرة! 🎉') + '</span><div class="prog"><i style="width:' + Math.round(doneCount() / Math.max(1, UNITS.length) * 100) + '%"></i></div></a></section>' +
    (nu ? '<a class="cont hero2" href="' + nu.href + '" style="--c:' + nu.color + '"><span class="em cov">' + contPic(nu) + '</span><div class="tx"><small>' + (heardCount(nu.id) ? 'تابع من حيث توقفت' : 'ابدأ من هنا') + '</small><b>' + esc(nu.title) + '</b><div class="prog"><i style="width:' + unitPct(nu.id) + '%"></i></div></div><span class="gobtn">' + (heardCount(nu.id) ? 'تابع' : 'ابدأ') + ' ‹</span></a>' : '') +
    '<div class="duo"><a class="mini ' + (done ? 'ok' : 'hot') + '" href="#/daily"><span class="em">' + (done ? '✅' : '🎯') + '</span><b>' + (done ? 'أنهيت مهمة اليوم' : 'مهمة اليوم') + '</b><small>' + (done ? 'عُد غدًا 🔥' : '10 أسئلة · +50 نقطة') + '</small></a>' +
      (S.test == null && !hidden('test') ? '<a class="mini" href="#/test" style="--c:#5B3DF5"><span class="em">🧭</span><b>حدّد مستواك</b><small>12 سؤالًا فقط</small></a>'
        : (mc && !hidden('mistakes') ? '<a class="mini" href="#/mistakes" style="--c:#E63946"><span class="em">🩹</span><b>راجع أخطاءك</b><small>' + plural(mc, 'كلمة واحدة', 'كلمتان', 'كلمات', 'كلمة') + '</small></a>'
        : (hidden('games') ? '<a class="mini" href="#/learn" style="--c:#5B3DF5"><span class="em">📚</span><b>الدروس</b><small>كلمات وقواعد</small></a>' : '<a class="mini" href="#/play" style="--c:#FF6B2C"><span class="em">🎮</span><b>العب وتعلّم</b><small>9 ألعاب</small></a>'))) + '</div>' +
+   (srsDue().length ? '<a class="revc" href="#/review"><span class="em">🔁</span><div><b>مراجعة اليوم</b><small>' + plural(srsDue().length, 'كلمة واحدة', 'كلمتان', 'كلمات', 'كلمة') + ' حان وقت مراجعتها</small></div><span class="arr">‹</span></a>' : '') +
    '<div class="sh"><h2>كلمة اليوم</h2></div>' +
    '<div class="wod">' + qEm(w, '⭐') + '<div style="flex:1;min-width:0"><div class="w">' + deHTML(w) + '</div><div class="pr arp">' + pron(w.ar) + '</div><div class="m">' + esc(w.mn) + '</div></div><button class="play" id="wodPlay" aria-label="استمع">' + ICON_PLAY + '</button></div>' +
    '<div class="sh"><h2>إلى أين اليوم؟</h2></div><div class="tiles big">' +
@@ -681,7 +685,7 @@ function countdown(){
 }
 
 /* ---------------- LEARN ---------------- */
-var LTABS = [{id:'words', i:'words', t:'الكلمات'}, {id:'a1', i:'a1', t:'دروس A1'}, {id:'a2', i:'a2', t:'دروس A2'}, {id:'b1', i:'a2', t:'دروس B1', soon:1}, {id:'read', i:'read', t:'اقرأ واكتب'}, {id:'tools', i:'tools', t:'أدوات'}];
+var LTABS = [{id:'words', i:'words', t:'الكلمات'}, {id:'a1', i:'a1', t:'دروس A1'}, {id:'a2', i:'a2', t:'دروس A2'}, {id:'b1', i:'a2', t:'دروس B1'}, {id:'read', i:'read', t:'اقرأ واكتب'}, {id:'tools', i:'tools', t:'أدوات'}];
 function tabBar(list, cur, base){ return '<div class="tabs" role="tablist">' + list.map(function(t){ return '<a role="tab" aria-selected="' + (t.id === cur) + '" class="tab' + (t.id === cur ? ' on' : '') + '" href="' + base + t.id + '">' + (t.i ? ic(t.i) : '<span>' + t.e + '</span>') + t.t + (t.soon ? '<em class="soon">قريبًا</em>' : '') + '</a>'; }).join('') + '</div>'; }
 function viewLearn(tab){
   var LT = LTABS.filter(function(t){ return !(t.id === 'a2' && hidden('a2')) && !(t.id === 'tools' && hidden('tools')) && !(t.id === 'read' && hidden('stories') && hidden('letters')); });
@@ -700,11 +704,13 @@ function viewLearn(tab){
   } else if (tab === 'a2'){
     var a2d = SR.a2.filter(function(l){ return S.done['l:' + l.id]; }).length;
     body = '<p class="lead">بعد A1: الماضي، والمقارنة، والجمل الأطول.</p>' +
-      '<div class="sh"><h2>دروس A2</h2><span class="cnt">' + a2d + ' من ' + SR.a2.length + '</span></div><div class="list">' + SR.a2.map(lessonRow).join('') + '</div>' +
-      '<div class="sh"><h2>سلّم المستويات</h2><a href="#/levels">التفاصيل</a></div>' + ladderHTML();
+      '<div class="sh"><h2>دروس A2</h2><span class="cnt">' + a2d + ' من ' + SR.a2.length + '</span></div><div class="list">' + SR.a2.map(lessonRow).join('') + '</div>';
   } else if (tab === 'b1'){
-    body = '<div class="panel center b1soon"><div class="big">🚀</div><h3>دروس B1 قريبًا</h3><p class="sub">نعمل الآن على دروس المستوى B1: جمل أطول، والماضي والمستقبل، والتعبير عن رأيك. أكمل A1 وA2 الآن، وستجد B1 بانتظارك قريبًا!</p>' +
-      '<a class="btn" href="#/learn/a2" style="text-decoration:none;display:inline-block;margin-top:10px">ابدأ بدروس A2</a></div>';
+    var B1 = SR.b1 || [], b1d = B1.filter(function(l){ return S.done['l:' + l.id]; }).length;
+    body = '<p class="lead">المستوى المتوسط: تطلب بأدب، وتصف الأشياء بجمل كاملة، وتحكي ما حدث.</p>' +
+      '<div class="sh"><h2>دروس B1</h2><span class="cnt">' + ar(b1d) + ' من ' + ar(B1.length) + '</span></div><div class="list">' + B1.map(lessonRow).join('') +
+      (SR.b1soon || []).map(function(t){ return '<div class="it lesson soonrow" style="--c:#6B6790"><span class="em num">⏳</span><div class="tx"><b>' + esc(t) + '</b><div class="cj">قريبًا</div></div><span class="st"><em class="soon">قريبًا</em></span></div>'; }).join('') + '</div>' +
+      '<a class="wach" href="https://whatsapp.com/channel/0029VbDTaxI6xCSKXFymw837" target="_blank" rel="noopener"><span class="wach-i">' + ICON_CHAT + '</span><div><b>⏳ تكملة دروس B1 قريبًا</b><small>اشترك في قناة الواتساب، ويصلك كل درس جديد أولًا بأول 💬</small><span class="wach-b">اشترك في القناة</span></div></a>';
   } else if (tab === 'read'){
     body = '<p class="lead">طبّق ما تعلمته: اقرأ واستمع إلى قصص قصيرة، وتعلّم كتابة الرسائل كما في الامتحان.</p>' +
       '<div class="tiles big">' + (hidden('stories') ? '' : bigTile('#/stories', '📖', '#FF3D7F', 'قصص قصيرة', plural((SX.stories || []).length, 'قصة واحدة', 'قصتان', 'قصص', 'قصة') + ' بالصوت والأسئلة')) + (hidden('letters') ? '' : bigTile('#/letters', '✉️', '#3A86FF', 'رسائل جاهزة', plural((SX.letters || []).length, 'نموذج واحد', 'نموذجان', 'نماذج', 'نموذجًا') + ' للكتابة')) + '</div>';
@@ -716,13 +722,15 @@ function viewLearn(tab){
   render(html, tab === 'words' ? 'words' : 'learn');
   window.scrollTo(0, 0);
 }
-var LHUB = {words:['#FF9F1C', 'الحروف والأرقام والمواضيع'], a1:['#5B3DF5', 'قواعد البداية خطوة بخطوة'], a2:['#3A86FF', 'الماضي والمقارنة والجمل الأطول'], b1:['#8338EC', 'نعمل عليها الآن'], read:['#FF3D7F', 'قصص قصيرة ورسائل جاهزة'], tools:['#06D6A0', 'الأرقام والوقت والتاريخ']};
+var LHUB = {words:['#FF9F1C', 'الحروف والأرقام والمواضيع'], a1:['#5B3DF5', 'قواعد البداية خطوة بخطوة'], a2:['#3A86FF', 'الماضي والمقارنة والجمل الأطول'], b1:['#8338EC', 'الأمنيات والجمل الموصولة والحكاية'], read:['#FF3D7F', 'قصص قصيرة ورسائل جاهزة'], tools:['#06D6A0', 'الأرقام والوقت والتاريخ']};
 function learnHub(LT){
-  function cnt(t){ if (t.id === 'a1' || t.id === 'a2'){ var L = SR[t.id], d = L.filter(function(l){ return S.done['l:' + l.id]; }).length; return '<span class="lhc-n">' + ar(d) + ' من ' + ar(L.length) + '</span><span class="lhc-bar"><i style="width:' + Math.round(d / L.length * 100) + '%"></i></span>'; }
+  function cnt(t){ if ((t.id === 'a1' || t.id === 'a2' || t.id === 'b1') && SR[t.id]){ var L = SR[t.id], d = L.filter(function(l){ return S.done['l:' + l.id]; }).length; return '<span class="lhc-n">' + ar(d) + ' من ' + ar(L.length) + '</span><span class="lhc-bar"><i style="width:' + Math.round(d / L.length * 100) + '%"></i></span>'; }
     if (t.id === 'words'){ return '<span class="lhc-n">' + ar(SR.modules.length) + ' موضوعًا</span>'; } return ''; }
   var html = '<div class="wrap"><div class="ph sm" style="--c:#5B3DF5"><span class="em phpic">' + uiPic('tile_learn', '📚') + '</span><h1>الدروس</h1><div class="g">Lernen</div></div>' +
     '<p class="lead">اختر ما تريد أن تتعلّمه:</p><div class="lhub">' + LT.filter(function(t){ return t.id !== 'words'; }).map(function(t){ var h = LHUB[t.id] || ['#5B3DF5', ''];
-      return '<a class="lhc' + (t.soon ? ' soon' : '') + '" href="#/learn/' + t.id + '" style="--c:' + h[0] + '"><span class="lhc-i">' + ic(t.i) + '</span><b>' + t.t + '</b><small>' + h[1] + '</small>' + (t.soon ? '<em class="soon">قريبًا</em>' : cnt(t)) + '</a>'; }).join('') + '</div>' + footer() + '</div>';
+      return '<a class="lhc' + (t.soon ? ' soon' : '') + '" href="#/learn/' + t.id + '" style="--c:' + h[0] + '"><span class="lhc-i">' + ic(t.i) + '</span><b>' + t.t + '</b><small>' + h[1] + '</small>' + (t.soon ? '<em class="soon">قريبًا</em>' : cnt(t)) + '</a>'; }).join('') +
+      '<a class="lhc" href="#/levels" style="--c:#FFB020"><span class="lhc-i">' + ic('train') + '</span><b>المستويات</b><small>من A1 إلى C2</small></a>' +
+    '</div>' + footer() + '</div>';
   render(html, 'learn'); window.scrollTo(0, 0);
 }
 function viewTrain(){
@@ -731,7 +739,8 @@ function viewTrain(){
     '<div class="tiles big">' +
       (hidden('exam') ? '' : bigTile('#/exam', '📝', '#8338EC', 'تدريب على امتحان A1', ex ? 'أكملت ' + ex + ' من 4 أجزاء · ' + exCount() + ' نماذج' : exCount() + ' نماذج كاملة: استماع، قراءة، كتابة، محادثة')) +
       (hidden('test') ? '' : bigTile('#/test', '🧭', '#2B1F86', 'اختبار المستوى', S.test == null ? '12 سؤالًا تحدد من أين تبدأ' : 'نتيجتك السابقة: ' + S.test + ' من 12')) +
-      (hidden('speak') ? '' : '<a class="tile soon" href="#/speak" style="--c:#06A77D"><span class="em">🎤</span><b>اختبر نطقك</b><span>قريبًا</span><i class="soonb">قريبًا</i></a>') +
+      bigTile('#/review', '🔁', '#0EA5E9', 'مراجعة اليوم', srsDue().length ? plural(srsDue().length, 'كلمة واحدة', 'كلمتان', 'كلمات', 'كلمة') + ' تنتظرك' : 'لا مراجعة الآن') +
+      (hidden('speak') ? '' : bigTile('#/speak', '🎤', '#06A77D', 'اختبر نطقك', 'انطق والموقع يسمعك')) +
       (hidden('mistakes') ? '' : bigTile('#/mistakes', '🩹', '#E63946', 'كرّاسة أخطائي', mc ? plural(mc, 'كلمة واحدة', 'كلمتان', 'كلمات', 'كلمة') + ' للمراجعة' : 'لا أخطاء الآن')) + '</div>' +
     '<div class="tip tip" style="margin-top:14px"><b class="k">💡 نصيحة</b>ابدأ باختبار المستوى إن كنت لا تعرف من أين تبدأ، ثم راجع كرّاسة أخطائي مرة كل يوم.</div>' + footer() + '</div>';
   render(html, 'train');
@@ -838,17 +847,17 @@ function viewNumbers(){
   render(html, 'words'); bindCtl(); bindItems(list);
 }
 function viewLesson(id){
-  var l = SR.a1.concat(SR.a2).find(function(x){ return x.id === id; }); if (!l) return go('#/learn');
-  var uid = 'l:' + id, grp = id.indexOf('a1') === 0 ? 'a1' : 'a2'; useAudio(grp);
+  var l = SR.a1.concat(SR.a2, SR.b1 || []).find(function(x){ return x.id === id; }); if (!l) return go('#/learn');
+  var uid = 'l:' + id, grp = id.slice(0, 2); useAudio(grp);
   var list = l.items.map(function(it, k){ return Object.assign({grp:grp, u:uid, k:k}, it); });
   var TK = {tip:['💡','معلومة'], trap:['⚠️','انتبه'], memo:['🧠','احفظها هكذا']};
-  var all = SR.a1.concat(SR.a2), k = all.indexOf(l), nx = all[k + 1], pv = all[k - 1];
+  var all = SR.a1.concat(SR.a2, SR.b1 || []), k = all.indexOf(l), nx = all[k + 1], pv = all[k - 1];
   /* group the examples; conjugation rows become one table */
   var groups = [], cur = null;
   list.forEach(function(it, i){ var g = l.items[i].grp || (cur ? cur.t : 'أمثلة'); if (!cur || cur.t !== g){ cur = {t:g, rows:[]}; groups.push(cur); } cur.rows.push([it, i]); });
   function tiles(rows){ return '<div class="list">' + rows.map(function(r){ var h = itemRow(r[0], r[1], l.color); return (r[0].de.length > 34 || (r[0].mn || '').length > 40) ? h.replace('<button class="it"', '<button class="it wide"') : h; }).join('') + '</div>'; }
   function conjTab(rows){ return '<div class="ctab" style="--c:' + l.color + '">' + rows.map(function(r){ var it = r[0];
-      return '<button class="it ctr" data-i="' + r[1] + '" style="--c:' + l.color + '"><span class="ctp" lang="de">' + conjPron(it) + '</span><span class="ctf de">' + esc(it.de).replace(/\s*·\s*/g, '<br>') + '</span><span class="play sm" aria-hidden="true">' + ICON_PLAY + '</span></button>'; }).join('') + '</div>'; }
+      return '<button class="it ctr" data-i="' + r[1] + '" style="--c:' + l.color + '"><span class="ctp" lang="de">' + conjPron(it) + '</span><span class="ctf de">' + esc(it.de).replace(/\s*·\s*/g, '<br>') + '</span>' + (it.mn ? '<span class="ctm">' + esc(it.mn.replace(/^[^:]*:\s*/, '')) + '</span>' : '') + '<span class="play sm" aria-hidden="true">' + ICON_PLAY + '</span></button>'; }).join('') + '</div>'; }
   function block(g){ var out = '', run = [], isC = null;
     g.rows.forEach(function(r){ var c = !!conjPron(r[0]); if (isC !== null && c !== isC){ out += isC ? conjTab(run) : tiles(run); run = []; } isC = c; run.push(r); });
     if (run.length) out += isC ? conjTab(run) : tiles(run); return out; }
@@ -872,7 +881,7 @@ function viewLesson(id){
   function rk(){ var b = $('#rktB'); if (!b) return; var max = document.documentElement.scrollHeight - innerHeight, f = max > 0 ? scrollY / max : 0; b.style.top = 'calc(' + (f * 100) + '% - ' + (f * 22) + 'px)'; }
   rk(); hdr(); mapOn(); var mapT = 0; addEventListener('scroll', function sc(){ rk(); if (!$('.lesson2')){ document.body.classList.remove('lsn-tabs'); removeEventListener('scroll', sc); return; } hdr(); clearTimeout(mapT); mapT = setTimeout(mapOn, 60); }, {passive:true});
   /* quick self-check: German example -> pick the Arabic meaning */
-  var pool = list.filter(function(x){ return x.mn; }), qs = shuffle(pool.slice()).slice(0, 3), qi = 0, ok = 0;
+  var pool = list.filter(function(x){ return x.mn && !conjPron(x); }), qs = shuffle(pool.slice()).slice(0, 3), qi = 0, ok = 0;
   function q(){ var box = $('#lquiz'); if (!box) return;
     if (!qs.length){ box.innerHTML = '<p class="sub">لا توجد أسئلة لهذا الدرس.</p>'; return; }
     if (qi >= qs.length){ box.innerHTML = '<div class="lq-end"><b>' + (ok === qs.length ? '🏆 ممتاز!' : '👍 أحسنت') + '</b> أجبت عن ' + ar(ok) + ' من ' + ar(qs.length) + ' بشكل صحيح.<button class="btn alt" id="lqA">🔁 أسئلة أخرى</button></div>'; $('#lqA').onclick = function(){ qs = shuffle(pool.slice()).slice(0, 3); qi = 0; ok = 0; q(); }; return; }
@@ -882,7 +891,7 @@ function viewLesson(id){
   q();
 }
 function viewLevels(){
-  var html = '<div class="wrap"><div class="ph" style="--c:#2B1F86"><a class="back" href="#/learn/a2">→ الدروس</a><span class="em">🧗</span><h1>سلّم المستويات</h1><div class="g">A1 → C2</div><p>هذه المستويات معيار أوروبي (CEFR) يُستخدم في الامتحانات والعمل.</p></div>' + ladderHTML() +
+  var html = '<div class="wrap"><div class="ph" style="--c:#2B1F86"><a class="back" href="#/learn">→ الدروس</a><span class="em">🧗</span><h1>سلّم المستويات</h1><div class="g">A1 → C2</div><p>هذه المستويات معيار أوروبي (CEFR) يُستخدم في الامتحانات والعمل.</p></div>' + ladderHTML() +
     '<div class="sh"><h2>A1 · مبتدئ</h2></div><div class="list">' + SR.a1.map(lessonRow).join('') + '</div>' +
     '<div class="sh"><h2>A2 · أساسي</h2></div><div class="list">' + SR.a2.map(lessonRow).join('') + '</div>' +
     '<div class="panel center" style="margin-top:16px"><div style="font-size:44px">🛸</div><b>مستوى B1 وما بعده قريبًا</b><p style="color:var(--mute);font-size:14px;margin:6px 0 12px">اشترك في القناة ليصلك كل جديد.</p>' + contactHTML(false) + '</div>' + footer() + '</div>';
@@ -1305,7 +1314,9 @@ function viewSpeak(tid){
         alts.forEach(function(a){ var s = Math.max(simil(a, target), noun ? simil(a, noun) : 0); if (s > best){ best = s; bestT = a; } });
         tries++;
         if (best >= 0.75){ ok++; S.spoke = (S.spoke || 0) + 1; save(); addXP(5); $('#heard').innerHTML = '<div class="hres ok">✅ ممتاز! سمعت: <span class="de">' + esc(bestT) + '</span></div>'; setTimeout(nx, 1300); }
-        else $('#heard').innerHTML = '<div class="hres no">🤔 سمعت: <span class="de">' + esc(bestT || '…') + '</span><br>' + (tries >= 3 ? 'لا بأس، انتقل للكلمة التالية.' : 'استمع مرة أخرى وحاول.') + '</div>'; };
+        else { var sw = wnorm(bestT).split(' ').filter(Boolean), tw = String(target).split(/\s+/);
+          var col = tw.map(function(w){ var n = wnorm(w); var good = !n || n.split(' ').every(function(p){ return wHit(p, sw); }); return '<span class="' + (good ? 'wok' : 'wno') + '">' + esc(w) + '</span>'; }).join(' ');
+          $('#heard').innerHTML = '<div class="hres no">🤔 سمعت: <span class="de">' + esc(bestT || '…') + '</span><div class="hcmp de">' + col + '</div><small>الأخضر نطقته صحيحًا، والأحمر يحتاج تدريبًا.</small><br>' + (tries >= 3 ? 'لا بأس، انتقل للكلمة التالية.' : 'استمع مرة أخرى وحاول.') + '</div>'; } };
       rec.onerror = function(e){ $('#heard').innerHTML = '<div class="hres no">' + (e.error === 'not-allowed' || e.error === 'service-not-allowed' ? 'اسمح للموقع باستخدام الميكروفون من إعدادات المتصفح.' : 'لم أسمع شيئًا، حاول مرة أخرى.') + '</div>'; };
       rec.onend = function(){ rec = null; btn.classList.remove('live'); btn.querySelector('span').textContent = 'اضغط وانطق'; if (!gotRes && !$('#heard').textContent) $('#heard').innerHTML = '<div class="hres no">لم أسمع شيئًا، حاول مرة أخرى.</div>'; };
       try{ rec.start(); }catch(err){ rec = null; btn.classList.remove('live'); }
@@ -1314,6 +1325,42 @@ function viewSpeak(tid){
   nx();
 }
 
+/* ---------------- SMART REVIEW (spaced repetition) ---------------- */
+var SRS_INT = [1, 2, 4, 7, 14, 30];
+function dayNo(d){ d = d || new Date(); return Math.round(new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() / 864e5); }
+function srsTouch(q, ok){ if (!q || !q.de) return; S.srs = S.srs || {}; var now = dayNo(), r = S.srs[q.de];
+  if (!r) r = {b:0, it:{de:q.de, ar:q.ar, mn:q.mn, e:q.e, g:q.g, n:q.n, grp:q.grp, say:q.say}};
+  if (ok){ if (!r.d || r.d <= now) r.b = Math.min(SRS_INT.length - 1, r.b + (r.d ? 1 : 0)); } else r.b = 0;
+  r.d = now + SRS_INT[r.b]; S.srs[q.de] = r; }
+function srsDue(){ var now = dayNo(), S2 = S.srs || {}; return Object.keys(S2).filter(function(k){ return S2[k].d <= now && S2[k].it && S2[k].it.mn; }); }
+function viewReview(){
+  var due = shuffle(srsDue()).slice(0, 15), items = due.map(function(k){ return S.srs[k].it; });
+  items.forEach(function(it){ useAudio(it.grp); });
+  var html = '<div class="wrap"><div class="ph sm" style="--c:#0EA5E9"><a class="back" href="#/train">→ التدريب</a><span class="em">🔁</span><h1>مراجعة اليوم</h1><div class="g">Wiederholung</div><p>كلمات تعلّمتها من قبل، تعود إليك في الوقت المناسب حتى تثبت في ذاكرتك.</p></div><div id="stage"></div>' + footer() + '</div>';
+  render(html, 'train'); var stage = $('#stage');
+  if (!items.length){ var all = Object.keys(S.srs || {}).length, next = Object.keys(S.srs || {}).map(function(k){ return S.srs[k].d; }).sort()[0];
+    stage.innerHTML = '<div class="empty"><i>🌟</i>' + (all ? 'لا توجد مراجعة اليوم! أحسنت.<br>المراجعة القادمة بعد ' + plural(Math.max(1, (next || dayNo() + 1) - dayNo()), 'يوم واحد', 'يومين', 'أيام', 'يومًا') + '.' : 'العب أي لعبة أولًا، وستظهر هنا الكلمات التي تحتاج مراجعة في الوقت المناسب.') + '<br><br><a class="btn" href="#/play" style="text-decoration:none;display:inline-block">اذهب إلى الألعاب</a></div>'; return; }
+  var pool = Object.keys(S.srs).map(function(k){ return S.srs[k].it.mn; }).concat(itemsOf('all').map(function(x){ return x.mn; })).filter(Boolean);
+  var i = 0, ok = 0;
+  (function q(){
+    if (i >= items.length){ addXP(ok * 5 + 10); S.reviews = (S.reviews || 0) + 1; save(); confetti();
+      stage.innerHTML = '<div class="result"><div class="em">' + (ok === items.length ? '🏆' : '🧠') + '</div><h2>' + ar(ok) + ' من ' + ar(items.length) + '</h2><p class="sub">الكلمات الصحيحة ستعود بعد مدة أطول، والخاطئة ستعود غدًا.</p><div class="xpgain">+' + ar(ok * 5 + 10) + ' نقطة ⚡</div><a class="btn" href="#/" style="text-decoration:none;display:inline-block;margin-top:10px">🏠 الرئيسية</a></div>'; return; }
+    var it = items[i], opts = shuffle([it.mn].concat(shuffle(pool.filter(function(m){ return m !== it.mn; })).filter(function(m, n, a){ return a.indexOf(m) === n; }).slice(0, 3)));
+    stage.innerHTML = '<div class="gamebar"><div class="prog"><i style="width:' + (i / items.length * 100) + '%"></i></div><span class="hearts">' + ar(i + 1) + '/' + ar(items.length) + '</span></div>' +
+      '<div class="qcard"><div class="big">' + deHTML(it) + '</div><button class="play sm" id="rp" style="margin:8px auto 0">' + ICON_PLAY + '</button><div class="q">ما معناها؟</div></div><div class="opts">' + opts.map(function(o, n){ return '<button class="opt" data-o="' + n + '">' + esc(o) + '</button>'; }).join('') + '</div>';
+    $('#rp').onclick = function(){ play(it); }; play(it);
+    $$('[data-o]', stage).forEach(function(b){ b.onclick = function(){ var good = opts[+b.dataset.o] === it.mn; $$('[data-o]', stage).forEach(function(x){ x.disabled = true; if (opts[+x.dataset.o] === it.mn) x.classList.add('ok'); });
+      if (good){ ok++; fixMistake(it); } else { b.classList.add('no'); addMistake(it); } srsTouch(it, good); save(); fx(good); setTimeout(function(){ i++; q(); }, good ? 700 : 1300); }; });
+  })();
+}
+/* ---------------- WEEKLY CHALLENGE ---------------- */
+var WEEK_GOAL = 300;
+function weekStart(){ var d = new Date(); d.setHours(0, 0, 0, 0); var dow = (d.getDay() + 1) % 7; d.setDate(d.getDate() - dow); return d; } /* week starts on Saturday */
+function weekXP(){ var d = weekStart(), t = 0; for (var k = 0; k < 7; k++){ var x = new Date(d); x.setDate(d.getDate() + k); t += S.days[dkey(x)] || 0; } return t; }
+function weekHTML(){ var x = weekXP(), pct = Math.min(100, Math.round(x / WEEK_GOAL * 100)), wk = dkey(weekStart()), done = x >= WEEK_GOAL;
+  if (done && !(S.wk && S.wk[wk])){ S.wk = S.wk || {}; S.wk[wk] = 1; save(); setTimeout(function(){ toast('🏆 أنجزت تحدّي الأسبوع!'); confetti(); checkBadges(); }, 600); }
+  var left = 6 - ((new Date().getDay() + 1) % 7);
+  return '<div class="wkc' + (done ? ' done' : '') + '"><div class="wkc-t"><b>' + (done ? '🏆 أنجزت تحدّي الأسبوع!' : '🏆 تحدّي الأسبوع') + '</b><span>' + ar(Math.min(x, WEEK_GOAL)) + ' / ' + ar(WEEK_GOAL) + ' نقطة</span></div><div class="prog"><i style="width:' + pct + '%"></i></div><small>' + (done ? 'رائع! تحدٍّ جديد يبدأ يوم السبت.' : 'اجمع ' + ar(WEEK_GOAL) + ' نقطة هذا الأسبوع · ' + (left ? 'باقي ' + plural(left, 'يوم واحد', 'يومان', 'أيام', 'يومًا') : 'اليوم آخر يوم') ) + '</small></div>'; }
 /* ---------------- MISTAKES ---------------- */
 function addMistake(q){ if (!q || !q.de) return; var k = q.de, m = S.mist[k] || {n:0, it:{de:q.de, ar:q.ar, mn:q.mn, e:q.e, g:q.g, n:q.n, grp:q.grp, say:q.say}}; m.n = Math.min(3, m.n + 1); m.t = today(); S.mist[k] = m; save(); }
 function fixMistake(q){ var m = q && S.mist[q.de]; if (!m) return; m.n--; if (m.n <= 0){ delete S.mist[q.de]; S.fixed = (S.fixed || 0) + 1; } save(); }
@@ -1642,7 +1689,7 @@ function viewGame(gid, tid, opts){
     $('#again').onclick = function(){ viewAdvLevel(LV.n); };
   }
   function others(item, n, key){ return shuffle(distract.filter(function(x){ return x[key] !== item[key]; }), rnd).slice(0, n); }
-  function judge(ok, q){ fx(ok); if (ok){ combo++; var amt = combo >= 3 ? 20 : 10; if (combo >= 3) R.bonus += 10; xpFloat(amt); fixMistake(q); } else { combo = 0; if (tid !== 'mist' || S.mist[q.de]) addMistake(q); } mascot(ok ? 'ok' : 'no'); }
+  function judge(ok, q){ fx(ok); srsTouch(q, ok); if (ok){ combo++; var amt = combo >= 3 ? 20 : 10; if (combo >= 3) R.bonus += 10; xpFloat(amt); fixMistake(q); } else { combo = 0; if (tid !== 'mist' || S.mist[q.de]) addMistake(q); } mascot(ok ? 'ok' : 'no'); }
 
   if (gid === 'meaning' || gid === 'listen' || gid === 'artikel' || gid === 'type' || gid === 'order' || opts.daily){
     var N = LV ? 8 : 10, qs, types, i = 0;
@@ -1932,7 +1979,7 @@ function certificate(name){
 var INDEX = null;
 function buildIndex(){
   INDEX = []; topics().forEach(function(t){ itemsOf(t.id).forEach(function(it){ INDEX.push(Object.assign({tid:'t/' + t.id, tt:t.title, te:t.e}, it)); }); });
-  SR.a1.concat(SR.a2).forEach(function(l){ var grp = l.id.indexOf('a1') === 0 ? 'a1' : 'a2'; l.items.forEach(function(it){ INDEX.push(Object.assign({tid:'l/' + l.id, tt:l.title, te:'📘', grp:grp}, it)); }); });
+  SR.a1.concat(SR.a2, SR.b1 || []).forEach(function(l){ var grp = l.id.slice(0, 2); l.items.forEach(function(it){ INDEX.push(Object.assign({tid:'l/' + l.id, tt:l.title, te:'📘', grp:grp}, it)); }); });
 }
 function stripAr(s){ return String(s).replace(/[ً-ْـ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه'); }
 function viewSearch(q){
@@ -2043,6 +2090,7 @@ function route(){
     case 'exam': return p[1] ? viewExamPart(p[1], +p[2] || 0) : viewExam();
     case 'speak': toast('هذه الميزة غير متاحة حاليًا، وستكون متاحة قريبًا 🚀'); return viewTrain();
     case 'mistakes': return viewMistakes();
+    case 'review': return viewReview();
     case 'search': return viewSearch(decodeURIComponent(p[1] || ''));
     case 'admin-mohannad': return viewAdmin();
     case 'about': return viewAbout();
