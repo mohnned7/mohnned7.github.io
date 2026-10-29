@@ -2099,5 +2099,19 @@ buildUnits();
 if (!S.station) S.station = stationIdx();
 shell(); applySettings(); addEventListener('hashchange', route); route(); loadConfig();
 if (S.last && S.last !== today() && S.last !== yesterday() && S.streak){ S.streak = 0; save(); updateRibbon(); }
-if ('serviceWorker' in navigator && location.protocol === 'https:'){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
+if ('serviceWorker' in navigator && location.protocol === 'https:'){
+  (function(){
+    var sw = navigator.serviceWorker, had = !!sw.controller, done = false;
+    sw.register('sw.js', {updateViaCache:'none'}).then(function(reg){
+      var chk = function(){ reg.update().catch(function(){}); };
+      document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible') chk(); });
+      setInterval(chk, 30*60*1000);
+    }).catch(function(){});
+    sw.addEventListener('controllerchange', function(){
+      if (!had || done) { had = true; return; }
+      done = true;
+      location.reload();
+    });
+  })();
+}
 })();
