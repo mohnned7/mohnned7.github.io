@@ -2327,7 +2327,7 @@ var WORK = [
    ['قول له يضغط الجرس لو احتاج حاجة:',['Wenn Sie etwas brauchen, drücken Sie bitte die Klingel.','Rufen Sie mich nicht.','Gehen Sie nach Hause.'],'الجملة دي بتطمّن المريض.']],
   voc:[['der Blutdruck','ضغط الدم'],['das Fieber','الحمّى'],['die Schmerzen','الألم'],['das Medikament','الدواء'],['die Spritze','الحقنة'],['die Allergie','الحساسية'],['der Patient','المريض'],['die Station','القسم'],['die Klingel','الجرس'],['messen','يقيس']]},
  {id:'hotel', e:'🏨', c:'#C9971C', f:'الفنادق', t:'تسجيل دخول ضيف', lv:'A2', me:'e', roles:{e:'موظف الاستقبال', c:'الضيف'},
-  lines:[['e','Herzlich willkommen im Hotel Sonne! Wie kann ich Ihnen helfen?','أهلًا بك في فندق زونه! كيف أستطيع مساعدتك؟'],
+  lines:[['e','Herzlich willkommen im Hotel Sonne! Mein Name ist Lili. Wie kann ich Ihnen helfen?','أهلًا بك في فندق زونه! اسمي ليلي. كيف أستطيع مساعدتك؟'],
    ['c','Guten Abend. Ich habe ein Zimmer reserviert.','مساء الخير. لقد حجزت غرفة.'],
    ['e','Auf welchen Namen, bitte?','باسم مَن من فضلك؟'],
    ['c','Auf den Namen Hassan.','باسم حسن.'],
@@ -2363,10 +2363,10 @@ var WORK = [
    ['تقول الحساب كله:',['Das macht zusammen achtzehn Euro.','Geben Sie mir Geld.','Achtzehn.'],'Das macht… = الحساب…']],
   voc:[['die Speisekarte','قائمة الطعام'],['die Rechnung','الحساب'],['der Tisch','الطاولة'],['reservieren','يحجز'],['bestellen','يطلب'],['die Vorspeise','المقبّلات'],['das Hauptgericht','الطبق الرئيسي'],['die Nachspeise','الحلوى'],['das Trinkgeld','البقشيش'],['Stimmt so.','احتفظ بالباقي.']]},
  {id:'job', e:'🤝', c:'#8338EC', f:'مقابلة العمل', t:'مقابلة شغل', lv:'B1', me:'c', roles:{e:'المدير', c:'أنت'},
-  lines:[['e','Guten Tag, Herr Ali. Bitte nehmen Sie Platz.','نهارك سعيد يا أستاذ علي. تفضل بالجلوس.'],
+  lines:[['e','Guten Tag, Herr Mohannad. Bitte nehmen Sie Platz.','نهارك سعيد يا أستاذ مهند. تفضل بالجلوس.'],
    ['c','Guten Tag. Vielen Dank für die Einladung.','نهارك سعيد. شكرًا جزيلًا على الدعوة.'],
    ['e','Erzählen Sie bitte etwas über sich.','حدّثنا عن نفسك من فضلك.'],
-   ['c','Ich heiße Ali und komme aus Ägypten.','اسمي علي، وأنا من مصر.'],
+   ['c','Ich heiße Mohannad und komme aus Ägypten.','اسمي مهند، وأنا من مصر.'],
    ['c','Ich bin Krankenpfleger und habe vier Jahre Berufserfahrung.','أنا ممرض، ولديّ خبرة أربع سنوات.'],
    ['e','Warum möchten Sie in Deutschland arbeiten?','لماذا تريد العمل في ألمانيا؟'],
    ['c','Ich möchte neue Erfahrungen sammeln.','أريد أن أكتسب خبرات جديدة.'],
@@ -2376,7 +2376,7 @@ var WORK = [
    ['c','Ja. Wann kann ich mit der Arbeit beginnen?','نعم. متى يمكنني أن أبدأ العمل؟'],
    ['e','Wir melden uns nächste Woche bei Ihnen.','سنتواصل معك الأسبوع القادم.']],
   quiz:[['أول ما تقعد، اشكرهم على الدعوة:',['Vielen Dank für die Einladung.','Endlich!','Was gibt es?'],'الشكر في الأول بيسيب انطباع حلو.'],
-   ['قالولك احكي عن نفسك:',['Ich heiße Ali und komme aus Ägypten.','Das ist privat.','Lesen Sie meinen Lebenslauf.'],'ابدأ باسمك وبلدك، وبعدها شغلك.'],
+   ['قالولك احكي عن نفسك:',['Ich heiße Mohannad und komme aus Ägypten.','Das ist privat.','Lesen Sie meinen Lebenslauf.'],'ابدأ باسمك وبلدك، وبعدها شغلك.'],
    ['سألوك عن خبرتك:',['Ich habe vier Jahre Berufserfahrung.','Ich habe vier Jahre.','Erfahrung ist nicht wichtig.'],'Berufserfahrung = خبرة في المهنة.'],
    ['سألوك عن نقاط قوتك:',['Ich bin zuverlässig und arbeite gern im Team.','Ich habe keine Schwächen.','Ich schlafe gern lange.'],'zuverlässig = يُعتمد عليه، كلمة مهمة جدًا في ألمانيا.'],
    ['اسأل سؤال في آخر المقابلة:',['Wann kann ich mit der Arbeit beginnen?','Wie viel Urlaub habe ich sofort?','Nein. Tschüss.'],'السؤال في الآخر بيبيّن إنك مهتم.']],
@@ -2569,14 +2569,14 @@ function viewWork(id, step){
   if (!id){
     var html = '<div class="wrap"><div class="ph" style="--c:#3A86FF"><a class="back" href="#/lab">→ النطق</a><span class="em">💼</span><h1>ألماني للوظائف</h1><div class="g">Deutsch für den Beruf</div><p>كل مكالمة 4 خطوات: اسمع ← اختار الرد ← اتكلم ← احفظ.</p></div>' +
       '<div class="worklist">' + WORK.map(function(w){ var st = (S.work || {})[w.id] || {}, n = (st.l ? 1 : 0) + (st.q ? 1 : 0) + (st.s ? 1 : 0) + (st.v ? 1 : 0);
-        return '<a class="workr" href="#/work/' + w.id + '" style="--c:' + w.c + '"><span class="wre">' + w.e + '</span><div class="wrt"><small>' + esc(w.f) + ' · ' + w.lv + '</small><b>' + esc(w.t) + '</b><div class="wdots">' + [0, 1, 2, 3].map(function(k){ return '<i class="' + (k < n ? 'on' : '') + '"></i>'; }).join('') + '</div></div><span class="arr">‹</span></a>'; }).join('') + '</div>' +
+        return '<a class="workr" href="#/work/' + w.id + '" style="--c:' + w.c + '"><span class="wre"><img src="work_' + w.id + '.jpg" alt="" loading="lazy" decoding="async"></span><div class="wrt"><small>' + esc(w.f) + ' · ' + w.lv + '</small><b>' + esc(w.t) + '</b><div class="wdots">' + [0, 1, 2, 3].map(function(k){ return '<i class="' + (k < n ? 'on' : '') + '"></i>'; }).join('') + '</div></div><span class="arr">‹</span></a>'; }).join('') + '</div>' +
       '<p class="sub center" style="margin-top:14px">الأسماء والشركات في المكالمات خيالية.</p>' + footer() + '</div>';
     return render(html, 'lab');
   }
   var w = WORK.find(function(x){ return x.id === id; }); if (!w) return go('#/work');
   S.work = S.work || {}; var st = S.work[id] = S.work[id] || {}; step = step || 'l'; useAudio('work');
   var STEPS = [['l', '🎧', 'اسمع'], ['q', '🧩', 'اختار الرد'], ['s', '🎤', 'اتكلم'], ['v', '⭐', 'احفظ']];
-  var html = '<div class="wrap"><div class="ph sm" style="--c:' + w.c + '"><a class="back" href="#/work">→ ألماني للوظائف</a><span class="em">' + w.e + '</span><h1>' + esc(w.t) + '</h1><div class="g">' + esc(w.f) + ' · ' + w.lv + '</div></div>' +
+  var html = '<div class="wrap"><div class="ph sm" style="--c:' + w.c + '"><a class="back" href="#/work">→ ألماني للوظائف</a><span class="em phpic"><span class="pic"><img src="work_' + w.id + '.jpg" alt="" decoding="async"></span></span><h1>' + esc(w.t) + '</h1><div class="g">' + esc(w.f) + ' · ' + w.lv + '</div></div>' +
     '<div class="wsteps">' + STEPS.map(function(s){ return '<a class="wst' + (s[0] === step ? ' on' : '') + (st[s[0]] ? ' ok' : '') + '" href="#/work/' + id + '/' + s[0] + '"><span>' + (st[s[0]] ? '✅' : s[1]) + '</span>' + s[2] + '</a>'; }).join('') + '</div><div id="wbox"></div>' + footer() + '</div>';
   render(html, 'lab'); var box = $('#wbox');
   function done(k, v){ st[k] = v || 1; save(); }
