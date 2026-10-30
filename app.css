@@ -1505,3 +1505,12 @@ body.th-neon .lesson2 .lnb{color:var(--ink)}
 .scfix{margin-top:12px;padding:14px;border-radius:18px;background:color-mix(in srgb,#E63946 12%,var(--surface));border:1px solid color-mix(in srgb,#E63946 45%,var(--line));line-height:1.8}.scfix-h{font-weight:800;color:#FF6B7A;margin-bottom:4px}.scfix small{color:var(--mute)}.scfix .btn{margin-top:10px}.screv{align-self:center;margin:10px auto;padding:8px 14px;border-radius:99px;background:color-mix(in srgb,var(--gold) 20%,var(--surface));border:1px solid color-mix(in srgb,var(--gold) 50%,var(--line));font-weight:700;font-size:14px;text-align:center}.prog.rev i{background:linear-gradient(90deg,#FFC53D,#FF8A00)}
 .wre{overflow:hidden;width:64px;height:64px;border-radius:18px}.wre img{width:100%;height:100%;object-fit:cover;display:block}
 .ctl{flex-wrap:wrap;overflow:visible!important;gap:6px}.ctl .seg button{padding:7px 12px;font-size:13.5px}.ctl .chip{padding:7px 12px;font-size:13.5px}
+/* ---- light mode: clearer cards ---- */
+:root:not([data-theme="dark"]){--bg:#FAFAFF;--line:#DDD7F5;--shadow:0 2px 6px rgba(42,26,140,.06),0 14px 30px -12px rgba(42,26,140,.32)}
+:root:not([data-theme="dark"]) body:not(.th-neon){background:radial-gradient(120% 50% at 100% 0%,#ECE8FF 0%,transparent 55%),var(--bg)}
+:root:not([data-theme="dark"]) .tile{background:radial-gradient(130% 100% at 100% 0%,color-mix(in srgb,var(--c) 40%,transparent),transparent 70%),#fff;border:1.5px solid color-mix(in srgb,var(--c) 55%,#fff);box-shadow:var(--shadow)}
+:root:not([data-theme="dark"]) .tile .em{background:color-mix(in srgb,var(--c) 34%,#fff)}
+:root:not([data-theme="dark"]) .labt,:root:not([data-theme="dark"]) .lhc,:root:not([data-theme="dark"]) .workr{background:linear-gradient(160deg,color-mix(in srgb,var(--c) 38%,#fff),color-mix(in srgb,var(--c) 8%,#fff) 85%);border:1.5px solid color-mix(in srgb,var(--c) 55%,#fff);box-shadow:var(--shadow)}
+:root:not([data-theme="dark"]) .labi{background:color-mix(in srgb,var(--c) 45%,#fff)}
+:root:not([data-theme="dark"]) .plan,:root:not([data-theme="dark"]) .cockpit,:root:not([data-theme="dark"]) .unitc,:root:not([data-theme="dark"]) .rcard2,:root:not([data-theme="dark"]) .ptask,:root:not([data-theme="dark"]) .it{box-shadow:var(--shadow)}
+:root:not([data-theme="dark"]) .ltip{background:linear-gradient(120deg,#FFE4EE,#fff);border-color:#FFB8CF;box-shadow:var(--shadow)}
