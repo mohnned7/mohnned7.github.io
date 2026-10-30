@@ -445,7 +445,7 @@ var ROCKET = '<svg viewBox="0 0 120 230" class="rocket" aria-hidden="true"><defs
 function shell(){
   document.body.insertAdjacentHTML('afterbegin',
    '<header class="top" id="top"><div class="wrap"><a class="ibtn me tback" id="topBack" href="#/" hidden aria-label="رجوع">' + ic('back') + '<small>رجوع</small></a><a class="logo" href="#/"><svg viewBox="0 0 100 100" class="lgo"><defs><linearGradient id="lgB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2A0E6E"/><stop offset="1" stop-color="#7B2FE0"/></linearGradient><linearGradient id="lgF" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFF3B0"/><stop offset=".5" stop-color="#FFC53D"/><stop offset="1" stop-color="#FF8A00"/></linearGradient><linearGradient id="lgW" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#DCD7F0"/></linearGradient></defs><circle cx="50" cy="50" r="50" fill="url(#lgB)"/><g fill="#fff"><circle class="lg-tw" cx="22" cy="26" r="2"/><circle class="lg-tw2" cx="76" cy="20" r="1.8"/><circle class="lg-tw" cx="84" cy="62" r="1.8"/><circle class="lg-tw2" cx="16" cy="60" r="1.6"/><path class="lg-tw2" d="M33 12l1.4 3.2 3.2 1.4-3.2 1.4-1.4 3.2-1.4-3.2-3.2-1.4 3.2-1.4z"/></g><g class="lg-rk"><g transform="translate(-4 5) rotate(45 50 50) scale(.92) translate(4 2)"><g class="lg-fl"><path d="M41 67C40 76 44 84 50 98 56 84 60 76 59 67 56 71 53 72 50 72 47 72 44 71 41 67z" fill="url(#lgF)"/><path d="M45 67C45 74 47 80 50 88 53 80 55 74 55 67z" fill="#FFF3B0"/></g><path d="M42 50C34 56 31 64 31 72L42 66z" fill="#FF6B2C"/><path d="M58 50C66 56 69 64 69 72L58 66z" fill="#FF6B2C"/><path d="M50 16C60 24 62 44 58 68H42C38 44 40 24 50 16z" fill="url(#lgW)"/><path d="M50 16C55.5 20 58.6 26 59.8 32H40.2C41.4 26 44.5 20 50 16z" fill="#FF6B2C"/><circle cx="50" cy="44" r="6" fill="#5B2BD9" stroke="#fff" stroke-width="2"/><circle cx="48" cy="42" r="1.6" fill="#fff" opacity=".7"/><path d="M47 68 50 60 53 68z" fill="#FF6B2C"/></g></g></svg>'+
-   '<b>Sprach<span>rakete</span></b></a><button class="ibtn tmini" id="themeBtn" aria-label="الوضع الليلي أو النهاري">' + ic('sun') + '</button><span class="tsp"></span><a class="ibtn wabtn" id="waBtn" href="https://whatsapp.com/channel/0029VbDTaxI6xCSKXFymw837" target="_blank" rel="noopener" aria-label="قناة الواتساب" title="قناة الواتساب">' + WA_SVG + '</a><a class="ibtn" id="srchBtn" href="#/search" aria-label="بحث" title="بحث">' + ic('search') + '</a><a class="ibtn me" id="meBtn" href="#/me" title="حسابي" aria-label="حسابي">' + ic('me') + '<small>أنا</small></a><button class="ibtn" id="setBtn" aria-label="الإعدادات" title="الإعدادات">' + ic('gear') + '</button></div></header>'+
+   '<b>Sprach<span>rakete</span></b></a><button class="ibtn tmini" id="themeBtn" aria-label="الوضع الليلي أو النهاري">' + ic('sun') + '</button><span class="tsp"></span><a class="ibtn wabtn" id="waBtn" href="https://whatsapp.com/channel/0029VbDTaxI6xCSKXFymw837" target="_blank" rel="noopener" aria-label="قناة الواتساب" title="قناة الواتساب">' + WA_SVG + '</a><a class="ibtn" id="srchBtn" href="#/search" aria-label="بحث" title="بحث">' + ic('search') + '</a><button class="ibtn" id="setBtn" aria-label="الإعدادات" title="الإعدادات">' + ic('gear') + '</button></div></header>'+
    '<main id="app"></main>'+
    '<nav class="nav" aria-label="القائمة"><div class="in">'+
    '<a href="#/" data-n="home">' + ic('home') + 'اليوم</a><a href="#/learn" data-n="learn">' + ic('learn') + 'الدروس</a><a href="#/lab" data-n="lab" class="navmid"><span class="nm">' + ic('mic') + '</span>النطق</a><a href="#/train" data-n="train">' + ic('train') + 'التدريب</a><a href="#/me" data-n="me">' + ic('words') + 'رحلتي</a></div></nav>'+
@@ -736,7 +736,7 @@ function viewLearn(tab){
   } else {
     body = '<p class="lead">أدوات تفاعلية تساعدك على الأرقام والوقت والتاريخ.</p><div class="tiles big">' + toolsHTML() + '</div>';
   }
-  var html = '<div class="wrap">' + (tab === 'words' ? '' : '<a class="back" href="#/learn">→ الدروس</a>') + '<div class="lsec-h"><span class="lsec-i">' + ic(TT.i) + '</span><h1>' + TT.t + '</h1></div>' +
+  var html = '<div class="wrap"><a class="back" href="#/learn">→ الدروس</a>' + '<div class="lsec-h"><span class="lsec-i">' + ic(TT.i) + '</span><h1>' + TT.t + '</h1></div>' +
     '<div class="tabbody">' + body + '</div>' + footer() + '</div>';
   render(html, tab === 'words' ? 'words' : 'learn');
   window.scrollTo(0, 0);
@@ -1276,24 +1276,39 @@ function speakExam(P, SP){
 var SRec = window.SpeechRecognition || window.webkitSpeechRecognition, srec = null;
 function wnorm(s){ return norm(String(s).replace(/\d+/g, function(d){ try{ return ' ' + numDe(+d) + ' '; }catch(e){ return d; } })); }
 function wHit(w, arr){ return arr.some(function(x){ return x === w || (w.length > 3 && x.length > 3 && simil(x, w) >= .75); }); }
+
+/* robust speech recognition (iPhone Safari delivers text late, or only after stop) */
+var SR_ERR = {'not-allowed':'🔒 المايك مقفول للموقع. اسمح بيه من إعدادات المتصفح. ولو آيفون: فعّل «الإملاء» من الإعدادات ← عام ← لوحة المفاتيح.', 'service-not-allowed':'🔒 التعرّف على الكلام مقفول. على الآيفون: فعّل «الإملاء» من الإعدادات ← عام ← لوحة المفاتيح، وجرّب من Safari.', 'no-speech':'🎙️ ما وصلنيش صوت. اتكلم بعد ما الزرار يتلوّن، وقرّب الموبايل من بُقّك.', 'audio-capture':'🎙️ المايك مش شغال، أو فيه تطبيق تاني بيستخدمه دلوقتي.', 'network':'📶 التعرّف على الكلام محتاج نت. اتأكد إن النت شغال.', 'language-not-supported':'🌍 الألماني مش متاح في الإملاء عندك. ضيف لوحة مفاتيح ألماني من إعدادات الموبايل.', 'empty':'🎙️ سمعت صوت بس ما فهمتش كلام. اتكلم أوضح وجرّب تاني.'};
+var srCur = null;
+function srListen(onState, onDone){
+  if (!SRec){ onDone(null, 'unsupported'); return null; }
+  if (srCur){ try{ srCur.stop(); }catch(e){} return null; }
+  stopAudio(); if (synth) try{ synth.cancel(); }catch(e){}
+  var r = new SRec(), alts = [], err = '', done = false, tmr;
+  r.lang = 'de-DE'; r.interimResults = true; r.continuous = false; r.maxAlternatives = 3;
+  r.onresult = function(e){ var list = []; for (var i = 0; i < e.results.length; i++){ var res = e.results[i]; for (var k = 0; k < res.length; k++){ if (!list[k]) list[k] = ''; list[k] += (list[k] ? ' ' : '') + res[k].transcript; } } list = list.map(function(s){ return s.trim(); }).filter(Boolean); if (list.length) alts = list; };
+  r.onerror = function(e){ if (e.error !== 'aborted') err = e.error || 'empty'; };
+  r.onend = function(){ clearTimeout(tmr); if (done) return; done = true; srCur = null; onState(false); if (alts.length) onDone(alts, ''); else onDone(null, err || 'empty'); };
+  srCur = r; onState(true);
+  tmr = setTimeout(function(){ try{ r.stop(); }catch(e){} }, 9000);
+  leaveHook = function(){ done = true; clearTimeout(tmr); try{ r.abort(); }catch(e){} srCur = null; };
+  try{ r.start(); }catch(e){ done = true; srCur = null; onState(false); onDone(null, 'audio-capture'); }
+  return r;
+}
+function srErrHTML(code){ return '<div class="pres-x">' + (SR_ERR[code] || (code === 'unsupported' ? '🌐 المتصفح ده مابيدعمش التعرّف على الكلام. جرّب Chrome أو Safari.' : SR_ERR.empty)) + '</div>'; }
 function micCheck(btn, c, cb){
-  if (srec){ try{ srec.stop(); }catch(e){} return; }
-  stopAudio(); srec = new SRec(); srec.lang = 'de-DE'; srec.interimResults = false; srec.maxAlternatives = 3;
-  btn.classList.add('live'); btn.querySelector('span').textContent = 'أستمع إليك… اضغط للإنهاء';
-  var got = false;
-  srec.onresult = function(e){ got = true; var r = e.results[0], said = r[0].transcript, sw = wnorm(said).split(' ').filter(Boolean);
-    var best = null; c.model.forEach(function(m){ var sc = simil(wnorm(said), wnorm(m.de)); if (!best || sc > best.sc) best = {m:m, sc:sc}; });
+  var lbl = btn.querySelector('span');
+  srListen(function(on){ btn.classList.toggle('live', on); if (lbl) lbl.textContent = on ? 'أستمع إليك… اضغط للإنهاء' : '🎙️ اضغط وقل جملتك'; }, function(alts, err){
+    if (!alts){ cb({good:false, html:srErrHTML(err)}); return; }
+    var said = alts[0], best = null; alts.forEach(function(s){ c.model.forEach(function(m){ var sc = simil(wnorm(s), wnorm(m.de)); if (!best || sc > best.sc){ best = {m:m, sc:sc}; said = s; } }); });
+    var sw = wnorm(said).split(' ').filter(Boolean);
     var mw = best.m.de.split(/\s+/), hit = 0, colored = mw.map(function(w){ var n = wnorm(w); var ok = !n || n.split(' ').every(function(p){ return wHit(p, sw); }); if (ok) hit++; return '<span class="' + (ok ? 'wok' : 'wno') + '">' + esc(w) + '</span>'; }).join(' ');
     var key = wnorm(c.w).split(' ').filter(function(x){ return x.length > 2 && ['der','die','das'].indexOf(x) < 0; }), keyOk = !key.length || key.some(function(k){ return sw.some(function(x){ return x.indexOf(k.slice(0, 3)) === 0 || simil(x, k) >= .7; }); });
     var pct = Math.round(hit / mw.length * 100); if (!keyOk && pct >= 70) keyOk = true; var good = pct >= 75 && keyOk; skillAdd('speak', pct);
-    cb({good:good, html:'<div class="sres ' + (good ? 'good' : 'mid') + '"><div class="sres-h">' + (good ? '✅ ممتاز! جملتك صحيحة تقريبًا' : pct >= 45 ? '👍 قريب! قارن جملتك بالنموذج' : '🔁 حاول مرة أخرى بعد الاستماع إلى النموذج') + ' <b>' + ar(pct) + '٪</b></div>' +
+    cb({good:good, html:'<div class="sres ' + (good ? 'good' : 'mid') + '"><div class="sres-h">' + (good ? '✅ ممتاز! جملتك صحيحة تقريبًا' : pct >= 45 ? '👍 قريب! قارن جملتك بالنموذج' : '🔁 حاول مرة أخرى بعد الاستماع إلى النموذج') + '</div>' +
       '<div class="sres-r"><span>🗣️ سمعتُك تقول:</span><div class="de">' + esc(said) + '</div></div>' +
       '<div class="sres-r"><span>✔️ الجملة الأقرب (الأخضر قلته، والأحمر ناقص أو مختلف):</span><div class="de">' + colored + '</div></div>' +
-      (keyOk ? '' : '<div class="sres-k">⚠️ لم تستخدم كلمة البطاقة: <b class="de">' + esc(c.w) + '</b></div>') + '</div>'}); };
-  srec.onerror = function(e){ if (e.error === 'not-allowed' || e.error === 'service-not-allowed') toast('اسمح للموقع باستخدام الميكروفون من إعدادات المتصفح'); else if (e.error === 'no-speech') toast('لم أسمع شيئًا، حاول مرة أخرى'); };
-  srec.onend = function(){ srec = null; btn.classList.remove('live'); btn.querySelector('span').textContent = got ? '🎙️ حاول مرة أخرى' : 'اضغط وقل جملتك'; };
-  leaveHook = function(){ if (srec){ try{ srec.abort(); }catch(e){} srec = null; } };
-  try{ srec.start(); }catch(e){ srec = null; btn.classList.remove('live'); }
+      (keyOk ? '' : '<div class="sres-k">⚠️ لم تستخدم كلمة البطاقة: <b class="de">' + esc(c.w) + '</b></div>') + '</div>'}); });
 }
 /* ---------------- SPEAK (pronunciation) ---------------- */
 function lev(a, b){ var m = [], i, j; for (i = 0; i <= b.length; i++) m[i] = [i]; for (j = 0; j <= a.length; j++) m[0][j] = j;
@@ -1494,11 +1509,11 @@ function scenesHTML(){ loadPics('food'); loadPics('travel'); loadPics('jobs'); r
 function viewScene(id){
   var sc = SCENES.find(function(x){ return x.id === id; }); if (!sc) return go('#/play');
   useAudio('scenes'); useAudio(sc.grp); useAudio('situations'); loadPics(sc.grp === 'body' ? 'body' : 'food'); loadPics('travel'); loadPics('jobs');
-  var i = 0, hearts = 3, mistakes = 0, okc = 0, busy = false, lastNpc = null;
+  var i = 0, hearts = 3, mistakes = 0, okc = 0, busy = false, lastNpc = null, Q = sc.steps.map(function(s, k){ return k; }), retry = [], inReview = false;
   function reveal(){ var t = lastNpc && lastNpc.querySelector('.tr'); if (t && t.hidden){ t.hidden = false; t.classList.add('trin'); } }
   render('<div class="wrap"><div class="ph sm" style="--c:' + sc.c + '"><a class="back" href="#/play">→ الألعاب</a><span class="em phpic">' + scPic(sc.pic, sc.e) + '</span><h1>' + sc.t + '</h1><div class="g">' + sc.de + '</div></div><div id="scbar"></div><div class="chat" id="chat"></div><div id="act"></div></div>', 'play');
   var chat = $('#chat'), act = $('#act');
-  function barH(){ $('#scbar').innerHTML = '<div class="gamebar"><div class="prog"><i style="width:' + (i / sc.steps.length * 100) + '%"></i></div><span class="hrt">' + '❤️'.repeat(hearts) + '<i>' + '🤍'.repeat(3 - hearts) + '</i></span></div>'; }
+  function barH(){ $('#scbar').innerHTML = '<div class="gamebar"><div class="prog' + (inReview ? ' rev' : '') + '"><i style="width:' + (i / Q.length * 100) + '%"></i></div><span class="hrt">' + '❤️'.repeat(hearts) + '<i>' + '🤍'.repeat(3 - hearts) + '</i></span></div>'; }
   function bubble(who, de, mn, ann){ var k = chat.children.length;
     chat.insertAdjacentHTML('beforeend', '<div class="bub2 ' + who + (ann ? ' ann' : '') + '"><span class="av">' + (who === 'me' ? '🙋' : ann ? '📢' : sc.npcPic ? scPic(sc.npcPic, sc.npc) : sc.npc) + '</span><div class="bx"><div class="d de">' + esc(de) + '</div>' + (mn ? '<div class="tr"' + (who === 'me' ? '' : ' hidden') + '>' + esc(mn) + '</div>' : '') + '</div>' + (who === 'npc' ? '<button class="rp" aria-label="استمع">' + ICON_PLAY + '</button>' : '') + '</div>');
     var el = chat.lastElementChild; if (who !== 'me') lastNpc = el;
@@ -1506,21 +1521,31 @@ function viewScene(id){
     el.scrollIntoView({block:'end', behavior:'smooth'}); return el; }
   function wrong(btn){ mistakes++; hearts--; fx(false); if (btn){ btn.classList.add('no'); } barH(); if (hearts <= 0){ busy = true; setTimeout(fail, 900); return true; } return false; }
   function right(btn){ okc++; fx(true); xpFloat(10); if (btn) btn.classList.add('ok'); reveal(); }
-  function nextStep(){ i++; barH(); busy = false; if (i >= sc.steps.length) return setTimeout(win, 500); setTimeout(step, 450); }
+  function nextStep(){ i++; busy = false;
+    if (i >= Q.length){ if (!inReview && retry.length){ inReview = true; Q = retry.slice(); i = 0; barH();
+        chat.insertAdjacentHTML('beforeend', '<div class="screv">🔁 قبل ما نخلص: راجع ' + plural(Q.length, 'السؤال اللي غلطت فيه', 'السؤالين اللي غلطت فيهم', 'الأسئلة اللي غلطت فيها', 'سؤالًا غلطت فيه') + '</div>'); setTimeout(step, 900); return; }
+      barH(); return setTimeout(win, 500); }
+    barH(); setTimeout(step, 450); }
+  function showRight(b, good, note, onGo){ busy = true; $$('[data-o],[data-b]', act).forEach(function(x){ x.disabled = true; }); if (b) b.classList.add('no'); if (good) good.classList.add('ok');
+    if (!inReview){ retry.push(Q[i]); if (wrong(null)) return; } else fx(false);
+    act.insertAdjacentHTML('beforeend', '<div class="scfix"><div class="scfix-h">❌ دي مش الإجابة الصح</div><div>' + note + '</div><button class="btn wide" id="scGo">فهمت، تابع ›</button></div>');
+    var g = $('#scGo', act); g.scrollIntoView({block:'center', behavior:'smooth'}); g.onclick = function(){ g.disabled = true; onGo(); }; }
   function step(){
-    var st = sc.steps[i]; act.innerHTML = ''; setTimeout(function(){ if (act.firstChild) act.scrollIntoView({block:'end', behavior:'smooth'}); }, 380);
+    var st = sc.steps[Q[i]]; act.innerHTML = ''; setTimeout(function(){ if (act.firstChild) act.scrollIntoView({block:'end', behavior:'smooth'}); }, 380);
     if (st.t === 'say' || st.t === 'ask'){
       bubble('npc', st.de, st.mn, st.ann); speak(st.de);
       var opts = shuffle(st.opts.slice(), Math.random);
       act.innerHTML = (st.q ? '<div class="scq">' + esc(st.q) + '</div>' : '<div class="scq">ماذا تقول؟' + (st.t === 'say' && SRec ? ' <button class="scmic" id="scMic"><small>🎤 رُدّ بصوتك</small></button>' : '') + '</div><div id="scMr"></div>') + '<div class="opts">' + opts.map(function(o, k){ return '<button class="opt' + (st.t === 'say' ? ' de' : '') + '" data-o="' + k + '">' + esc(o[0]) + '</button>'; }).join('') + '</div>';
-      var scm = $('#scMic', act); if (scm) scm.onclick = function(){ var good = opts.find(function(o){ return o[2]; }); micListen(scm, good[0], function(r){ if (!r){ $('#scMr').innerHTML = '<div class="pres-x">🎙️ ما سمعتش كويس، جرّب تاني أو اختار الرد</div>'; return; }
+      var scm = $('#scMic', act); if (scm) scm.onclick = function(){ var good = opts.find(function(o){ return o[2]; }); micListen(scm, good[0], function(r, e){ if (!r){ $('#scMr').innerHTML = srErrHTML(e); return; }
           var best = opts.map(function(o, k){ return {k:k, sc:simil(wnorm(r.said), wnorm(o[0]))}; }).sort(function(x, y){ return y.sc - x.sc; })[0];
           if (opts[best.k][2] && best.sc >= .5){ $('#scMr').innerHTML = ''; var bt = $('[data-o="' + best.k + '"]', act); if (bt) bt.click(); }
           else $('#scMr').innerHTML = '<div class="pres-x">' + (best.sc >= .5 ? '🤔 ده مش الرد المناسب هنا، جرّب تاني' : '🎙️ سمعتك تقول: <span class="de">' + esc(r.said) + '</span> — جرّب تاني أو اختار الرد') + '</div>'; }); };
       $$('[data-o]', act).forEach(function(b){ b.onclick = function(){ if (busy) return; var o = opts[+b.dataset.o];
         if (o[2] || (st.t === 'ask' && o[1] === 1)){ busy = true; right(b); $$('[data-o]', act).forEach(function(x){ x.disabled = true; });
           if (st.t === 'say'){ bubble('me', o[0], o[1]); speak(o[0], function(){}); setTimeout(nextStep, 900); } else setTimeout(nextStep, 700); }
-        else { b.disabled = true; wrong(b); } }; });
+        else { var gi = opts.findIndex(function(x){ return x[2] || (st.t === 'ask' && x[1] === 1); }), gb = $('[data-o="' + gi + '"]', act), go = opts[gi];
+          showRight(b, gb, st.t === 'say' ? 'الرد المناسب هو: <b class="de">' + esc(go[0]) + '</b><br><small>' + esc(go[1] || '') + '</small>' : 'الإجابة الصح: <b>' + esc(go[0]) + '</b>' + (st.mn ? '<br><small>لأن الجملة معناها: ' + esc(st.mn) + '</small>' : ''),
+            function(){ reveal(); if (st.t === 'say'){ bubble('me', go[0], go[1]); speak(go[0], function(){}); setTimeout(nextStep, 900); } else nextStep(); }); } }; });
     } else if (st.t === 'pick'){
       act.innerHTML = '<div class="scq">🧺 ضع في السلة ما في القائمة:</div><div class="sclist de">📝 ' + esc(st.task) + '</div><div class="shelf">' + st.shelf.map(function(n, k){ var it = itemsOf(st.topic).find(function(x){ return x.n === n; }) || {de:n, n:n};
         return '<button class="shi" data-s="' + k + '">' + scPic(st.topic + '/' + n, it.e) + '<span class="de" hidden>' + esc(it.de) + '</span></button>'; }).join('') + '</div><div class="basket" id="bk">🛒 السلة: <b>0</b> / ' + st.need.length + '</div>';
@@ -1544,7 +1569,9 @@ function viewScene(id){
       act.innerHTML = '<div class="scq">🩺 قل للطبيب أين الألم. اختر الصورة المناسبة لهذه الجملة:</div><div class="sclist de">🗣️ ' + esc(st.task) + '</div><div class="shelf body">' + st.choices.map(function(n, k){ var it = itemsOf(st.topic).find(function(x){ return x.n === n; }) || {de:n};
         return '<button class="shi" data-b="' + k + '">' + scPic(st.topic + '/' + n, it.e) + '<span class="de" hidden>' + esc(it.de) + '</span></button>'; }).join('') + '</div>';
       $$('[data-b]', act).forEach(function(b){ b.onclick = function(){ if (busy) return; var n = st.choices[+b.dataset.b];
-        if (n === st.need){ busy = true; right(b); var lb2 = b.querySelector('.de'); if (lb2) lb2.hidden = false; bubble('me', st.say, ''); speak(st.say); setTimeout(nextStep, 1000); } else { b.disabled = true; wrong(b); } }; });
+        if (n === st.need){ busy = true; right(b); var lb2 = b.querySelector('.de'); if (lb2) lb2.hidden = false; bubble('me', st.say, ''); speak(st.say); setTimeout(nextStep, 1000); }
+        else { var gb2 = $('[data-b="' + st.choices.indexOf(st.need) + '"]', act); if (gb2){ var l3 = gb2.querySelector('.de'); if (l3) l3.hidden = false; }
+          showRight(b, gb2, 'الصورة الصح هي اللي باللون الأخضر: <b class="de">' + esc(st.say) + '</b>', function(){ bubble('me', st.say, ''); speak(st.say); setTimeout(nextStep, 1000); }); } }; });
     }
   }
   function fail(){ act.innerHTML = ''; $('#scbar').innerHTML = '';
@@ -2229,20 +2256,9 @@ function practiceSheet(it){
     $('#pcTR', m).innerHTML = '<div class="sres ' + (good ? 'good' : 'mid') + '"><div class="sres-h">' + (good ? '✅ صح! كتبتها مظبوط' : '✍️ قريب، قارن بالصح') + '</div><div class="sres-r"><span>الصح:</span><div class="de">' + esc(it.de) + '</div></div></div>'; skillAdd('write', sc); };
   $('#pcIn', m).onkeydown = function(e){ if (e.key === 'Enter') $('#pcChk', m).click(); };
   var mic = $('#pcMic', m), rec = null;
-  if (mic) mic.onclick = function(){
-    if (rec){ try{ rec.stop(); }catch(e){} return; }
-    stopAudio(); rec = new SRec(); rec.lang = 'de-DE'; rec.interimResults = false; rec.maxAlternatives = 3; var got = false;
-    mic.classList.add('live'); mic.querySelector('small').textContent = 'بسمعك… اضغط لما تخلص';
-    rec.onresult = function(e){ got = true; var alts = [].slice.call(e.results[0]).map(function(r){ return r.transcript; });
-      var best = alts.map(function(s){ return {s:s, sc:simil(wnorm(s), wnorm(it.de))}; }).sort(function(x, y){ return y.sc - x.sc; })[0], said = best.s, sw = wnorm(said).split(' ').filter(Boolean);
-      var mw = it.de.split(/\s+/), hit = 0, col = mw.map(function(w){ var n = wnorm(w), ok = !n || n.split(' ').every(function(p){ return wHit(p, sw); }); if (ok) hit++; return '<span class="' + (ok ? 'wok' : 'wno') + '">' + esc(w) + '</span>'; }).join(' ');
-      var pct = Math.round(Math.max(best.sc, hit / mw.length) * 100); skillAdd('speak', pct);
-      $('#pcRes', m).innerHTML = '<div class="pres">' + scoreRing(pct) + '<div><b>' + (pct >= 85 ? 'ممتاز! نطقك واضح جدًا 🎉' : pct >= 60 ? 'قريب! جرّب مرة كمان 👍' : 'اسمعها تاني وجرّب 🔁') + '</b><div class="de pres-w">' + col + '</div><small>سمعتك تقول: <span class="de">' + esc(said) + '</span></small></div></div>'; };
-    rec.onerror = function(e){ if (e.error === 'not-allowed' || e.error === 'service-not-allowed') toast('اسمح للموقع باستخدام الميكروفون من إعدادات المتصفح'); else $('#pcRes', m).innerHTML = '<div class="pres-x">🎙️ ما سمعتش كويس، قرّب الموبايل وجرّب تاني</div>'; };
-    rec.onend = function(){ rec = null; mic.classList.remove('live'); mic.querySelector('small').textContent = got ? 'جرّب مرة كمان' : 'اضغط وقُلها بصوتك'; };
-    try{ rec.start(); }catch(e){ rec = null; mic.classList.remove('live'); }
-  };
-  var x = m.querySelector('.x'), close0 = x.onclick; x.onclick = function(){ if (rec){ try{ rec.abort(); }catch(e){} } close0(); };
+  if (mic) mic.onclick = function(){ micListen(mic, it.de, function(r, e){ if (!r){ $('#pcRes', m).innerHTML = srErrHTML(e); return; }
+      $('#pcRes', m).innerHTML = '<div class="pres">' + scoreRing(r.pct) + '<div><b>' + (r.pct >= 85 ? 'ممتاز! نطقك واضح جدًا 🎉' : r.pct >= 60 ? 'قريب! جرّب مرة كمان 👍' : 'اسمعها تاني وجرّب 🔁') + '</b><div class="de pres-w">' + r.html + '</div><small>سمعتك تقول: <span class="de">' + esc(r.said) + '</span></small></div></div>'; }); };
+  var x = m.querySelector('.x'), close0 = x.onclick; x.onclick = function(){ if (srCur){ try{ srCur.abort(); }catch(e){} srCur = null; } close0(); };
 }
 function viewSaved(){
   var list = Object.keys(S.fav || {}).map(function(k){ return S.fav[k]; }).sort(function(a, b){ return (b.t || 0) - (a.t || 0); });
@@ -2404,19 +2420,15 @@ function labPlay(text, mode, done){ /* mode: 'slow' | 'normal' | 'fast' — its 
   var pr = a.play(); if (pr && pr.catch) pr.catch(function(err){ if (!err || err.name !== 'AbortError') speak(text, done); });
   leaveHook = function(){ try{ a.pause(); }catch(e){} };
 }
-function micListen(btn, target, cb){ if (!SRec){ toast('الميكروفون غير مدعوم هنا، جرّب Chrome'); return; }
-  stopAudio(); var r = new SRec(); r.lang = 'de-DE'; r.interimResults = false; r.maxAlternatives = 3; var got = false, lbl = btn.querySelector('small');
-  btn.classList.add('live'); if (lbl) lbl.textContent = 'بسمعك… اضغط لما تخلص';
-  r.onresult = function(e){ got = true; var alts = [].slice.call(e.results[0]).map(function(x){ return x.transcript; });
+function micListen(btn, target, cb){
+  var lbl = btn.querySelector('small');
+  srListen(function(on){ btn.classList.toggle('live', on); if (lbl) lbl.textContent = on ? 'بسمعك… اضغط لما تخلص' : 'اضغط واتكلم'; }, function(alts, err){
+    if (!alts){ cb(null, err); return; }
     var best = alts.map(function(s){ return {s:s, sc:simil(wnorm(s), wnorm(target))}; }).sort(function(a, b){ return b.sc - a.sc; })[0], sw = wnorm(best.s).split(' ').filter(Boolean);
     var mw = target.split(/\s+/), hit = 0, col = mw.map(function(w){ var n = wnorm(w), ok = !n || n.split(' ').every(function(p){ return wHit(p, sw); }); if (ok) hit++; return '<span class="' + (ok ? 'wok' : 'wno') + '">' + esc(w) + '</span>'; }).join(' ');
-    var pct = Math.round(Math.max(best.sc, hit / mw.length) * 100); skillAdd('speak', pct); cb({pct:pct, said:best.s, html:col}); };
-  r.onerror = function(e){ if (e.error === 'not-allowed' || e.error === 'service-not-allowed') toast('اسمح للموقع باستخدام الميكروفون من إعدادات المتصفح'); else cb(null); };
-  r.onend = function(){ btn.classList.remove('live'); if (lbl) lbl.textContent = got ? 'جرّب مرة كمان' : 'اضغط واتكلم'; if (leaveHook === stopR) leaveHook = null; };
-  function stopR(){ try{ r.abort(); }catch(e){} } leaveHook = stopR;
-  try{ r.start(); }catch(e){ btn.classList.remove('live'); }
+    var pct = Math.round(Math.max(best.sc, hit / mw.length) * 100); skillAdd('speak', pct); cb({pct:pct, said:best.s, html:col}); });
 }
-function micResHTML(res){ if (!res) return '<div class="pres-x">🎙️ ما سمعتش كويس، قرّب الموبايل وجرّب تاني</div>';
+function micResHTML(res, err){ if (!res) return srErrHTML(err);
   return '<div class="pres">' + scoreRing(res.pct) + '<div><b>' + (res.pct >= 85 ? 'ممتاز! نطقك واضح جدًا 🎉' : res.pct >= 60 ? 'قريب! جرّب مرة كمان 👍' : 'اسمعها تاني وجرّب 🔁') + '</b><div class="de pres-w">' + res.html + '</div><small>سمعتك تقول: <span class="de">' + esc(res.said) + '</span></small></div></div>'; }
 /* record yourself and listen back */
 var recM = null;
@@ -2544,7 +2556,7 @@ var LAB_FN = {
         '<button class="micbig" id="rMic"><span>🎤</span><small>اضغط واتكلم</small></button><div id="rRes"></div>' +
         '<div class="rc-ctl"><button class="btn alt" id="rShow">👁️ اعرض الجملة</button><button class="btn alt" id="rPlay">🔊 اسمعها</button><button class="btn" id="rNext">التالي ›</button></div><div id="rAns"></div></div>';
       var best = 0;
-      $('#rMic').onclick = function(){ micListen(this, it.de, function(r){ if (r) best = Math.max(best, r.pct); $('#rRes').innerHTML = micResHTML(r); }); };
+      $('#rMic').onclick = function(){ micListen(this, it.de, function(r, e){ if (r) best = Math.max(best, r.pct); $('#rRes').innerHTML = micResHTML(r, e); }); };
       $('#rShow').onclick = function(){ $('#rAns').innerHTML = '<div class="sres good" style="margin-top:10px"><div class="de" style="font-size:18px">' + esc(it.de) + '</div></div>'; };
       $('#rPlay').onclick = function(){ play(it); };
       $('#rNext').onclick = function(){ sum += best; i++; q(); };
@@ -2600,7 +2612,7 @@ function viewWork(id, step){
         '<div class="rc-ctl"><button class="btn alt" id="wShow">👁️ اعرض الجملة</button><button class="btn alt" id="wHear">🔊 اسمعها</button><button class="btn" id="wNx">التالي ›</button></div>' +
         '<button class="linkbtn" id="wTypeT" style="display:block;margin:8px auto 0">⌨️ اكتبها بدل الكلام</button><div id="wType" hidden><input class="inp de" id="wIn" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="اكتب جملتك بالألماني"><button class="btn wide" id="wChk" style="margin-top:8px">تحقّق</button></div>';
       if (prev) speak(prev[1]);
-      $('#wMic').onclick = function(){ micListen(this, mine[1], function(r){ if (r) best = Math.max(best, r.pct); $('#wRes').innerHTML = micResHTML(r); }); };
+      $('#wMic').onclick = function(){ micListen(this, mine[1], function(r, e){ if (r) best = Math.max(best, r.pct); $('#wRes').innerHTML = micResHTML(r, e); }); };
       $('#wShow').onclick = function(){ $('#wAns').hidden = false; };
       $('#wHear').onclick = function(){ speak(mine[1]); };
       $('#wTypeT').onclick = function(){ var x = $('#wType'); x.hidden = !x.hidden; if (!x.hidden) $('#wIn').focus(); };
