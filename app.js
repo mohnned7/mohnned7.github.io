@@ -43,15 +43,16 @@ var ART = {m:'der', f:'die', n:'das'};
 var ARTINFO = {m:'<b>der</b> أداة للمذكّر، مثل «الـ» في العربية.<br>مثال: <span class="de">der Hund</span> = الكلب', f:'<b>die</b> أداة للمؤنّث، مثل «الـ» في العربية.<br>مثال: <span class="de">die Katze</span> = القطة', n:'<b>das</b> أداة للمحايد (لا مذكّر ولا مؤنّث)، مثل «الـ» في العربية.<br>مثال: <span class="de">das Haus</span> = البيت'};
 
 /* ---------------- storage ---------------- */
-function blank(){ return {xp:0, streak:0, last:'', days:{}, badges:{}, heard:{}, done:{}, gs:{}, mist:{}, fixed:0, cards:{}, games:{}, daily:{}, tools:{}, name:'', set:{theme:'dark', kids:false, sp:false, speed:'slow'}, v:5, perfect:false, test:null, popup:false, station:0, exam:{}, spoke:0}; }
+function blank(){ return {xp:0, streak:0, last:'', days:{}, badges:{}, heard:{}, done:{}, gs:{}, mist:{}, fixed:0, cards:{}, games:{}, daily:{}, tools:{}, name:'', set:{theme:'light', kids:false, sp:false, speed:'normal'}, v:6, perfect:false, test:null, popup:false, station:0, exam:{}, spoke:0}; }
 var S = (function(){
   var d = blank();
   try{ var x = JSON.parse(localStorage.getItem('sprachrakete') || 'null');
     if (x){ for (var k in x) if (k !== 'seen') d[k] = x[k];
-      d.set = Object.assign({theme:'dark', kids:false, sp:false, speed:'slow'}, x.set || {});
+      d.set = Object.assign({theme:'light', kids:false, sp:false, speed:'normal'}, x.set || {});
       if ((x.v || 1) < 3){ if (!x.set || x.set.theme !== 'light') d.set.theme = 'dark'; }
       if ((x.v || 1) < 4){ d.set.sp = false; d.v = 4; }
       if ((x.v || 1) < 5){ var od = 0; for (var kk in (x.done || {})) if (/^[tlsw]:/.test(kk)) od++; var of = [0, .06, .15, .28, .45, .62, .8, 1], oi = 0; of.forEach(function(f, i){ if (od >= Math.ceil(f * 48)) oi = i; }); d.stFloor = Math.min(oi, 6); d.v = 5; }
+      if ((x.v || 1) < 6){ d.set.speed = 'normal'; d.v = 6; }
       ['heard','done','gs','mist','exam','days','badges','cards','games','daily','tools'].forEach(function(k){ if (!d[k] || typeof d[k] !== 'object') d[k] = {}; });
     } }catch(e){}
   return d;
