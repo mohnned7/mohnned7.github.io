@@ -626,7 +626,7 @@ function viewAbout(){
     '<div class="panel about"><h3>🔒 خصوصيتك</h3><p>لا تحتاج إلى حساب أو بريد إلكتروني. تقدّمك ونقاطك محفوظة على جهازك فقط، ولا نجمع أي بيانات شخصية. نستخدم عدّاد زيارات بسيطًا لا يتعرّف عليك ولا يستخدم ملفات تعريف الارتباط.</p></div>' +
     '<div class="panel about"><h3>💡 نصائح للاستفادة</h3><ul><li>استمع إلى كل كلمة وكرّرها بصوت عالٍ.</li><li>عشر دقائق كل يوم أفضل من ساعتين مرة في الأسبوع.</li><li>راجع كرّاسة أخطائي باستمرار.</li></ul></div>' +
     '<div class="sh"><h2>تواصل معي</h2></div>' + contactHTML(false) +
-    '<p class="sub center" style="margin-top:16px">الخط العربي: Readex Pro (رخصة SIL OFL). جميع المحتويات والتصميم © مهند.</p>' + footer() + '</div>';
+    '<p class="sub center" style="margin-top:16px">صُنع بحب ❤️ بواسطة مهند · © 2026 جميع الحقوق محفوظة.</p>' + footer() + '</div>';
   render(html, 'home');
 }
 function viewPrivacy(){
